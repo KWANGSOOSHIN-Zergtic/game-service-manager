@@ -7,11 +7,7 @@
 ## 제작 목표
 
 - 게임(1 Team Football) 서비스 관리 툴 제작
-  - 게임 프로젝트의 이름 입니다.
-  - 이미지는 /public/resource/1tf_ci.png
 - 회사의 이름은 우레 (Woore) 입니다
-  - 이미지는 /public/resource/woore_ci.webp
-  - 저작권 표기에 사용해 주세요
 
 ## 기술 스택
 
@@ -21,12 +17,14 @@
 ### Frontend
 - Framework: Next.js, TypeScript
 - UI Components: ShadCN UI
-- Icons: Lucide React
+  - 설치된 컴포넌트: button, card, form, input, label, select, table, tabs, toast, dialog, dropdown-menu, separator, sheet, sidebar, avatar, badge, calendar, checkbox, radio-group, switch, alert, progress, skeleton
+- Icons: Lucide React, Radix UI Icons
+- 유틸리티: class-variance-authority, clsx, tailwind-merge
 
 ### 상태 관리
 - Global State: Zustand
-- Server State: React Query
-- Form Validation: Zod
+- Server State: @tanstack/react-query
+- Form Validation: Zod, @hookform/resolvers
 
 ### 테스트
 - Unit Testing: Jest + React Testing Library
@@ -34,26 +32,17 @@
 
 ### 코드 품질
 - Linting: ESLint
+  - @typescript-eslint/eslint-plugin
+  - @typescript-eslint/parser
 - Formatting: Prettier
+  - eslint-config-prettier
 - Type Checking: TypeScript
+  - @types/node
+  - @types/react
+  - @types/react-dom
 
 ### 문서화
-- API Documentation: Swagger/OpenAPI
 - Code Documentation: JSDoc
-- Diagrams: Mermaid
-- Documentation Format: Markdown
-
-### DevOps
-- CI/CD: GitHub Actions
-- Monitoring: Sentry
-- Error Tracking: Sentry
-- Performance Monitoring: Sentry
-
-### 보안
-- Authentication: JWT
-- Security Headers: Next.js Security Headers
-- XSS Protection: Built-in Next.js Protection
-- CSRF Protection: Built-in Next.js Protection
 
 ## 명명 규칙
 - **파일명**: 
