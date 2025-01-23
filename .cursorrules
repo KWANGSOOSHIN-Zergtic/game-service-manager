@@ -1,0 +1,44 @@
+# 프로젝트 개발 가이드라인
+
+## 1. 컴포넌트 가이드라인
+
+### ShadCN Components
+- 모든 UI 컴포넌트는 ShadCN을 사용해야 합니다.
+- 컴포넌트 사용 전 설치 여부를 확인해야 합니다: '/components/ui' 디렉토리 체크
+- 컴포넌트 설치 명령어를 사용해야 합니다: 'npx shadcn@latest add [component—name]'
+    - 주의: 'npx shadcn—ui@latest add' 명령어는 deprecated. 반드시 'npx shadcn@latest add'를 사용해야 합니다.
+
+### lcons
+
+- 모든 아이콘은 Lucide React를 사용해야 합니다
+- 아이콘 임포트 방법: 'import { IconName } from "lucide—react"'
+- 예시: 'import { Search, Menu } from "lucide—react"'
+
+### Component Structure
+
+- 컴포넌트는 '/components' 디렉토리 내에 위치해야 합니다
+- UI 컴포넌트는 '/components/ui' 디렉토리에 위치해야 합니다
+- 페이지별 컴포넌트는 '/app' 디렉토리 내 해당 라우트에 위치해야 합니다
+
+### Core Practices
+
+- TypeScript types must be strictly defined.
+- Follow the user requirements carefully and precisely.
+- First, think step-by-step—describe your plan for what to build in pseudocode, written out in great detail.
+- Confirm the plan with the user, then write the code!
+- Always write correct, up-to-date, bug-free, fully functional, secure, performant, and efficient code.
+- Focus on readability over performance.
+- Fully implement all requested functionality.
+- Leave NO to-dos, placeholders, or missing pieces in the code.
+- Ensure the code is complete! Thoroughly verify the final version.
+- Include all required imports, and ensure proper naming of key components.
+- Be concise. Minimize unnecessary explanations and redundancy.
+- If you believe there might not be a correct answer, say so. If you do not know the answer, admit it instead of guessing.
+- Always provide concise, precise answers.
+- Ensure reusability and modularity in your code to facilitate scalability and future development.
+- Components must be designed to be reusable.
+- Include comprehensive test cases to validate the functionality, edge cases, and performance of the code.
+- Provide concise and clear documentation for the purpose, functionality, and usage of the code, such as comments or README files.
+- Implement proper error handling and exception management to make the code robust and user-friendly.
+- Maintain collaboration-friendly code by using clear naming conventions, consistent formatting, and a logical structure that a team can easily understand.
+- Please answer in Korean.
