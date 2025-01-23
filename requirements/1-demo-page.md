@@ -2,7 +2,6 @@
 
 ## 디자인 참조
 - 주 참조: [HR ERP System UI Case Study](https://www.behance.net/gallery/198326177/HR-ERP-System-UI-Case-Study)
-- 부 참조: [pluuug Web Solution](https://www.behance.net/gallery/217243789/pluuug-Web-Solution-for-Outsourcing-Agency)
 
 ## 제작 목표
 
@@ -61,15 +60,6 @@
 
 ## 페이지 구조 및 기능
 
-### 1. 로그인 페이지 (`/login`)
-- **디자인 요소**
-  - 우레(Woore) 로고 표시
-  - 1 Team Football 로고 표시
-  - 로그인 폼 (이메일/비밀번호)
-  - "로그인 상태 유지" 체크박스
-  - 로그인 버튼
-  - 로그인 성공 시 대시보드로 자동 연결
-
 ### 2. 콘텐츠 페이지
 
 #### 대시보드 (`/dashboard`)
@@ -99,19 +89,6 @@
   - 유저 검색
   - 계정 상태 관리
   - 제재 관리
-
-### 3. 어드민 페이지
-
-#### 계정 관리자 (`/admin/accounts`)
-- 관리자 계정 목록
-- 권한 관리
-- 접근 로그 관리
-- 1 Team Football Game Service Manager의 접속 권한 관리
-
-#### 서비스 관리자 (`/admin/service`)
-- 시스템 설정
-- 운영 정책 관리
-- 1 Team Football Game Service Manager의 서비스 관리
 
 ## UI/UX 구성요소
 
