@@ -35,8 +35,8 @@ export function Header() {
             <AvatarFallback>PB</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Phoenix Baker</span>
-            <span className="text-xs text-gray-500">HR Officer</span>
+            <span className="text-sm font-medium">KwangSoo Shin</span>
+            <span className="text-xs text-gray-500">Developer</span>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ export function Sidebar() {
     <div className="w-64 bg-white border-r flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b">
-        <h1 className="text-xl font-bold text-purple-600">Woore ERP</h1>
+        <h1 className="text-xl font-bold text-purple-600">1Team Fooball Service Manager</h1>
         <p className="text-xs text-gray-500">v1.0</p>
       </div>
 

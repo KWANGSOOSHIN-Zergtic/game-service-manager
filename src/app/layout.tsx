@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "1 Team Football Game Service Manager",
-  description: "Game service management tool",
+  title: "1Team Football Game Service Manager",
+  description: "1Team Football Game Service Manager",
 };
 
 export default function RootLayout({
@@ -19,15 +18,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col">
-            <Header />
-            <main className="flex-1 overflow-auto bg-gray-50">
-              {children}
-            </main>
-          </div>
-        </div>
+        {children}
+        <Toaster position="top-center" />
       </body>
     </html>
   );

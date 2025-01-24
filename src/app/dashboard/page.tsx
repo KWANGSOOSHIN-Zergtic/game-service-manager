@@ -6,18 +6,15 @@ import { Birthdays } from "@/components/dashboard/birthdays"
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-6 p-8">
-      <h1 className="text-2xl font-bold">Overview</h1>
-      
+    <div className="flex flex-col gap-6">
+      <Overview />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Overview />
-        <Birthdays />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <WorkingFormat />
         <ProjectEmployment />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <TotalApplications />
+        <Birthdays />
       </div>
     </div>
   )

@@ -1,11 +1,11 @@
-# 1 Team Football Game Service Manager
+# 1Team Football Game Service Manager
 
 ## 디자인 참조
 - 주 참조: [HR ERP System UI Case Study](https://www.behance.net/gallery/198326177/HR-ERP-System-UI-Case-Study)
 
 ## 제작 목표
 
-- 게임(1 Team Football) 서비스 관리 툴 제작
+- 게임(1Team Football) 서비스 관리 툴 제작
 - 회사의 이름은 우레 (Woore) 입니다
 
 ## 기술 스택

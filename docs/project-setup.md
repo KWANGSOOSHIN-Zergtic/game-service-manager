@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-1 Team Football Game Service Manager는 게임 서비스 관리를 위한 웹 기반 관리자 도구입니다.
+1Team Football Game Service Manager는 게임 서비스 관리를 위한 웹 기반 관리자 도구입니다.
 
 ### 주요 기능
 - 서비스 현황 모니터링
