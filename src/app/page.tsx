@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Github } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import Image from "next/image"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [loginData, setLoginData] = useState({
     email: "",
@@ -21,28 +22,14 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
     
-    try {
-      if (loginData.email === "admin@woore.co.kr" && loginData.password === "1234") {
-        // 로그인 성공 시 세션 스토리지에 로그인 상태 저장
-        sessionStorage.setItem("isLoggedIn", "true")
-        sessionStorage.setItem("userEmail", loginData.email)
-        
-        // 로그인 성공 메시지 표시
-        toast.success("Login successful!")
-        
-        // 약간의 지연 후 리다이렉션 (토스트 메시지가 보이도록)
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1000)
-      } else {
-        toast.error("Invalid email or password")
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      toast.error("An error occurred during login")
-    } finally {
-      setIsLoading(false)
+    const success = await login(loginData)
+    if (success) {
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
     }
+    
+    setIsLoading(false)
   }
 
   return (

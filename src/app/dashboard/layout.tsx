@@ -1,23 +1,20 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/layout/sidebar"
 import { Header } from "@/components/layout/header"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
+  const { checkAuth } = useAuth()
 
   useEffect(() => {
-    const isLoggedIn = sessionStorage.getItem("isLoggedIn")
-    if (!isLoggedIn) {
-      router.push("/")
-    }
-  }, [router])
+    checkAuth()
+  }, [checkAuth])
 
   return (
     <div className="flex h-screen">
