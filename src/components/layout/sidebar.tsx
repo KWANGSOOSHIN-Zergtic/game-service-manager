@@ -13,9 +13,9 @@ import { cn } from "@/lib/utils"
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Users, label: "Users", href: "/user-management" },
-  { icon: Gamepad2, label: "Service", href: "/Service" },
-  { icon: Headset, label: "CS", href: "/CS" },
+  { icon: Users, label: "Users", href: "/users" },
+  { icon: Gamepad2, label: "Service", href: "/service" },
+  { icon: Headset, label: "CS", href: "/cs" },
 ]
 
 export function Sidebar() {
@@ -25,7 +25,7 @@ export function Sidebar() {
     <div className="w-64 bg-white border-r flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b">
-        <h1 className="text-xl font-bold text-purple-600">1Team Fooball Service Manager</h1>
+        <h1 className="text-xl font-bold text-purple-600">1Team Football Service Manager</h1>
         <p className="text-xs text-gray-500">v1.0</p>
       </div>
 
