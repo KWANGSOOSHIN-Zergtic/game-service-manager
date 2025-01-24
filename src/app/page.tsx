@@ -22,7 +22,7 @@ export default function LoginPage() {
     setIsLoading(true)
     
     try {
-      if (loginData.email === "admin@woore.co.kr" && loginData.password === "Enter1234!!") {
+      if (loginData.email === "admin@woore.co.kr" && loginData.password === "1234") {
         // 로그인 성공 시 세션 스토리지에 로그인 상태 저장
         sessionStorage.setItem("isLoggedIn", "true")
         sessionStorage.setItem("userEmail", loginData.email)

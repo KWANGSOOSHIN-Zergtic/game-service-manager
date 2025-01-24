@@ -51,4 +51,37 @@ https://casdoor.org/favicon.png
 
 
 이메일: admin@woore.co.kr
-비밀번호: Enter1234!!
+비밀번호: 1234
+
+
+
+```
+import { 
+  LayoutDashboard, 
+  Users, 
+  ScrollText, 
+  FileText, 
+  StickyNote, 
+  Wallet, 
+  BarChart3,
+  ChevronDown,
+  Gamepad2,
+  Headset,
+  Receipt
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+
+const menuItems = [
+  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+  { icon: Users, label: "Users", href: "/user-management" },
+  { icon: Gamepad2, label: "Service", href: "/Service" },
+  { icon: Headset, label: "CS", href: "/CS" },
+  { icon: Receipt, label: "Payment", href: "/Payment" },
+  { icon: FileText, label: "User Circulars", href: "/circulars" },
+  { icon: ScrollText, label: "ScrollText", href: "/ScrollText" },
+  { icon: StickyNote, label: "Notes", href: "/notes" },
+  { icon: Wallet, label: "Budget", href: "/budget" },
+  { icon: BarChart3, label: "Bonds and Stocks", href: "/bonds" },
+  { icon: FileText, label: "Docs Management", href: "/docs" },
+]
+```

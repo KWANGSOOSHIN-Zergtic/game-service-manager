@@ -5,26 +5,17 @@ import { usePathname } from "next/navigation"
 import { 
   LayoutDashboard, 
   Users, 
-  ScrollText, 
-  Truck, 
-  FileText, 
-  StickyNote, 
-  Wallet, 
-  BarChart3,
-  ChevronDown
+  ChevronDown,
+  Gamepad2,
+  Headset,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Users, label: "Staff List", href: "/staff" },
-  { icon: ScrollText, label: "Payroll List", href: "/payroll" },
-  { icon: Truck, label: "Logistics", href: "/logistics" },
-  { icon: FileText, label: "User Circulars", href: "/circulars" },
-  { icon: StickyNote, label: "Notes", href: "/notes" },
-  { icon: Wallet, label: "Budget", href: "/budget" },
-  { icon: BarChart3, label: "Bonds and Stocks", href: "/bonds" },
-  { icon: FileText, label: "Docs Management", href: "/docs" },
+  { icon: Users, label: "Users", href: "/user-management" },
+  { icon: Gamepad2, label: "Service", href: "/Service" },
+  { icon: Headset, label: "CS", href: "/CS" },
 ]
 
 export function Sidebar() {

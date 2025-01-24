@@ -1,7 +1,15 @@
 "use client"
 
-import { Search, Bell, HelpCircle } from "lucide-react"
+import { Search, Bell, HelpCircle, Settings } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function Header() {
   return (
@@ -28,6 +36,23 @@ export function Header() {
           <Bell className="h-5 w-5" />
           <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
         </button>
+
+        {/* Setup */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-2 text-gray-500 hover:text-gray-700">
+              <Settings className="h-5 w-5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Setup</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>System Settings</DropdownMenuItem>
+            <DropdownMenuItem>User Settings</DropdownMenuItem>
+            <DropdownMenuItem>Security Settings</DropdownMenuItem>
+            <DropdownMenuItem>API Configuration</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Profile */}
         <div className="flex items-center gap-3">
