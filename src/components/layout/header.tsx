@@ -91,11 +91,13 @@ export function Header() {
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>내 계정</DropdownMenuLabel>
+                  <DropdownMenuLabel>계정</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    <span>Account Setting</span>
+                  <DropdownMenuItem asChild>
+                    <Link href="/account-setting">
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Account Setting</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-red-600 font-bold">
                     <LogOut className="mr-2 h-4 w-4" />

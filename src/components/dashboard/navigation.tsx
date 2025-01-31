@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, Settings, HeadphonesIcon, ChevronRight, HelpCircle, Bell, AlertTriangle } from "lucide-react"
+import { LayoutDashboard, Users, Settings, HeadphonesIcon, ChevronRight, HelpCircle, Bell, AlertTriangle, UserCircle } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -51,6 +51,11 @@ export function Navigation() {
         return {
           icon: <AlertTriangle className="w-8 h-8 text-purple-600" />,
           title: "Error"
+        }
+      case "account-setting":
+        return {
+          icon: <UserCircle className="w-8 h-8 text-purple-600" />,
+          title: "Account Setting"
         }
       default:
         return {
