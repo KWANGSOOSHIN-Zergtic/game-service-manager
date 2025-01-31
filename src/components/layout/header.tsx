@@ -1,7 +1,8 @@
 "use client"
 
-import { Search, Bell, HelpCircle, Settings } from "lucide-react"
+import { Search, Bell, HelpCircle, Settings, LogOut, UserCircle } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import Link from "next/link"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export function Header() {
   return (
@@ -27,43 +34,81 @@ export function Header() {
       {/* Right Section */}
       <div className="flex items-center gap-4">
         {/* Help */}
-        <button className="p-2 text-gray-500 hover:text-gray-700">
-          <HelpCircle className="h-5 w-5" />
-        </button>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/help" className="p-2 text-gray-500 hover:text-gray-700">
+                <HelpCircle className="h-5 w-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent className="bg-gray-100 border-gray-200">
+              <p className="text-purple-600 font-bold">Help</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Notifications */}
-        <button className="p-2 text-gray-500 hover:text-gray-700 relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/alarm" className="p-2 text-gray-500 hover:text-gray-700 relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent className="bg-gray-100 border-gray-200">
+              <p className="text-purple-600 font-bold">Alarm</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Setup */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 text-gray-500 hover:text-gray-700">
-              <Settings className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Setup</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>System Settings</DropdownMenuItem>
-            <DropdownMenuItem>User Settings</DropdownMenuItem>
-            <DropdownMenuItem>Security Settings</DropdownMenuItem>
-            <DropdownMenuItem>API Configuration</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/setup" className="p-2 text-gray-500 hover:text-gray-700">
+                <Settings className="h-5 w-5" />
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent className="bg-gray-100 border-gray-200">
+              <p className="text-purple-600 font-bold">Setup</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
         {/* Profile */}
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback>PB</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">KwangSoo Shin</span>
-            <span className="text-xs text-gray-500">Developer</span>
-          </div>
-        </div>
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-3 hover:cursor-pointer">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>KS</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-purple-600">KwangSoo Shin</span>
+                    <span className="text-xs text-gray-500">Developer</span>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>내 계정</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    <span>Account Setting</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600 font-bold">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log Out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent className="bg-gray-100 border-gray-200">
+              <p className="text-purple-600 font-bold">Account</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </header>
   )
