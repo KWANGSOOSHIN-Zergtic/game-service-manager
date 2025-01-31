@@ -8,6 +8,8 @@ import {
   ChevronDown,
   Gamepad2,
   Headset,
+  Code,
+  TestTube
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +18,10 @@ const menuItems = [
   { icon: Users, label: "Users", href: "/users" },
   { icon: Gamepad2, label: "Service", href: "/service" },
   { icon: Headset, label: "CS", href: "/cs" },
+  { icon: Code, label: "Dev1", href: "/dev1" },
+  { icon: Code, label: "Dev2", href: "/dev2" },
+  { icon: TestTube, label: "Test1", href: "/test1" },
+  { icon: TestTube, label: "Test2", href: "/test2" },
 ]
 
 export function Sidebar() {
