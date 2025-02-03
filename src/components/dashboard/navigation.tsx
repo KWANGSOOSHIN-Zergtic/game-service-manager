@@ -1,6 +1,6 @@
 "use client"
 
-import { LayoutDashboard, Users, Settings, HeadphonesIcon, ChevronRight, HelpCircle, Bell, AlertTriangle, UserCircle, Code, TestTube } from "lucide-react"
+import { LayoutDashboard, Users, Settings, HeadphonesIcon, ChevronRight, HelpCircle, Bell, AlertTriangle, UserCircle, Code, TestTube, ComputerIcon, ComponentIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -67,6 +67,11 @@ export function Navigation() {
           icon: <Code className="w-8 h-8 text-purple-600" />,
           title: "Dev2"
         }
+      case "component-generator":
+        return {
+          icon: <ComponentIcon className="w-8 h-8 text-purple-600" />,
+          title: "Component Generator"
+        }        
       case "test1":
         return {
           icon: <TestTube className="w-8 h-8 text-purple-600" />,
@@ -79,8 +84,8 @@ export function Navigation() {
         }
       default:
         return {
-          icon: <LayoutDashboard className="w-8 h-8 text-purple-600" />,
-          title: "Dashboard"
+          icon: <ComputerIcon className="w-8 h-8 text-purple-600" />,
+          title: "Default"
         }
     }
   }

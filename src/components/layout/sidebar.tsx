@@ -9,7 +9,8 @@ import {
   Gamepad2,
   Headset,
   Code,
-  TestTube
+  TestTube,
+  Component
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +21,7 @@ const menuItems = [
   { icon: Headset, label: "CS", href: "/cs" },
   { icon: Code, label: "Dev1", href: "/dev1" },
   { icon: Code, label: "Dev2", href: "/dev2" },
+  { icon: Component, label: "Component Generator", href: "/component-generator" },
   { icon: TestTube, label: "Test1", href: "/test1" },
   { icon: TestTube, label: "Test2", href: "/test2" },
 ]
