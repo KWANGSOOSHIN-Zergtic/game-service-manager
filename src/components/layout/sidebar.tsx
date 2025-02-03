@@ -2,32 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  LayoutDashboard, 
-  Users, 
-  ChevronDown,
-  Gamepad2,
-  Headset,
-  Code,
-  TestTube,
-  Component
-} from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-
-const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-  { icon: Users, label: "Users", href: "/users" },
-  { icon: Gamepad2, label: "Service", href: "/service" },
-  { icon: Headset, label: "CS", href: "/cs" },
-  { icon: Code, label: "Dev1", href: "/dev1" },
-  { icon: Code, label: "Dev2", href: "/dev2" },
-  { icon: Component, label: "Component Generator", href: "/component-generator" },
-  { icon: TestTube, label: "Test1", href: "/test1" },
-  { icon: TestTube, label: "Test2", href: "/test2" },
-]
+import { MENU_ITEMS } from "@/config/menu"
 
 export function Sidebar() {
   const pathname = usePathname()
+  const sidebarItems = MENU_ITEMS.filter(item => item.showInSidebar)
 
   return (
     <div className="w-64 bg-white border-r flex flex-col">
@@ -40,12 +21,14 @@ export function Sidebar() {
       {/* Menu Items */}
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href
+          {sidebarItems.map((item) => {
+            const isActive = pathname === `/${item.path}`
+            const Icon = item.icon
+            
             return (
-              <li key={item.href}>
+              <li key={item.path}>
                 <Link
-                  href={item.href}
+                  href={`/${item.path}`}
                   className={cn(
                     "flex items-center gap-3 px-3 py-2 rounded-lg group transition-colors",
                     isActive 
@@ -53,7 +36,7 @@ export function Sidebar() {
                       : "text-gray-700 hover:bg-gray-100"
                   )}
                 >
-                  <item.icon className={cn(
+                  <Icon className={cn(
                     "h-5 w-5",
                     isActive && "text-purple-700"
                   )} />
