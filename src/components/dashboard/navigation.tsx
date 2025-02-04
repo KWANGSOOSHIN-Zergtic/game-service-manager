@@ -40,7 +40,7 @@ export function Navigation() {
   const pageInfo = getPageInfo()
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-4 border-b border-gray-200">
       <div className="flex items-center gap-4">
         {pageInfo.icon}
         <h1 className="text-2xl font-semibold text-gray-900">{pageInfo.title}</h1>
