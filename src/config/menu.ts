@@ -28,7 +28,7 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: "users", icon: Users, label: "Users", showInSidebar: true },
   { path: "service", icon: Gamepad2, label: "Service", showInSidebar: true },
   { path: "cs", icon: Headset, label: "CS", showInSidebar: true },
-  { path: "component-generator", icon: Component, label: "Component Generator", showInSidebar: true },
+  { path: "component-generator", icon: Component, label: "ComponentGenerator", showInSidebar: true },
   { path: "dev", icon: Code, label: "Dev", showInSidebar: true },
   { 
     path: "test", 
@@ -37,8 +37,7 @@ export const MENU_ITEMS: MenuItem[] = [
     showInSidebar: true,
     subItems: [
       { path: "test/test-sub1", icon: TestTube, label: "TestSub1", showInSidebar: true },
-      { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }
-    ]
+      { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }]
   },
   { path: "help", icon: HelpCircle, label: "Help" },
   { path: "alarm", icon: Bell, label: "Alarm" },
