@@ -10,8 +10,24 @@ export function Navigation() {
   
   const getPageInfo = () => {
     const paths = pathname.split("/").filter(Boolean)
-    const currentPath = paths[0]?.toLowerCase() || ""
+    const currentPath = paths.join('/')
     
+    // 먼저 서브메뉴에서 찾기
+    for (const item of MENU_ITEMS) {
+      if (item.subItems) {
+        const subItem = item.subItems.find(sub => sub.path === currentPath)
+        if (subItem) {
+          const Icon = subItem.icon
+          return {
+            icon: <Icon className="w-8 h-8 text-purple-600" />,
+            title: subItem.label,
+            parentLabel: item.label // 부모 메뉴 레이블 추가
+          }
+        }
+      }
+    }
+
+    // 메인 메뉴에서 찾기
     const menuItem = MENU_ITEMS.find(item => item.path === currentPath) || DEFAULT_MENU_ITEM
     const Icon = menuItem.icon
 
@@ -35,6 +51,12 @@ export function Navigation() {
           1Team Football Service Manager
         </Link>
         <ChevronRight className="w-4 h-4 text-gray-400" />
+        {pageInfo.parentLabel && (
+          <>
+            <span className="text-gray-500">{pageInfo.parentLabel}</span>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </>
+        )}
         <span className="text-purple-600 font-bold">{pageInfo.title}</span>
       </div>
     </div>
