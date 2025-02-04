@@ -3,12 +3,11 @@ import { WorkingFormat } from "@/components/dashboard/working-format"
 import { ProjectEmployment } from "@/components/dashboard/project-employment"
 import { TotalApplications } from "@/components/dashboard/total-applications"
 import { Birthdays } from "@/components/dashboard/birthdays"
-import { Navigation } from "@/components/dashboard/navigation"
+import { PageContainer } from "@/components/layout/page-container"
 
 export default function DashboardPage() {
   return (
-    <div className="p-8 flex flex-col gap-6">
-      <Navigation />
+    <PageContainer path="dashboard">
       <div className="space-y-6">
         <Overview />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -20,6 +19,6 @@ export default function DashboardPage() {
           <Birthdays />
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 } 

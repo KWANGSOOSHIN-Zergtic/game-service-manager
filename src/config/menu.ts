@@ -36,8 +36,8 @@ export const MENU_ITEMS: MenuItem[] = [
     label: "Test", 
     showInSidebar: true,
     subItems: [
-      { path: "test/sub1", icon: TestTube, label: "TestSub1", showInSidebar: true },
-      { path: "test/sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }
+      { path: "test/test-sub1", icon: TestTube, label: "TestSub1", showInSidebar: true },
+      { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }
     ]
   },
   { path: "help", icon: HelpCircle, label: "Help" },

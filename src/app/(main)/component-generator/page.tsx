@@ -1,12 +1,11 @@
 'use client';
 
-import { AlertTriangle } from "lucide-react"
-import { Navigation } from "@/components/dashboard/navigation"
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useState } from 'react';
 import { testConnection } from '@/utils/database';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TableList } from "@/components/database/table-list";
+import { PageContainer } from "@/components/layout/page-container"
 
 interface ConnectionStatus {
   success?: boolean;
@@ -63,13 +62,7 @@ export default function ComponentGeneratorPage() {
   };
 
   return (
-    <div className="p-8 flex flex-col gap-6">
-      <Navigation />
-      <div className="flex items-center gap-3 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <AlertTriangle className="w-6 h-6 text-yellow-600" />
-        <span className="text-yellow-800 font-medium">Component Generator 페이지 입니다.</span>
-      </div>
-      
+    <PageContainer path="component-generator">
       <div className="flex flex-col gap-4">
         <Button onClick={handleTestConnection} disabled={isLoading}>
           {isLoading ? '연결 테스트 중...' : '데이터베이스 연결 테스트'}
@@ -84,6 +77,6 @@ export default function ComponentGeneratorPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 } 
