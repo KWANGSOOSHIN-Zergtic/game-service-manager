@@ -138,7 +138,7 @@ export default function TestPage() {
               <div className="space-y-2">
                 <label className="text-sm font-midium font-bold">Page Name</label>
                 <Input 
-                  placeholder="type here1..." 
+                  placeholder="Enter new 'PageName' here..." 
                   value={pageName}
                   onChange={(e) => setPageName(e.target.value)}
                 />
