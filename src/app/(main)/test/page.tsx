@@ -1,11 +1,11 @@
 'use client';
 
-import { Plus, CheckCircle2, XCircle } from "lucide-react"
+import { Plus } from "lucide-react"
 import { PageContainer } from "@/components/layout/page-container"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
 import {
   Select,
   SelectContent,
@@ -23,11 +23,7 @@ export default function TestPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [pageName, setPageName] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [result, setResult] = useState<{
-    status: 'success' | 'error' | null;
-    message: string;
-    error?: string;
-  }>({ status: null, message: '' });
+  const [result, setResult] = useState<ResultData>({ status: null, message: '' });
 
   // showInSidebar가 true인 메인 메뉴 항목만 필터링
   const mainCategories = MENU_ITEMS.filter(item => item.showInSidebar);
@@ -114,16 +110,14 @@ export default function TestPage() {
 
   return (
     <PageContainer path="test">
-      {/* Page Create */}
       <div className="space-y-6">
-        {/* Basic Information */}
         <Card>
-          <CardHeader className="py-4 bg-gray-200">
-            <CardTitle>Page Create</CardTitle>
+          <CardHeader className="py-4 bg-gray-50">
+            <CardTitle className="text-lg font-semibold text-gray-900">Page Create</CardTitle>
           </CardHeader>
-          <Separator />
-          <CardContent className="py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Separator className="bg-gray-200" />
+          <CardContent className="py-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
                 <label className="text-sm font-midium font-bold">Main Category</label>
                 <Select
@@ -163,37 +157,12 @@ export default function TestPage() {
               </div>
             </div>
             
-            {result.status && (
-              <div className="mt-8 rounded-lg overflow-hidden">
-                <Alert 
-                  variant={result.status === 'success' ? 'default' : 'destructive'}
-                  className={`border ${
-                    result.status === 'success' 
-                      ? 'bg-green-50 border-green-200 text-green-800' 
-                      : 'bg-red-50 border-red-200 text-red-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {result.status === 'success' ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <XCircle className="h-5 w-5 text-red-600" />
-                    )}
-                    <AlertTitle className="text-base font-semibold">
-                      {result.status === 'success' ? '성공' : '실패'}
-                    </AlertTitle>
-                  </div>
-                  <AlertDescription className="mt-2 ml-7">
-                    <div className="font-medium">{result.message}</div>
-                    {result.error && (
-                      <div className="mt-2 text-sm opacity-90">
-                        에러 코드: {result.error}
-                      </div>
-                    )}
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
+            <ResultAlert 
+              result={result} 
+              className="mt-8"
+              successTitle="페이지 생성 완료"
+              errorTitle="페이지 생성 실패"
+            />
           </CardContent>
           <Separator className="bg-gray-200" />
         </Card>
