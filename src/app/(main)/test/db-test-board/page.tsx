@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { testConnection } from '@/utils/database';
 import { DataTable, TableData } from '@/components/ui/data-table';
 import { PageContainer } from "@/components/layout/page-container"
@@ -24,11 +24,34 @@ interface ConnectionStatus {
 export default function DbTestBoardPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(false);
   const [result, setResult] = useState<ResultData>({ status: null, message: '' });
   const [data, setData] = useState<TableData[]>([]);
 
+  // 데이터 로딩 함수
+  const loadData = async () => {
+    setIsDataLoading(true);
+    try {
+      // 실제 API 호출을 시뮬레이션하기 위한 지연
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 테스트 데이터 설정
+      setData(paymentVoucherData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setResult({
+        status: 'error',
+        message: '데이터 로딩 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+
   const handleTestConnection = async () => {
     setIsLoading(true);
+    setData([]); // 연결 테스트 시 기존 데이터 초기화
     try {
       const response = await testConnection();
       setConnectionStatus(response);
@@ -42,30 +65,15 @@ export default function DbTestBoardPage() {
         message: dbInfoText ? `${dbInfoText} > ${response.message}` : response.message,
         error: response.error
       });
+
+      // 연결 성공 시 데이터 로드
+      if (response.success) {
+        await loadData();
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  // 데이터 로딩 시뮬레이션
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // 실제 API 호출을 시뮬레이션하기 위한 지연
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // 테스트 데이터 설정
-        setData(paymentVoucherData);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
 
   const handleCreateNew = () => {
     console.log('Create new item clicked');
@@ -93,10 +101,12 @@ export default function DbTestBoardPage() {
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"
           onClick={handleTestConnection} 
-          disabled={isLoading}
+          disabled={isLoading || isDataLoading}
         >
-          <Plus className="w-4 h-4 mr-2 " />
-          {isLoading ? "연결 테스트 중..." : "데이터베이스 연결 테스트"}
+          <Plus className="w-4 h-4 mr-2" />
+          {isLoading ? "연결 테스트 중..." : 
+           isDataLoading ? "데이터 로딩 중..." : 
+           "데이터베이스 연결 테스트"}
         </Button>
 
         <ResultAlert 
@@ -109,14 +119,21 @@ export default function DbTestBoardPage() {
           <div className="mt-6">
             <Card>
               <CardHeader className="py-4 bg-gray-50">
-                <CardTitle className="text-lg font-semibold text-gray-900">Database Table List</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-900">
+                  Database Table List
+                  {connectionStatus.dbInfo && (
+                    <span className="ml-2 text-sm text-gray-500">
+                      ({connectionStatus.dbInfo.host} - {connectionStatus.dbInfo.database})
+                    </span>
+                  )}
+                </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
                   tableName="Payment Voucher"
                   data={data}
-                  isLoading={isLoading}
+                  isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
                   onRowClick={handleRowClick}
                   onSelectionChange={handleSelectionChange}
