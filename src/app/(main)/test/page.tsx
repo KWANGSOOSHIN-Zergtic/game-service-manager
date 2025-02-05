@@ -1,9 +1,11 @@
 'use client';
 
-import { Plus } from "lucide-react"
+import { Plus, CheckCircle2, XCircle } from "lucide-react"
 import { PageContainer } from "@/components/layout/page-container"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   Select,
   SelectContent,
@@ -14,15 +16,18 @@ import {
 import { Button } from "@/components/ui/button"
 import { MENU_ITEMS } from "@/config/menu"
 import { useState } from "react"
-import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation"
 
 export default function TestPage() {
-  const { toast } = useToast();
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [pageName, setPageName] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [result, setResult] = useState<{
+    status: 'success' | 'error' | null;
+    message: string;
+    error?: string;
+  }>({ status: null, message: '' });
 
   // showInSidebar가 true인 메인 메뉴 항목만 필터링
   const mainCategories = MENU_ITEMS.filter(item => item.showInSidebar);
@@ -30,19 +35,20 @@ export default function TestPage() {
   const handleCreatePage = async () => {
     try {
       setIsLoading(true);
+      setResult({ status: null, message: '' });
 
       if (!selectedCategory) {
-        toast({
-          title: "카테고리를 선택해주세요.",
-          variant: "destructive",
+        setResult({
+          status: 'error',
+          message: '카테고리를 선택해주세요.',
         });
         return;
       }
 
       if (!pageName) {
-        toast({
-          title: "페이지 이름을 입력해주세요.",
-          variant: "destructive",
+        setResult({
+          status: 'error',
+          message: '페이지 이름을 입력해주세요.',
         });
         return;
       }
@@ -82,9 +88,9 @@ export default function TestPage() {
         throw new Error('페이지 생성에 실패했습니다.');
       }
 
-      toast({
-        title: "페이지가 생성되었습니다.",
-        description: `${selectedCategory}/${formattedPageName}`,
+      setResult({
+        status: 'success',
+        message: `페이지가 성공적으로 생성되었습니다: ${selectedCategory}/${formattedPageName}`,
       });
 
       // 입력 필드 초기화
@@ -96,10 +102,10 @@ export default function TestPage() {
       router.refresh();
 
     } catch (error) {
-      toast({
-        title: "오류가 발생했습니다.",
-        description: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
-        variant: "destructive",
+      setResult({
+        status: 'error',
+        message: '페이지 생성 실패',
+        error: error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.",
       });
     } finally {
       setIsLoading(false);
@@ -112,10 +118,11 @@ export default function TestPage() {
       <div className="space-y-6">
         {/* Basic Information */}
         <Card>
-          <CardHeader>
+          <CardHeader className="py-4 bg-gray-50">
             <CardTitle>Page Create</CardTitle>
           </CardHeader>
-          <CardContent>
+          <Separator />
+          <CardContent className="py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-midium font-bold">Main Category</label>
@@ -155,7 +162,40 @@ export default function TestPage() {
                 </Button>
               </div>
             </div>
+            
+            {result.status && (
+              <div className="mt-8 rounded-lg overflow-hidden">
+                <Alert 
+                  variant={result.status === 'success' ? 'default' : 'destructive'}
+                  className={`border ${
+                    result.status === 'success' 
+                      ? 'bg-green-50 border-green-200 text-green-800' 
+                      : 'bg-red-50 border-red-200 text-red-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    {result.status === 'success' ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    )}
+                    <AlertTitle className="text-base font-semibold">
+                      {result.status === 'success' ? '성공' : '실패'}
+                    </AlertTitle>
+                  </div>
+                  <AlertDescription className="mt-2 ml-7">
+                    <div className="font-medium">{result.message}</div>
+                    {result.error && (
+                      <div className="mt-2 text-sm opacity-90">
+                        에러 코드: {result.error}
+                      </div>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
           </CardContent>
+          <Separator className="bg-gray-200" />
         </Card>
       </div>
     </PageContainer>
