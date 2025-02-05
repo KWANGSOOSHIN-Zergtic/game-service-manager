@@ -10,6 +10,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Filter, Search, MoreVertical, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 
 // 동적 컬럼 정의
@@ -89,8 +96,7 @@ export function DataTable({
     key: string;
     direction: 'asc' | 'desc' | null;
   }>({ key: '', direction: null });
-
-  const itemsPerPage = 4;
+  const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(20);
 
   // 데이터 유효성 검사
   const validateData = (data: TableData[]): boolean => {
@@ -223,17 +229,27 @@ export function DataTable({
     onPageChange?.(newPage);
   };
 
-  // 메모이제이션된 현재 페이지 데이터
+  // 페이지당 항목 수 변경 처리
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = value === 'all' ? 'all' : Number(value);
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // 페이지 수가 변경되면 첫 페이지로 이동
+  };
+
+  // 현재 페이지 데이터 계산 로직 수정
   const currentData = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    if (itemsPerPage === 'all') {
+      return filteredData;
+    }
+    const startIndex = (currentPage - 1) * (itemsPerPage as number);
+    const endIndex = startIndex + (itemsPerPage as number);
     return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, currentPage]);
+  }, [filteredData, currentPage, itemsPerPage]);
 
   const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / (itemsPerPage as number));
+  const startIndex = itemsPerPage === 'all' ? 0 : (currentPage - 1) * (itemsPerPage as number);
+  const endIndex = itemsPerPage === 'all' ? totalItems : Math.min(startIndex + (itemsPerPage as number), totalItems);
 
   // 데이터 변경 시 필터된 데이터 초기화
   useEffect(() => {
@@ -370,12 +386,67 @@ export function DataTable({
             <tr>
               <td colSpan={columns.length + 2}>
                 <div className="bg-purple-50/80 flex items-center justify-between px-4 h-10">
-                  <div className="text-xs text-gray-500 font-bold">
-                    Rows per page: {itemsPerPage}
+                  <div className="flex items-center space-x-2 text-xs text-gray-500">
+                    <span className="font-bold">Rows per page:</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onValueChange={handleItemsPerPageChange}
+                    >
+                      <SelectTrigger className="h-7 w-[70px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className="min-w-[70px] w-[70px]"
+                        position="popper"
+                        align="start"
+                      >
+                        <SelectItem 
+                          value="all"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          All
+                        </SelectItem>
+                        <SelectItem 
+                          value="5"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          5
+                        </SelectItem>
+                        <SelectItem 
+                          value="10"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          10
+                        </SelectItem>
+                        <SelectItem 
+                          value="20"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          20
+                        </SelectItem>
+                        <SelectItem 
+                          value="50"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          50
+                        </SelectItem>
+                        <SelectItem 
+                          value="100"
+                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
+                        >
+                          100
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-xs text-gray-500">
-                      {totalItems > 0 ? `${startIndex + 1}-${endIndex} of ${totalItems}` : '0-0 of 0'}
+                      {totalItems > 0 ? (
+                        <span>
+                          <span className="text-purple-600 font-bold">{startIndex + 1}-{endIndex}</span>
+                          <span> of {totalItems}</span>
+                        </span>
+                      ) : '0-0 of 0'}
                     </div>
                     <div className="flex gap-1">
                       <Button
