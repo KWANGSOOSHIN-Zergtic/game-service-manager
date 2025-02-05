@@ -121,17 +121,12 @@ export default function DbTestBoardPage() {
               <CardHeader className="py-4 bg-gray-50">
                 <CardTitle className="text-lg font-semibold text-gray-900">
                   Database Table List
-                  {connectionStatus.dbInfo && (
-                    <span className="ml-2 text-sm text-gray-500">
-                      ({connectionStatus.dbInfo.host} - {connectionStatus.dbInfo.database})
-                    </span>
-                  )}
                 </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
-                  tableName="Payment Voucher"
+                  tableName="Row Data"
                   data={data}
                   isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
