@@ -9,6 +9,7 @@ import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { paymentVoucherData } from "@/test-data/test-data-table";
+import { Plus } from "lucide-react";
 
 interface ConnectionStatus {
   success?: boolean;
@@ -89,8 +90,13 @@ export default function DbTestBoardPage() {
   return (
     <PageContainer path="test/db-test-board">
       <div className="flex flex-col gap-4">
-        <Button onClick={handleTestConnection} disabled={isLoading}>
-          {isLoading ? '연결 테스트 중...' : '데이터베이스 연결 테스트'}
+        <Button 
+          className="bg-green-500 hover:bg-green-600 w-full font-bold"
+          onClick={handleTestConnection} 
+          disabled={isLoading}
+        >
+          <Plus className="w-4 h-4 mr-2 " />
+          {isLoading ? "연결 테스트 중..." : "데이터베이스 연결 테스트"}
         </Button>
 
         <ResultAlert 
