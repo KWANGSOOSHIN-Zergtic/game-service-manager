@@ -118,7 +118,7 @@ export default function TestPage() {
       <div className="space-y-6">
         {/* Basic Information */}
         <Card>
-          <CardHeader className="py-4 bg-gray-50">
+          <CardHeader className="py-4 bg-gray-200">
             <CardTitle>Page Create</CardTitle>
           </CardHeader>
           <Separator />
