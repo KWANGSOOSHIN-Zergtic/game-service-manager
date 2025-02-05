@@ -8,7 +8,6 @@ import { PageContainer } from "@/components/layout/page-container"
 import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { paymentVoucherData } from "@/test-data/test-data-table";
 import { Plus } from "lucide-react";
 
 interface ConnectionStatus {
@@ -32,11 +31,19 @@ export default function DbTestBoardPage() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      // 실제 API 호출을 시뮬레이션하기 위한 지연
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/db-tables');
+      const responseData = await response.json();
       
-      // 테스트 데이터 설정
-      setData(paymentVoucherData);
+      if (responseData.success) {
+        // API 응답 데이터를 TableData 형식으로 변환
+        const formattedData: TableData[] = responseData.tables.map((table: any, index: number) => ({
+          id: index + 1,
+          ...table
+        }));
+        setData(formattedData);
+      } else {
+        throw new Error(responseData.error || '데이터를 불러오는데 실패했습니다.');
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       setResult({
@@ -126,7 +133,7 @@ export default function DbTestBoardPage() {
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
-                  tableName="Row Data"
+                  tableName="Database Tables"
                   data={data}
                   isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
