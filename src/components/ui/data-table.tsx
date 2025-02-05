@@ -10,14 +10,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Filter, Search, MoreVertical, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Filter, Search, MoreVertical, Plus } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -157,7 +151,7 @@ export function DataTable({
     }
 
     const filtered = data.filter(item => 
-      Object.entries(item).some(([_, val]) => 
+      Object.entries(item).some(([, val]) => 
         val?.toString().toLowerCase().includes(value.toLowerCase())
       )
     );
@@ -242,14 +236,10 @@ export function DataTable({
       return filteredData;
     }
     const startIndex = (currentPage - 1) * (itemsPerPage as number);
-    const endIndex = startIndex + (itemsPerPage as number);
-    return filteredData.slice(startIndex, endIndex);
+    return filteredData.slice(startIndex, startIndex + (itemsPerPage as number));
   }, [filteredData, currentPage, itemsPerPage]);
 
   const totalItems = filteredData.length;
-  const totalPages = itemsPerPage === 'all' ? 1 : Math.ceil(totalItems / (itemsPerPage as number));
-  const startIndex = itemsPerPage === 'all' ? 0 : (currentPage - 1) * (itemsPerPage as number);
-  const endIndex = itemsPerPage === 'all' ? totalItems : Math.min(startIndex + (itemsPerPage as number), totalItems);
 
   // 데이터 변경 시 필터된 데이터 초기화
   useEffect(() => {
@@ -385,99 +375,13 @@ export function DataTable({
           <tfoot className="border-t border-gray-100 bg-white">
             <tr>
               <td colSpan={columns.length + 2}>
-                <div className="bg-purple-50/80 flex items-center justify-between px-4 h-10">
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <span className="font-bold">Rows per page:</span>
-                    <Select
-                      value={itemsPerPage.toString()}
-                      onValueChange={handleItemsPerPageChange}
-                    >
-                      <SelectTrigger className="h-7 w-[70px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent 
-                        className="min-w-[70px] w-[70px]"
-                        position="popper"
-                        align="start"
-                      >
-                        <SelectItem 
-                          value="all"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          All
-                        </SelectItem>
-                        <SelectItem 
-                          value="5"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          5
-                        </SelectItem>
-                        <SelectItem 
-                          value="10"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          10
-                        </SelectItem>
-                        <SelectItem 
-                          value="20"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          20
-                        </SelectItem>
-                        <SelectItem 
-                          value="50"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          50
-                        </SelectItem>
-                        <SelectItem 
-                          value="100"
-                          className="text-xs data-[state=checked]:text-purple-600 data-[state=checked]:bg-purple-50 data-[state=checked]:font-bold"
-                        >
-                          100
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-xs text-gray-500">
-                      {totalItems > 0 ? (
-                        <span>
-                          <span className="text-purple-600 font-bold">{startIndex + 1}-{endIndex}</span>
-                          <span> of {totalItems}</span>
-                        </span>
-                      ) : '0-0 of 0'}
-                    </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-6 w-6 ${
-                          currentPage === 1 
-                            ? 'text-gray-600' 
-                            : 'text-purple-700 hover:text-purple-800 hover:bg-purple-50'
-                        }`}
-                        disabled={currentPage === 1}
-                        onClick={() => handlePageChange(currentPage - 1)}
-                      >
-                        <ChevronLeft className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-6 w-6 ${
-                          currentPage === totalPages 
-                            ? 'text-gray-600' 
-                            : 'text-purple-700 hover:text-purple-800 hover:bg-purple-50'
-                        }`}
-                        disabled={currentPage === totalPages}
-                        onClick={() => handlePageChange(currentPage + 1)}
-                      >
-                        <ChevronRight className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={handlePageChange}
+                  onItemsPerPageChange={handleItemsPerPageChange}
+                />
               </td>
             </tr>
           </tfoot>
