@@ -17,7 +17,7 @@ interface ConnectionStatus {
   };
 }
 
-export default function ComponentGeneratorPage() {
+export default function DbTestBoardPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -62,7 +62,7 @@ export default function ComponentGeneratorPage() {
   };
 
   return (
-    <PageContainer path="component-generator">
+    <PageContainer path="test/db-test-board">
       <div className="flex flex-col gap-4">
         <Button onClick={handleTestConnection} disabled={isLoading}>
           {isLoading ? '연결 테스트 중...' : '데이터베이스 연결 테스트'}

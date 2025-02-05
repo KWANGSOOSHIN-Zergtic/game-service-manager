@@ -5,14 +5,14 @@ import {
   Headset,
   Code,
   TestTube,
-  Component,
   Settings,
   HelpCircle,
   Bell,
   AlertTriangle,
   UserCircle,
   ComputerIcon,
-  LucideIcon
+  LucideIcon,
+  DatabaseZapIcon
 } from "lucide-react"
 
 export interface MenuItem {
@@ -28,14 +28,11 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: "users", icon: Users, label: "Users", showInSidebar: true },
   { path: "service", icon: Gamepad2, label: "Service", showInSidebar: true },
   { path: "cs", icon: Headset, label: "CS", showInSidebar: true },
-  { path: "component-generator", icon: Component, label: "ComponentGenerator", showInSidebar: true },
   { path: "dev", icon: Code, label: "Dev", showInSidebar: true },
   { 
-    path: "test", 
-    icon: TestTube, 
-    label: "Test", 
-    showInSidebar: true,
-    subItems: [
+      path: "test",icon: TestTube, label: "Test", showInSidebar: true,
+      subItems: [
+      { path: "test/db-test-board", icon: DatabaseZapIcon, label: "DbTestBoard", showInSidebar: true },
       { path: "test/test-sub1", icon: TestTube, label: "TestSub1", showInSidebar: true },
       { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }]
   },
