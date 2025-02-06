@@ -340,48 +340,58 @@ export function DataTable({
                   />
                 </div>
               </TableHead>
-              {filteredColumns.map((column) => (
-                <TableHead
-                  key={column.key}
-                  className={`text-xs font-bold text-gray-600 h-10 py-2 ${
-                    column.sortable ? 'cursor-pointer select-none' : ''
-                  } border-r border-gray-200 text-center`}
-                  onClick={() => column.sortable && handleSort(column.key)}
-                  role={column.sortable ? 'button' : undefined}
-                  tabIndex={column.sortable ? 0 : undefined}
-                  aria-sort={
-                    sortConfig.key === column.key 
-                      ? sortConfig.direction === 'asc' 
-                        ? 'ascending' 
-                        : 'descending'
-                      : undefined
-                  }
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    {column.label}
-                    {column.sortable && sortConfig.key === column.key && (
-                      <span className="text-gray-400">
-                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                      </span>
-                    )}
-                  </div>
+              {filteredColumns.length === 0 ? (
+                <TableHead className="h-10 py-2 border-r border-gray-200 text-center">
+                  <div className="flex items-center justify-center">-</div>
                 </TableHead>
-              ))}
-              <TableHead className="w-12 h-10 py-2"></TableHead>
+              ) : (
+                filteredColumns.map((column) => (
+                  <TableHead
+                    key={column.key}
+                    className={`text-xs font-bold text-gray-600 h-10 py-2 ${
+                      column.sortable ? 'cursor-pointer select-none' : ''
+                    } border-r border-gray-200 text-center`}
+                    onClick={() => column.sortable && handleSort(column.key)}
+                    role={column.sortable ? 'button' : undefined}
+                    tabIndex={column.sortable ? 0 : undefined}
+                    aria-sort={
+                      sortConfig.key === column.key 
+                        ? sortConfig.direction === 'asc' 
+                          ? 'ascending' 
+                          : 'descending'
+                        : undefined
+                    }
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      {column.label}
+                      {column.sortable && sortConfig.key === column.key && (
+                        <span className="text-gray-400">
+                          {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </TableHead>
+                ))
+              )}
+              <TableHead className="w-12 h-10 py-2 border-r border-gray-200"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={filteredColumns.length + 2} className="text-center py-4">
+                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                <TableCell colSpan={Math.max(1, filteredColumns.length)} className="text-center py-4">
                   데이터를 불러오는 중...
                 </TableCell>
+                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
               </TableRow>
             ) : currentData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={filteredColumns.length + 2} className="text-center py-4">
+                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                <TableCell colSpan={Math.max(1, filteredColumns.length)} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
+                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
               </TableRow>
             ) : (
               currentData.map((item) => (
@@ -390,7 +400,7 @@ export function DataTable({
                   className={`hover:bg-purple-50/30 ${rowClassName}`}
                   onClick={() => onRowClick?.(item)}
                 >
-                  <TableCell className={`py-3 ${cellClassName} border-r border-gray-200 text-center`}>
+                  <TableCell className={`w-12 py-3 ${cellClassName} border-r border-gray-200 text-center`}>
                     <div className="flex justify-center items-center">
                       <Checkbox
                         checked={selectedRows.includes(item.id?.toString())}
@@ -398,25 +408,29 @@ export function DataTable({
                       />
                     </div>
                   </TableCell>
-                  {filteredColumns.map((column) => (
-                    <TableCell 
-                      key={column.key} 
-                      className={`py-3 ${cellClassName} ${
-                        column.align ? `text-${column.align}` : 'text-center'
-                      } border-r border-gray-200`}
-                    >
-                      {column.key === 'category' ? (
-                        <div className="flex justify-center">
-                          <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
-                            {column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)}
-                          </span>
-                        </div>
-                      ) : (
-                        column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell className={`py-3 w-12 text-right ${cellClassName} border-r border-gray-200`}>
+                  {filteredColumns.length === 0 ? (
+                    <TableCell className="py-3 border-r border-gray-200 text-center">-</TableCell>
+                  ) : (
+                    filteredColumns.map((column) => (
+                      <TableCell 
+                        key={column.key} 
+                        className={`py-3 ${cellClassName} ${
+                          column.align ? `text-${column.align}` : 'text-center'
+                        } border-r border-gray-200`}
+                      >
+                        {column.key === 'category' ? (
+                          <div className="flex justify-center">
+                            <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
+                              {column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)}
+                            </span>
+                          </div>
+                        ) : (
+                          column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)
+                        )}
+                      </TableCell>
+                    ))
+                  )}
+                  <TableCell className={`w-12 py-3 text-right ${cellClassName} border-r border-gray-200`}>
                     <Button variant="ghost" size="icon" className="hover:bg-purple-50">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
@@ -425,9 +439,10 @@ export function DataTable({
               ))
             )}
           </TableBody>
-          <tfoot className="border-t border-gray-100 bg-white">
+          <tfoot className="border-t border-gray-100 bg-purple-50/80">
             <tr>
-              <td colSpan={filteredColumns.length + 2}>
+              <td className="w-12"></td>
+              <td colSpan={Math.max(1, filteredColumns.length)}>
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}
@@ -436,6 +451,7 @@ export function DataTable({
                   onItemsPerPageChange={handleItemsPerPageChange}
                 />
               </td>
+              <td className="w-12 border-r border-gray-200"></td>
             </tr>
           </tfoot>
         </Table>
