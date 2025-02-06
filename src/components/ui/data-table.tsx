@@ -373,18 +373,20 @@ export function DataTable({
         <Table>
           <TableHeader>
             <TableRow className={`bg-purple-50/80 ${headerClassName}`}>
-              <TableHead className="w-12 h-10 py-2">
-                <Checkbox
-                  checked={data.length > 0 && selectedRows.length === data.length}
-                  onCheckedChange={handleSelectAll}
-                />
+              <TableHead className="w-12 h-10 py-2 border-r border-gray-200 text-center">
+                <div className="flex justify-center items-center">
+                  <Checkbox
+                    checked={data.length > 0 && selectedRows.length === data.length}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </div>
               </TableHead>
               {filteredColumns.map((column) => (
                 <TableHead
                   key={column.key}
                   className={`text-xs font-bold text-gray-600 h-10 py-2 ${
                     column.sortable ? 'cursor-pointer select-none' : ''
-                  }`}
+                  } border-r border-gray-200 text-center`}
                   onClick={() => column.sortable && handleSort(column.key)}
                   role={column.sortable ? 'button' : undefined}
                   tabIndex={column.sortable ? 0 : undefined}
@@ -396,7 +398,7 @@ export function DataTable({
                       : undefined
                   }
                 >
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-center gap-1">
                     {column.label}
                     {column.sortable && sortConfig.key === column.key && (
                       <span className="text-gray-400">
@@ -429,29 +431,33 @@ export function DataTable({
                   className={`hover:bg-purple-50/30 ${rowClassName}`}
                   onClick={() => onRowClick?.(item)}
                 >
-                  <TableCell className={`py-3 ${cellClassName}`}>
-                    <Checkbox
-                      checked={selectedRows.includes(item.id?.toString())}
-                      onCheckedChange={() => handleSelectRow(item.id?.toString())}
-                    />
+                  <TableCell className={`py-3 ${cellClassName} border-r border-gray-200 text-center`}>
+                    <div className="flex justify-center items-center">
+                      <Checkbox
+                        checked={selectedRows.includes(item.id?.toString())}
+                        onCheckedChange={() => handleSelectRow(item.id?.toString())}
+                      />
+                    </div>
                   </TableCell>
                   {filteredColumns.map((column) => (
                     <TableCell 
                       key={column.key} 
                       className={`py-3 ${cellClassName} ${
-                        column.align ? `text-${column.align}` : ''
-                      }`}
+                        column.align ? `text-${column.align}` : 'text-center'
+                      } border-r border-gray-200`}
                     >
                       {column.key === 'category' ? (
-                        <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
-                          {column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)}
-                        </span>
+                        <div className="flex justify-center">
+                          <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
+                            {column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)}
+                          </span>
+                        </div>
                       ) : (
                         column.format?.(item[column.key]) ?? formatValue(item[column.key], column.type)
                       )}
                     </TableCell>
                   ))}
-                  <TableCell className={`py-3 w-12 text-right ${cellClassName}`}>
+                  <TableCell className={`py-3 w-12 text-right ${cellClassName} border-r border-gray-200`}>
                     <Button variant="ghost" size="icon" className="hover:bg-purple-50">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
