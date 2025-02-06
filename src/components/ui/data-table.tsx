@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Filter, Search, MoreVertical, Plus } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -91,6 +96,8 @@ export function DataTable({
     direction: 'asc' | 'desc' | null;
   }>({ key: '', direction: null });
   const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(20);
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
+  const [isAllColumnsVisible, setIsAllColumnsVisible] = useState(true);
 
   // 데이터 유효성 검사
   const validateData = (data: TableData[]): boolean => {
@@ -141,6 +148,14 @@ export function DataTable({
       console.error('Error processing table data:', error);
     }
   }, [data, customFormatters]);
+
+  // 컬럼 정보 생성 시 visibleColumns 초기화
+  useEffect(() => {
+    if (data.length > 0) {
+      const columnKeys = Object.keys(data[0]);
+      setVisibleColumns(new Set(columnKeys));
+    }
+  }, [data]);
 
   // 검색 처리
   const handleSearch = (value: string) => {
@@ -246,19 +261,93 @@ export function DataTable({
     setFilteredData(data);
   }, [data]);
 
+  // 컬럼 표시/숨김 토글
+  const toggleColumn = (columnKey: string) => {
+    setVisibleColumns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(columnKey)) {
+        newSet.delete(columnKey);
+      } else {
+        newSet.add(columnKey);
+      }
+      setIsAllColumnsVisible(newSet.size === columns.length);
+      return newSet;
+    });
+  };
+
+  // 모든 컬럼 토글
+  const toggleAllColumns = () => {
+    if (isAllColumnsVisible) {
+      setVisibleColumns(new Set());
+      setIsAllColumnsVisible(false);
+    } else {
+      setVisibleColumns(new Set(columns.map(col => col.key)));
+      setIsAllColumnsVisible(true);
+    }
+  };
+
+  // 필터링된 컬럼
+  const filteredColumns = useMemo(() => 
+    columns.filter(column => visibleColumns.has(column.key))
+  , [columns, visibleColumns]);
+
   return (
     <div className={`space-y-4 ${className}`}>
       {showActions && (
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800 w-[100px]"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[100px] p-2">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={isAllColumnsVisible}
+                      onCheckedChange={toggleAllColumns}
+                      id="all-columns"
+                      className="data-[state=checked]:border-gray-600 data-[state=checked]:bg-gray-600"
+                    />
+                    <label 
+                      htmlFor="all-columns"
+                      className={`text-[10px] cursor-pointer ${
+                        isAllColumnsVisible ? 'font-bold text-purple-600' : ''
+                      }`}
+                    >
+                      All
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    {columns.map((column) => (
+                      <div key={column.key} className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={visibleColumns.has(column.key)}
+                          onCheckedChange={() => toggleColumn(column.key)}
+                          id={`column-${column.key}`}
+                          className="data-[state=checked]:border-gray-600 data-[state=checked]:bg-gray-600"
+                        />
+                        <label 
+                          htmlFor={`column-${column.key}`}
+                          className={`text-[10px] cursor-pointer ${
+                            visibleColumns.has(column.key) ? 'font-bold text-purple-600' : ''
+                          }`}
+                        >
+                          {column.label}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-purple-400" />
               <Input
@@ -291,7 +380,7 @@ export function DataTable({
                   onCheckedChange={handleSelectAll}
                 />
               </TableHead>
-              {columns.map((column) => (
+              {filteredColumns.map((column) => (
                 <TableHead
                   key={column.key}
                   className={`text-xs font-bold text-gray-600 h-10 py-2 ${column.width || ''} ${
@@ -324,13 +413,13 @@ export function DataTable({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 2} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length + 2} className="text-center py-4">
                   데이터를 불러오는 중...
                 </TableCell>
               </TableRow>
             ) : currentData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + 2} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length + 2} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
               </TableRow>
@@ -347,7 +436,7 @@ export function DataTable({
                       onCheckedChange={() => handleSelectRow(item.id?.toString())}
                     />
                   </TableCell>
-                  {columns.map((column) => (
+                  {filteredColumns.map((column) => (
                     <TableCell 
                       key={column.key} 
                       className={`py-3 ${cellClassName} ${
@@ -374,7 +463,7 @@ export function DataTable({
           </TableBody>
           <tfoot className="border-t border-gray-100 bg-white">
             <tr>
-              <td colSpan={columns.length + 2}>
+              <td colSpan={filteredColumns.length + 2}>
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}
