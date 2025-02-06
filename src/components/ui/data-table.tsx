@@ -136,7 +136,6 @@ export function DataTable({
             key,
             label: key.toUpperCase().replace(/_/g, ' '),
             type,
-            width: key === 'id' ? 'w-12' : undefined,
             sortable: true,
             format: (value) => customFormatters?.[key]?.(value) ?? formatValue(value, type)
           };
@@ -383,7 +382,7 @@ export function DataTable({
               {filteredColumns.map((column) => (
                 <TableHead
                   key={column.key}
-                  className={`text-xs font-bold text-gray-600 h-10 py-2 ${column.width || ''} ${
+                  className={`text-xs font-bold text-gray-600 h-10 py-2 ${
                     column.sortable ? 'cursor-pointer select-none' : ''
                   }`}
                   onClick={() => column.sortable && handleSort(column.key)}
@@ -452,7 +451,7 @@ export function DataTable({
                       )}
                     </TableCell>
                   ))}
-                  <TableCell className={`py-3 ${cellClassName}`}>
+                  <TableCell className={`py-3 w-12 text-right ${cellClassName}`}>
                     <Button variant="ghost" size="icon" className="hover:bg-purple-50">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
