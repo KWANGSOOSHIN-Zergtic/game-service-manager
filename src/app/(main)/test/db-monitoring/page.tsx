@@ -31,7 +31,7 @@ export default function DbMonitoringPage() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      const response = await fetch('/api/db-tables');
+      const response = await fetch('/api/db-list');
       const responseData = await response.json();
       
       if (responseData.success) {

@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
 import { DB_QUERIES } from '../db-query/queries';
 
-const getDBTables = async () => {
+const getDBList = async () => {
     const AppDataSource = new DataSource({
         type: 'postgres',
         host: process.env.DEV_DB_HOST,
@@ -23,7 +23,7 @@ const getDBTables = async () => {
         await AppDataSource.destroy();
         return { success: true, tables };
     } catch (error) {
-        console.error('Error in getDBTables:', error);
+        console.error('Error in getDBList:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -32,6 +32,6 @@ const getDBTables = async () => {
 };
 
 export async function GET() {
-    const result = await getDBTables();
+    const result = await getDBList();
     return NextResponse.json(result);
 } 

@@ -9,6 +9,7 @@ import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Plus } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 
 interface ConnectionStatus {
   success?: boolean;
@@ -31,7 +32,7 @@ export default function DbTestBoardPage() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      const response = await fetch('/api/db-tables');
+      const response = await fetch('/api/db-list');
       const responseData = await response.json();
       
       if (responseData.success) {
@@ -113,7 +114,7 @@ export default function DbTestBoardPage() {
           <Plus className="w-4 h-4 mr-2" />
           {isLoading ? "DB 연결 중..." : 
            isDataLoading ? "데이터 로딩 중..." : 
-           "DB 연결"}
+           "DB List Load"}
         </Button>
 
         <ResultAlert 
@@ -146,6 +147,35 @@ export default function DbTestBoardPage() {
             </Card>
           </div>
         )}
+
+        <Card>
+          <CardHeader className="py-4 bg-gray-50">
+            <CardTitle className="text-lg font-semibold text-gray-900">Connect DB</CardTitle>
+          </CardHeader>
+          <Separator className="bg-gray-200" />
+          <CardContent className="py-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-2">
+                <label className="text-sm font-midium font-bold">DB list</label>
+                <Select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Connect DB" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="test">Test</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>              
+              <div className="space-y-2">
+                <label className="text-sm font-midium font-bold opacity-0">Action</label>
+                <Button className="bg-green-500 hover:bg-green-600 w-full">
+                  Connect DB
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+          <Separator className="bg-gray-200" />
+        </Card>
       </div>
     </PageContainer>
   );
