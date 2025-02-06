@@ -1,0 +1,50 @@
+interface QueryInfo {
+    name: string;
+    description: string;
+    query: string;
+}
+
+interface DatabaseQueries {
+    [key: string]: QueryInfo;
+}
+
+export const DB_QUERIES: DatabaseQueries = {
+    SELECT_TABLE_LIST: {
+        name: 'SELECT_TABLE_LIST',
+        description: 'PostgreSQL의 information_schema에서 public 스키마의 테이블 목록을 조회',
+        query: `
+            SELECT 
+                table_name,
+                table_schema
+            FROM 
+                information_schema.tables 
+            WHERE 
+                table_schema = 'public'
+            ORDER BY 
+                table_name;
+        `
+    },
+    SELECT_SERVICE_DB_CONFIG: {
+        name: 'SELECT_SERVICE_DB_CONFIG',
+        description: 'service-db-config 테이블의 모든 데이터를 조회',
+        query: `
+            SELECT 
+                index,
+                name,
+                type,
+                host,
+                port,
+                data_base,
+                config
+            FROM service_db_config
+            ORDER BY index ASC
+        `
+    },
+    // 여기에 새로운 쿼리들을 추가할 수 있습니다
+    // 예시:
+    // SELECT_TABLE_COLUMNS: {
+    //     name: 'SELECT_TABLE_COLUMNS',
+    //     description: '특정 테이블의 컬럼 정보 조회',
+    //     query: '...'
+    // }
+}; 

@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
+import { DB_QUERIES } from '../db-query/queries';
 
 const getDBTables = async () => {
     const AppDataSource = new DataSource({
@@ -16,22 +17,13 @@ const getDBTables = async () => {
     try {
         await AppDataSource.initialize();
         
-        // PostgreSQL의 information_schema에서 테이블 목록 조회
-        const tables = await AppDataSource.query(`
-            SELECT 
-                table_name,
-                table_schema
-            FROM 
-                information_schema.tables 
-            WHERE 
-                table_schema = 'public'
-            ORDER BY 
-                table_name;
-        `);
+        // 쿼리 상수 사용
+        const tables = await AppDataSource.query(DB_QUERIES.SELECT_SERVICE_DB_CONFIG.query);
 
         await AppDataSource.destroy();
         return { success: true, tables };
     } catch (error) {
+        console.error('Error in getDBTables:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : '알 수 없는 오류'
