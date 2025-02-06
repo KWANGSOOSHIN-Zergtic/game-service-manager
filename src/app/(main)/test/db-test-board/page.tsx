@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { testConnection } from '@/utils/database';
+import { DBConnection } from '@/utils/database';
 import { DataTable, TableData } from '@/components/ui/data-table';
 import { PageContainer } from "@/components/layout/page-container"
 import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
@@ -56,11 +56,11 @@ export default function DbTestBoardPage() {
     }
   };
 
-  const handleTestConnection = async () => {
+  const handleServiceDBConnection = async () => {
     setIsLoading(true);
-    setData([]); // 연결 테스트 시 기존 데이터 초기화
+    setData([]); // DB 연결 시 기존 데이터 초기화
     try {
-      const response = await testConnection();
+      const response = await DBConnection();
       setConnectionStatus(response);
       
       const dbInfoText = response.dbInfo 
@@ -73,7 +73,7 @@ export default function DbTestBoardPage() {
         error: response.error
       });
 
-      // 연결 성공 시 데이터 로드
+      // DB 연결 성공 시 데이터 로드
       if (response.success) {
         await loadData();
       }
@@ -107,19 +107,19 @@ export default function DbTestBoardPage() {
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"
-          onClick={handleTestConnection} 
+          onClick={handleServiceDBConnection} 
           disabled={isLoading || isDataLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
-          {isLoading ? "연결 테스트 중..." : 
+          {isLoading ? "DB 연결 중..." : 
            isDataLoading ? "데이터 로딩 중..." : 
-           "데이터베이스 연결 테스트"}
+           "DB 연결"}
         </Button>
 
         <ResultAlert 
           result={result}
-          successTitle="연결 성공"
-          errorTitle="연결 실패"
+          successTitle="DB 연결 성공"
+          errorTitle="DB 연결 실패"
         />
 
         {connectionStatus.success && (
@@ -127,13 +127,13 @@ export default function DbTestBoardPage() {
             <Card>
               <CardHeader className="py-4 bg-gray-50">
                 <CardTitle className="text-lg font-semibold text-gray-900">
-                  Database Table List
+                  Service DB List
                 </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
-                  tableName="Database Tables"
+                  tableName="Service DB List"
                   data={data}
                   isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
