@@ -54,6 +54,18 @@ interface DataTableProps {
   onCreateNew?: () => void;
 }
 
+// Object 내용을 문자열로 변환하는 함수 추가
+const stringifyObject = (obj: object): string => {
+  try {
+    return JSON.stringify(obj, null, 2)
+      .replace(/[{}"]/g, '')
+      .replace(/,\n/g, '\n')
+      .trim();
+  } catch (error) {
+    return '[Object]';
+  }
+};
+
 // 값 포맷팅을 위한 유틸리티 함수
 const formatValue = (value: string | number | null | object, type?: string) => {
   if (value === null || value === undefined) return '-';
@@ -62,10 +74,19 @@ const formatValue = (value: string | number | null | object, type?: string) => {
   if (typeof value === 'object') {
     return (
       <div className="flex justify-center">
-        <span className="inline-flex items-center gap-1 text-sky-600 font-medium bg-sky-100 px-3 py-1 rounded-full">
-          <Braces className="h-3 w-3" />
-          Object
-        </span>
+        <Popover>
+          <PopoverTrigger>
+            <span className="inline-flex items-center gap-1 text-sky-600 font-medium bg-sky-100 px-3 py-1 rounded-full hover:bg-sky-200 cursor-pointer transition-colors">
+              <Braces className="h-3 w-3" />
+              Object
+            </span>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto max-w-[300px] p-2">
+            <pre className="text-xs whitespace-pre-wrap break-words text-gray-600">
+              {stringifyObject(value)}
+            </pre>
+          </PopoverContent>
+        </Popover>
       </div>
     );
   }
