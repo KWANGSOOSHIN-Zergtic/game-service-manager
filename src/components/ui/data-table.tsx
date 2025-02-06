@@ -380,7 +380,7 @@ export function DataTable({
             {isLoading ? (
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
-                <TableCell colSpan={Math.max(1, filteredColumns.length)} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length} className="text-center py-4">
                   데이터를 불러오는 중...
                 </TableCell>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
@@ -388,7 +388,7 @@ export function DataTable({
             ) : currentData.length === 0 ? (
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
-                <TableCell colSpan={Math.max(1, filteredColumns.length)} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
@@ -441,8 +441,7 @@ export function DataTable({
           </TableBody>
           <tfoot className="border-t border-gray-100 bg-purple-50/80">
             <tr>
-              <td className="w-12"></td>
-              <td colSpan={Math.max(1, filteredColumns.length)}>
+              <td colSpan={columns.length + 2}>
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}
@@ -451,7 +450,6 @@ export function DataTable({
                   onItemsPerPageChange={handleItemsPerPageChange}
                 />
               </td>
-              <td className="w-12 border-r border-gray-200"></td>
             </tr>
           </tfoot>
         </Table>
