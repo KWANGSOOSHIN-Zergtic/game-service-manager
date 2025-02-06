@@ -56,7 +56,7 @@ export const DB_QUERIES: DatabaseQueries = {
         query: `
             SELECT 
                 index,
-                name,
+                name
             FROM service_db_config
             ORDER BY index ASC
         `

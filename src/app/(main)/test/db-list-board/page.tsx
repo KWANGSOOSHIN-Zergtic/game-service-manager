@@ -21,7 +21,7 @@ interface ConnectionStatus {
   };
 }
 
-export default function DbTestBoardPage() {
+export default function DbListBoardPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -104,7 +104,7 @@ export default function DbTestBoardPage() {
   };
 
   return (
-    <PageContainer path="test/db-test-board">
+    <PageContainer path="test/db-list-board">
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"

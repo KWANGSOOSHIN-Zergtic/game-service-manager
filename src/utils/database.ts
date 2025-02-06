@@ -2,7 +2,7 @@
 
 export const DBConnection = async () => {
     try {
-        const response = await fetch('/api/db-test-board');
+        const response = await fetch('/api/db-list-board');
         const data = await response.json();
         return data;
     } catch (error) {
