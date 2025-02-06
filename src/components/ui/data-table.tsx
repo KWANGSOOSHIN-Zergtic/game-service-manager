@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, Search, MoreVertical, Plus } from "lucide-react";
+import { Filter, Search, MoreVertical, Plus, Braces } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import {
   Popover,
@@ -23,15 +23,15 @@ export interface TableColumn {
   key: string;
   label: string;
   width?: string;
-  format?: (value: string | number | null) => string | number;
-  type?: 'string' | 'number' | 'currency' | 'percentage';
+  format?: (value: string | number | null | object) => string | number | React.ReactNode;
+  type?: 'string' | 'number' | 'currency' | 'percentage' | 'object';
   sortable?: boolean;
   align?: 'left' | 'center' | 'right';
 }
 
 // 동적 데이터 타입
 export interface TableData {
-  [key: string]: string | number | null;
+  [key: string]: string | number | null | object;
   id: string | number;
 }
 
@@ -44,7 +44,7 @@ interface DataTableProps {
   rowClassName?: string;
   cellClassName?: string;
   customFormatters?: {
-    [key: string]: (value: string | number | null) => string | number;
+    [key: string]: (value: string | number | null | object) => string | number | React.ReactNode;
   };
   onRowClick?: (item: TableData) => void;
   onSelectionChange?: (selectedItems: TableData[]) => void;
@@ -55,8 +55,20 @@ interface DataTableProps {
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
-const formatValue = (value: string | number | null, type?: string) => {
+const formatValue = (value: string | number | null | object, type?: string) => {
   if (value === null || value === undefined) return '-';
+  
+  // Object 타입 체크 추가
+  if (typeof value === 'object') {
+    return (
+      <div className="flex justify-center">
+        <span className="inline-flex items-center gap-1 text-sky-600 font-medium bg-sky-100 px-3 py-1 rounded-full">
+          <Braces className="h-3 w-3" />
+          Object
+        </span>
+      </div>
+    );
+  }
   
   switch (type) {
     case 'currency':
@@ -130,6 +142,8 @@ export function DataTable({
             } else {
               type = 'number';
             }
+          } else if (typeof value === 'object' && value !== null) {
+            type = 'object';
           }
 
           return {
