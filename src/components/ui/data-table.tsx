@@ -363,7 +363,7 @@ export function DataTable({
               onClick={onCreateNew}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create New {tableName || 'Item'}
+              Create New Row
             </Button>
           )}
         </div>
