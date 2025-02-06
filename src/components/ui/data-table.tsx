@@ -10,14 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, Search, MoreVertical, Plus } from "lucide-react";
+import { Search, MoreVertical, Plus } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { ObjectDisplay } from "@/components/ui/object-display";
+import { ColumnFilter } from "@/components/ui/column-filter";
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -303,58 +299,13 @@ export function DataTable({
       {showActions && (
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="text-purple-700 border-purple-200 hover:bg-purple-50 hover:text-purple-800 w-[100px]"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[100px] p-2">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={isAllColumnsVisible}
-                      onCheckedChange={toggleAllColumns}
-                      id="all-columns"
-                      className="data-[state=checked]:border-gray-600 data-[state=checked]:bg-gray-600"
-                    />
-                    <label 
-                      htmlFor="all-columns"
-                      className={`text-[10px] cursor-pointer ${
-                        isAllColumnsVisible ? 'font-bold text-purple-600' : ''
-                      }`}
-                    >
-                      All
-                    </label>
-                  </div>
-                  <div className="space-y-2">
-                    {columns.map((column) => (
-                      <div key={column.key} className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={visibleColumns.has(column.key)}
-                          onCheckedChange={() => toggleColumn(column.key)}
-                          id={`column-${column.key}`}
-                          className="data-[state=checked]:border-gray-600 data-[state=checked]:bg-gray-600"
-                        />
-                        <label 
-                          htmlFor={`column-${column.key}`}
-                          className={`text-[10px] cursor-pointer ${
-                            visibleColumns.has(column.key) ? 'font-bold text-purple-600' : ''
-                          }`}
-                        >
-                          {column.label}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
+            <ColumnFilter
+              columns={columns}
+              visibleColumns={visibleColumns}
+              isAllColumnsVisible={isAllColumnsVisible}
+              onToggleColumn={toggleColumn}
+              onToggleAllColumns={toggleAllColumns}
+            />
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-purple-400" />
               <Input
