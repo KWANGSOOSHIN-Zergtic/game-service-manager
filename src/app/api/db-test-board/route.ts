@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
 
-const testDBConnection = async () => {
+const DBConnection = async () => {
     const dbConfig = {
         host: process.env.DEV_DB_HOST,
         database: process.env.DB_NAME,
@@ -43,6 +43,6 @@ const testDBConnection = async () => {
 };
 
 export async function GET() {
-    const result = await testDBConnection();
+    const result = await DBConnection();
     return NextResponse.json(result);
 } 

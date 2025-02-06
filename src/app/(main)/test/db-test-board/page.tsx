@@ -56,7 +56,7 @@ export default function DbTestBoardPage() {
     }
   };
 
-  const handleServiceDBConnection = async () => {
+  const handleDBConnection = async () => {
     setIsLoading(true);
     setData([]); // DB 연결 시 기존 데이터 초기화
     try {
@@ -107,7 +107,7 @@ export default function DbTestBoardPage() {
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"
-          onClick={handleServiceDBConnection} 
+          onClick={handleDBConnection} 
           disabled={isLoading || isDataLoading}
         >
           <Plus className="w-4 h-4 mr-2" />
