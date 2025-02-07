@@ -31,7 +31,7 @@ export default function DbInfomationPage() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      const response = await fetch('/api/service-db-config-list');
+      const response = await fetch('/api/db-infomation');
       const responseData = await response.json();
       
       if (responseData.success) {

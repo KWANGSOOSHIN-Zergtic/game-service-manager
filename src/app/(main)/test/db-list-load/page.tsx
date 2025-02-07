@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { DBConnection } from '@/utils/database';
+import { DBConnection, fetchDBList } from '@/utils/database';
 import { DataTable, TableData } from '@/components/ui/data-table';
 import { PageContainer } from "@/components/layout/page-container"
 import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
@@ -21,7 +21,7 @@ interface ConnectionStatus {
   };
 }
 
-export default function DbListBoardPage() {
+export default function DbListLoadPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -32,10 +32,12 @@ export default function DbListBoardPage() {
   const loadData = async () => {
     setIsDataLoading(true);
     try {
-      const response = await fetch('/api/db-list');
-      const responseData = await response.json();
+      const responseData = await fetchDBList({
+        retryCount: 3,
+        timeout: 5000
+      });
       
-      if (responseData.success) {
+      if (responseData.success && Array.isArray(responseData.tables)) {
         // API 응답 데이터를 TableData 형식으로 변환
         const formattedData: TableData[] = responseData.tables.map((table: any, index: number) => ({
           id: index + 1,
@@ -52,6 +54,7 @@ export default function DbListBoardPage() {
         message: '데이터 로딩 중 오류가 발생했습니다.',
         error: error instanceof Error ? error.message : '알 수 없는 오류'
       });
+      setData([]);
     } finally {
       setIsDataLoading(false);
     }
@@ -61,7 +64,10 @@ export default function DbListBoardPage() {
     setIsLoading(true);
     setData([]); // DB 연결 시 기존 데이터 초기화
     try {
-      const response = await DBConnection();
+      const response = await DBConnection({
+        retryCount: 3,
+        timeout: 5000
+      });
       setConnectionStatus(response);
       
       const dbInfoText = response.dbInfo 
@@ -104,7 +110,7 @@ export default function DbListBoardPage() {
   };
 
   return (
-    <PageContainer path="test/db-list-board">
+    <PageContainer path="test/db-list-load">
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"
