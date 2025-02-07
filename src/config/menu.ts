@@ -33,7 +33,7 @@ export const MENU_ITEMS: MenuItem[] = [
       path: "test",icon: TestTube, label: "Test", showInSidebar: true,
       subItems: [
       { path: "test/db-list-board", icon: DatabaseZapIcon, label: "DbListBoard", showInSidebar: true },
-      { path: "test/db-monitoring", icon: DatabaseZapIcon, label: "DbMonitoring", showInSidebar: true },
+      { path: "test/db-infomation", icon: DatabaseZapIcon, label: "DbInfomation", showInSidebar: true },
       { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }]
   },
   { path: "help", icon: HelpCircle, label: "Help" },

@@ -18,7 +18,7 @@ const getDBList = async () => {
         await AppDataSource.initialize();
         
         // 쿼리 상수 사용
-        const tables = await AppDataSource.query(DB_QUERIES.SELECT_SERVICE_DB_LIST.query);
+        const tables = await AppDataSource.query(DB_QUERIES.SELECT_DB_LIST.query);
 
         await AppDataSource.destroy();
         return { success: true, tables };

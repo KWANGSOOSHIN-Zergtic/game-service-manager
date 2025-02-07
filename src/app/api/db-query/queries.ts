@@ -19,8 +19,8 @@ export const DB_QUERIES: DatabaseQueries = {
     // }
     //----------------------------------
 
-    SELECT_TABLE_LIST: {
-        name: 'SELECT_TABLE_LIST',
+    SELECT_PUBLIC_TABLE_LIST: {
+        name: 'SELECT_PUBLIC_TABLE_LIST',
         description: 'PostgreSQL의 information_schema에서 public 스키마의 테이블 목록을 조회',
         query: `
             SELECT 
@@ -36,7 +36,7 @@ export const DB_QUERIES: DatabaseQueries = {
     },
     SELECT_SERVICE_DB_CONFIG: {
         name: 'SELECT_SERVICE_DB_CONFIG',
-        description: 'service-db-config 테이블의 모든 데이터를 조회',
+        description: 'service-db-config 테이블의 모든 데이터를(서비스 중인 DB 리스트) 조회',
         query: `
             SELECT 
                 index,
@@ -50,13 +50,14 @@ export const DB_QUERIES: DatabaseQueries = {
             ORDER BY index ASC
         `
     },
-    SELECT_SERVICE_DB_LIST: {
-        name: 'SELECT_SERVICE_DB_LIST',
+    SELECT_DB_LIST: {
+        name: 'SELECT_DB_LIST',
         description: 'service-db-config 테이블 DB 목록 조회',
         query: `
             SELECT 
                 index,
-                name
+                name,
+                description
             FROM service_db_config
             ORDER BY index ASC
         `

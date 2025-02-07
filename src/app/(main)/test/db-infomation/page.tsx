@@ -20,7 +20,7 @@ interface ConnectionStatus {
   };
 }
 
-export default function DbMonitoringPage() {
+export default function DbInfomationPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
@@ -103,7 +103,7 @@ export default function DbMonitoringPage() {
   };
 
   return (
-    <PageContainer path="test/db-monitoring">
+    <PageContainer path="test/db-infomation">
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"
@@ -127,7 +127,7 @@ export default function DbMonitoringPage() {
             <Card>
               <CardHeader className="py-4 bg-gray-50">
                 <CardTitle className="text-lg font-semibold text-gray-900">
-                  DbMonitoring
+                  DbInfomation
                 </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
