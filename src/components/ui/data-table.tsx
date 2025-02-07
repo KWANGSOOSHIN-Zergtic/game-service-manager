@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreVertical, Plus } from "lucide-react";
+import { Search, MoreVertical, Plus, ListOrdered } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
@@ -138,7 +138,7 @@ export function DataTable({
 
           return {
             key,
-            label: key.toUpperCase().replace(/_/g, ' '),
+            label: key === 'id' ? 'ID' : key.toUpperCase().replace(/_/g, ' '),
             type,
             sortable: true,
             format: (value) => customFormatters?.[key]?.(value) ?? formatValue(value, type)
@@ -291,8 +291,13 @@ export function DataTable({
 
   // 필터링된 컬럼
   const filteredColumns = useMemo(() => 
-    columns.filter(column => visibleColumns.has(column.key))
+    columns.filter(column => visibleColumns.has(column.key) && column.key !== 'id')
   , [columns, visibleColumns]);
+
+  // ID 컬럼 찾기
+  const idColumn = useMemo(() => 
+    columns.find(column => column.key === 'id')
+  , [columns]);
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -300,7 +305,7 @@ export function DataTable({
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <ColumnFilter
-              columns={columns}
+              columns={columns.filter(col => col.key !== 'id')} // ID 컬럼은 필터 목록에서 제외
               visibleColumns={visibleColumns}
               isAllColumnsVisible={isAllColumnsVisible}
               onToggleColumn={toggleColumn}
@@ -340,6 +345,32 @@ export function DataTable({
                   />
                 </div>
               </TableHead>
+              {/* ID 컬럼 - 항상 표시 */}
+              {idColumn && (
+                <TableHead
+                  className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center w-16"
+                  onClick={() => idColumn.sortable && handleSort('id')}
+                  role={idColumn.sortable ? 'button' : undefined}
+                  tabIndex={idColumn.sortable ? 0 : undefined}
+                  aria-sort={
+                    sortConfig.key === 'id'
+                      ? sortConfig.direction === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : undefined
+                  }
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <ListOrdered className="h-4 w-4 text-gray-400" />
+                    {idColumn.sortable && sortConfig.key === 'id' && (
+                      <span className="text-gray-400">
+                        {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                      </span>
+                    )}
+                  </div>
+                </TableHead>
+              )}
+              {/* 나머지 필터링 가능한 컬럼들 */}
               {filteredColumns.length === 0 ? (
                 <TableHead className="h-10 py-2 border-r border-gray-200 text-center">
                   <div className="flex items-center justify-center">-</div>
@@ -373,13 +404,18 @@ export function DataTable({
                   </TableHead>
                 ))
               )}
-              <TableHead className="w-12 h-10 py-2 border-r border-gray-200"></TableHead>
+              <TableHead className="w-12 h-10 py-2 border-r border-gray-200">
+                <div className="flex items-center justify-center">
+                  <MoreVertical className="h-4 w-4 text-gray-400" />
+                </div>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
                 <TableCell colSpan={filteredColumns.length} className="text-center py-4">
                   데이터를 불러오는 중...
                 </TableCell>
@@ -388,6 +424,7 @@ export function DataTable({
             ) : currentData.length === 0 ? (
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
                 <TableCell colSpan={filteredColumns.length} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
@@ -408,6 +445,15 @@ export function DataTable({
                       />
                     </div>
                   </TableCell>
+                  {/* ID 컬럼 데이터 - 항상 표시 */}
+                  {idColumn && (
+                    <TableCell 
+                      className={`w-16 py-3 ${cellClassName} text-center border-r border-gray-200 text-gray-400`}
+                    >
+                      {idColumn.format?.(item[idColumn.key]) ?? formatValue(item[idColumn.key], idColumn.type)}
+                    </TableCell>
+                  )}
+                  {/* 나머지 필터링된 컬럼 데이터 */}
                   {filteredColumns.length === 0 ? (
                     <TableCell className="py-3 border-r border-gray-200 text-center">-</TableCell>
                   ) : (
