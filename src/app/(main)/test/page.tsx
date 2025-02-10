@@ -95,7 +95,6 @@ export default function TestPage() {
       
       // 새로 생성된 페이지로 이동
       router.push(`/${selectedCategory}/${formattedPageName}`);
-      router.refresh();
 
     } catch (error) {
       setResult({
