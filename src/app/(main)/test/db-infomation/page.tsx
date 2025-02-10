@@ -1,152 +1,216 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { DBConnection } from '@/utils/database';
-import { DataTable, TableData } from '@/components/ui/data-table';
-import { PageContainer } from "@/components/layout/page-container"
-import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Plus } from "lucide-react";
+import { DBListInfo, DBConfig } from '@/app/api/db-infomation/db-infomation';
+import { ResultAlert, ResultData } from '@/components/ui/result-alert';
+import { PageContainer } from '@/components/layout/page-container';
 
-interface ConnectionStatus {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  dbInfo?: {
-    host?: string;
-    database?: string;
-  };
-}
+export default function DBInformation() {
+    const [isLoading, setIsLoading] = useState(false);
+    const [result, setResult] = useState<ResultData>({ 
+        status: null, 
+        message: '' 
+    });
+    const [dbList, setDBList] = useState<DBListInfo[]>([]);
+    const [selectedDB, setSelectedDB] = useState<string>('');
 
-export default function DbInfomationPage() {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDataLoading, setIsDataLoading] = useState(false);
-  const [result, setResult] = useState<ResultData>({ status: null, message: '' });
-  const [data, setData] = useState<TableData[]>([]);
+    useEffect(() => {
+        initializeDBCollection();
+    }, []);
 
-  // 데이터 로딩 함수
-  const loadData = async () => {
-    setIsDataLoading(true);
-    try {
-      const response = await fetch('/api/db-infomation');
-      const responseData = await response.json();
-      
-      if (responseData.success) {
-        // API 응답 데이터를 TableData 형식으로 변환
-        const formattedData: TableData[] = responseData.tables.map((table: any, index: number) => ({
-          id: index + 1,
-          ...table
-        }));
-        setData(formattedData);
-      } else {
-        throw new Error(responseData.error || '데이터를 불러오는데 실패했습니다.');
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setResult({
-        status: 'error',
-        message: '데이터 로딩 중 오류가 발생했습니다.',
-        error: error instanceof Error ? error.message : '알 수 없는 오류'
-      });
-    } finally {
-      setIsDataLoading(false);
-    }
-  };
+    // DB Collection 초기화
+    const initializeDBCollection = async () => {
+        try {
+            setIsLoading(true);
+            console.log('DB Collection 초기화 시작');
 
-  const handleDBConnection = async () => {
-    setIsLoading(true);
-    setData([]); // DB 연결 시 기존 데이터 초기화
-    try {
-      const response = await DBConnection();
-      setConnectionStatus(response);
-      
-      const dbInfoText = response.dbInfo 
-        ? `[${response.dbInfo.host} - ${response.dbInfo.database}]`
-        : '';
+            // DB Collection 정보 로드
+            const collectionResponse = await fetch('/api/db-infomation');
+            const collectionResult = await collectionResponse.json();
+            
+            console.log('DB Collection 초기화 응답:', collectionResult);
+            
+            if (!collectionResult.success) {
+                throw new Error(collectionResult.error || 'DB Collection 초기화 실패');
+            }
 
-      setResult({
-        status: response.success ? 'success' : 'error',
-        message: dbInfoText ? `${dbInfoText} > ${response.message}` : response.message,
-        error: response.error
-      });
+            if (collectionResult.tables) {
+                console.log('DB Collection 설정 정보:', collectionResult.tables);
+                collectionResult.tables.forEach((db: DBConfig) => {
+                    console.log(`${db.name} 설정:`, {
+                        type: db.type,
+                        host: db.host,
+                        port: db.port,
+                        database: db.data_base,
+                        config: db.config
+                    });
+                });
+            } else {
+                console.warn('DB Collection tables가 비어있음');
+            }
 
-      // DB 연결 성공 시 데이터 로드
-      if (response.success) {
-        await loadData();
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+            // DB Collection 초기화 성공 시에만 DB 리스트 로드
+            await loadDBList();
+        } catch (error) {
+            console.error('DB Collection 초기화 실패:', error);
+            setResult({
+                status: 'error',
+                message: error instanceof Error ? error.message : 'DB Collection 초기화에 실패했습니다.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-  const handleCreateNew = () => {
-    console.log('Create new item clicked');
-  };
+    const loadDBList = async () => {
+        try {
+            console.log('DB 리스트 로드 시작');
+            const response = await fetch('/api/db-list');
+            const result = await response.json();
+            
+            console.log('DB 리스트 응답:', result);
+            
+            if (result.success && result.dbList) {
+                console.log('로드된 DB 리스트:', result.dbList);
+                setDBList(result.dbList);
+                setResult({
+                    status: 'success',
+                    message: 'DB 리스트를 성공적으로 불러왔습니다.'
+                });
+            } else {
+                throw new Error(result.error || 'DB 리스트 로드 실패');
+            }
+        } catch (error) {
+            console.error('DB 리스트 로딩 실패:', error);
+            setResult({
+                status: 'error',
+                message: error instanceof Error ? error.message : '데이터베이스 리스트를 불러오는데 실패했습니다.'
+            });
+        }
+    };
 
-  const handleRowClick = (item: TableData) => {
-    console.log('Row clicked:', item);
-  };
+    const handleConnect = async () => {
+        if (!selectedDB) {
+            setResult({
+                status: 'error',
+                message: 'DB를 선택해주세요.'
+            });
+            return;
+        }
 
-  const handleSelectionChange = (selectedItems: TableData[]) => {
-    console.log('Selection changed:', selectedItems);
-  };
+        setIsLoading(true);
+        try {
+            console.log('선택된 DB 연결 시도:', selectedDB);
 
-  const handleSort = (key: string, direction: 'asc' | 'desc' | null) => {
-    console.log('Sort:', key, direction);
-  };
+            // DB Collection 정보 다시 확인
+            const collectionResponse = await fetch('/api/db-infomation');
+            const collectionResult = await collectionResponse.json();
+            
+            console.log('DB Collection 재확인 결과:', collectionResult);
+            
+            if (!collectionResult.success) {
+                throw new Error('DB Collection 정보를 가져오는데 실패했습니다.');
+            }
 
-  const handlePageChange = (page: number) => {
-    console.log('Page changed:', page);
-  };
+            // 선택한 DB의 설정 정보 찾기
+            const selectedDBInfo = collectionResult.tables?.find((db: DBConfig) => db.name === selectedDB);
+            if (!selectedDBInfo) {
+                console.error('선택한 DB 설정을 찾을 수 없음:', {
+                    selectedDB,
+                    availableDBs: collectionResult.tables?.map((db: DBConfig) => db.name)
+                });
+                throw new Error(`${selectedDB} 데이터베이스 설정을 찾을 수 없습니다.`);
+            }
 
-  return (
-    <PageContainer path="test/db-infomation">
-      <div className="flex flex-col gap-4">
-        <Button 
-          className="bg-green-500 hover:bg-green-600 w-full font-bold"
-          onClick={handleDBConnection} 
-          disabled={isLoading || isDataLoading}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {isLoading ? "DB 연결 중..." : 
-           isDataLoading ? "데이터 로딩 중..." : 
-           "DB Infomation Load"}
-        </Button>
+            console.log('선택한 DB 설정 정보:', {
+                name: selectedDBInfo.name,
+                type: selectedDBInfo.type,
+                host: selectedDBInfo.host,
+                port: selectedDBInfo.port,
+                database: selectedDBInfo.data_base,
+                config: selectedDBInfo.config
+            });
 
-        <ResultAlert 
-          result={result}
-          successTitle="Service DB 연결 성공"
-          errorTitle="Service DB 연결 실패"
-        />
+            // DB 연결 요청
+            const response = await fetch('/api/db-connect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    dbName: selectedDB,
+                    config: selectedDBInfo.config  // config 정보도 함께 전송
+                }),
+            });
 
-        {connectionStatus.success && (
-          <div className="mt-6">
-            <Card>
-              <CardHeader className="py-4 bg-gray-50">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  DbInfomation
-                </CardTitle>
-              </CardHeader>
-              <Separator className="bg-gray-200" />
-              <CardContent className="py-6">
-                <DataTable
-                  tableName="Database Tables"
-                  data={data}
-                  isLoading={isDataLoading}
-                  onCreateNew={handleCreateNew}
-                  onRowClick={handleRowClick}
-                  onSelectionChange={handleSelectionChange}
-                  onSort={handleSort}
-                  onPageChange={handlePageChange}
+            const data = await response.json();
+            console.log('DB 연결 응답:', data);
+            
+            if (data.success) {
+                const connectionInfo = {
+                    name: selectedDB,
+                    type: selectedDBInfo.type,
+                    host: selectedDBInfo.host,
+                    port: selectedDBInfo.port,
+                    database: selectedDBInfo.data_base,
+                    user: data.data.user,
+                    password: data.data.password,
+                    config: selectedDBInfo.config
+                };
+                console.log('DB 연결 정보:', connectionInfo);
+                setResult({
+                    status: 'success',
+                    message: `${selectedDB} 데이터베이스 연결에 성공했습니다.\n` +
+                            `User: ${data.data.user}\n` +
+                            `Password: ${data.data.password}`
+                });
+            } else {
+                throw new Error(data.error || 'DB 연결 실패');
+            }
+        } catch (error) {
+            console.error('DB 연결 요청 실패:', error);
+            setResult({
+                status: 'error',
+                message: error instanceof Error ? error.message : '서버 오류가 발생했습니다.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <PageContainer path="test/db-infomation">
+            <div className="flex flex-col gap-4">
+                <div className="flex gap-4 items-center">
+                    <Select value={selectedDB} onValueChange={setSelectedDB}>
+                        <SelectTrigger className="w-[200px]">
+                            <SelectValue placeholder="DB 선택" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {dbList.map((db) => (
+                                <SelectItem key={db.index} value={db.name}>
+                                    {db.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Button 
+                        onClick={handleConnect} 
+                        disabled={!selectedDB || isLoading}
+                        className="min-w-[120px]"
+                    >
+                        {isLoading ? '연결 중...' : 'Connect DB'}
+                    </Button>
+                </div>
+
+                <ResultAlert 
+                    result={result}
+                    successTitle="DB 연결 성공"
+                    errorTitle="DB 연결 실패"
                 />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
-    </PageContainer>
-  );
+            </div>
+        </PageContainer>
+    );
 } 
