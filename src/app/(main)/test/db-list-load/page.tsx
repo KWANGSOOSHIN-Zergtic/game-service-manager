@@ -26,13 +26,21 @@ interface DBListResponse {
   [key: string]: string | number | null | object;
 }
 
+interface TableListResponse {
+  table_name: string;
+  table_schema: string;
+}
+
 export default function DbListLoadPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [result, setResult] = useState<ResultData>({ status: null, message: '' });
+  const [connectResult, setConnectResult] = useState<ResultData>({ status: null, message: '' });
   const [data, setData] = useState<TableData[]>([]);
   const [selectedDB, setSelectedDB] = useState<string>('');
+  const [tableData, setTableData] = useState<TableData[]>([]);
+  const [isTableLoading, setIsTableLoading] = useState(false);
 
   // 데이터 로딩 함수
   const loadData = async () => {
@@ -119,19 +127,47 @@ export default function DbListLoadPage() {
     if (!selectedDB) return;
 
     try {
+      // DB 연결 시도
       const response = await fetch(`/api/db-connection?dbName=${selectedDB}`, {
         method: 'GET',
       });
       
       const result = await response.json();
       
-      setResult({
+      setConnectResult({
         status: result.success ? 'success' : 'error',
         message: result.message,
         error: result.error
       });
+
+      // DB 연결 성공 시 테이블 목록 조회
+      if (result.success) {
+        setIsTableLoading(true);
+        try {
+          const tableResponse = await fetch(`/api/db-query?dbName=${selectedDB}`);
+          const tableResult = await tableResponse.json();
+
+          if (tableResult.success) {
+            const formattedTableData: TableData[] = tableResult.tables.map((table: TableListResponse, index: number) => ({
+              id: index + 1,
+              ...table
+            }));
+            setTableData(formattedTableData);
+          } else {
+            throw new Error(tableResult.error);
+          }
+        } catch (error) {
+          setConnectResult({
+            status: 'error',
+            message: '테이블 목록 조회 중 오류가 발생했습니다.',
+            error: error instanceof Error ? error.message : '알 수 없는 오류'
+          });
+        } finally {
+          setIsTableLoading(false);
+        }
+      }
     } catch (error) {
-      setResult({
+      setConnectResult({
         status: 'error',
         message: 'DB 연결 중 오류가 발생했습니다.',
         error: error instanceof Error ? error.message : '알 수 없는 오류'
@@ -222,9 +258,9 @@ export default function DbListLoadPage() {
         </Card>
 
         <ResultAlert 
-          result={result}
-          successTitle="Service DB 연결 성공"
-          errorTitle="Service DB 연결 실패"
+          result={connectResult}
+          successTitle={`${selectedDB || 'DB'} 연결 성공`}
+          errorTitle={`${selectedDB || 'DB'} 연결 실패`}
         />
 
         <Card>
@@ -237,8 +273,8 @@ export default function DbListLoadPage() {
           <CardContent className="py-6">
             <DataTable
               tableName="DB Table List"
-              data={data}
-              isLoading={isDataLoading}
+              data={tableData}
+              isLoading={isTableLoading}
               onCreateNew={handleCreateNew}
               onRowClick={handleRowClick}
               onSelectionChange={handleSelectionChange}
