@@ -221,6 +221,12 @@ export default function DbListLoadPage() {
           <Separator className="bg-gray-200" />
         </Card>
 
+        <ResultAlert 
+          result={result}
+          successTitle="Service DB 연결 성공"
+          errorTitle="Service DB 연결 실패"
+        />
+
         <Card>
           <CardHeader className="py-4 bg-gray-50">
             <CardTitle className="text-lg font-semibold text-gray-900">
@@ -242,11 +248,6 @@ export default function DbListLoadPage() {
           </CardContent>
         </Card>
 
-        <ResultAlert 
-          result={result}
-          successTitle="Service DB 연결 성공"
-          errorTitle="Service DB 연결 실패"
-        />
       </div>
     </PageContainer>
   );
