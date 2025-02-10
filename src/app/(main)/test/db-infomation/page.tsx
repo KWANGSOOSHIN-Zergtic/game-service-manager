@@ -113,13 +113,13 @@ export default function DbInfomationPage() {
           <Plus className="w-4 h-4 mr-2" />
           {isLoading ? "DB 연결 중..." : 
            isDataLoading ? "데이터 로딩 중..." : 
-           "DB 연결"}
+           "DB Infomation Load"}
         </Button>
 
         <ResultAlert 
           result={result}
-          successTitle="DB 연결 성공"
-          errorTitle="DB 연결 실패"
+          successTitle="Service DB 연결 성공"
+          errorTitle="Service DB 연결 실패"
         />
 
         {connectionStatus.success && (

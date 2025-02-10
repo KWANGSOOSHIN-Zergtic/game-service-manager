@@ -1,10 +1,10 @@
 import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
 
-const DBConnection = async () => {
+const DBConnection = async (dbName?: string) => {
     const dbConfig = {
         host: process.env.DEV_DB_HOST,
-        database: process.env.DB_NAME,
+        database: dbName || process.env.DB_NAME,
     };
 
     const AppDataSource = new DataSource({
@@ -23,7 +23,7 @@ const DBConnection = async () => {
         await AppDataSource.destroy();
         return { 
             success: true, 
-            message: 'DB 연결 성공',
+            message: 'Service DB 연결 성공',
             dbInfo: {
                 host: dbConfig.host,
                 database: dbConfig.database
@@ -32,7 +32,7 @@ const DBConnection = async () => {
     } catch (error) {
         return {
             success: false,
-            message: 'DB 연결 실패',
+            message: 'Service DB 연결 실패',
             error: error instanceof Error ? error.message : '알 수 없는 오류',
             dbInfo: {
                 host: dbConfig.host,
@@ -42,7 +42,9 @@ const DBConnection = async () => {
     }
 };
 
-export async function GET() {
-    const result = await DBConnection();
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const dbName = searchParams.get('dbName');
+    const result = await DBConnection(dbName || undefined);
     return NextResponse.json(result);
 } 

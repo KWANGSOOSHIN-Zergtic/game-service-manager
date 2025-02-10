@@ -21,12 +21,18 @@ interface ConnectionStatus {
   };
 }
 
+interface DBListResponse {
+  name: string;
+  [key: string]: string | number | null | object;
+}
+
 export default function DbListLoadPage() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [result, setResult] = useState<ResultData>({ status: null, message: '' });
   const [data, setData] = useState<TableData[]>([]);
+  const [selectedDB, setSelectedDB] = useState<string>('');
 
   // 데이터 로딩 함수
   const loadData = async () => {
@@ -39,7 +45,7 @@ export default function DbListLoadPage() {
       
       if (responseData.success && Array.isArray(responseData.tables)) {
         // API 응답 데이터를 TableData 형식으로 변환
-        const formattedData: TableData[] = responseData.tables.map((table: any, index: number) => ({
+        const formattedData: TableData[] = responseData.tables.map((table: DBListResponse, index: number) => ({
           id: index + 1,
           ...table
         }));
@@ -109,6 +115,30 @@ export default function DbListLoadPage() {
     console.log('Page changed:', page);
   };
 
+  const handleConnectDB = async () => {
+    if (!selectedDB) return;
+
+    try {
+      const response = await fetch(`/api/db-connection?dbName=${selectedDB}`, {
+        method: 'GET',
+      });
+      
+      const result = await response.json();
+      
+      setResult({
+        status: result.success ? 'success' : 'error',
+        message: result.message,
+        error: result.error
+      });
+    } catch (error) {
+      setResult({
+        status: 'error',
+        message: 'DB 연결 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
+    }
+  };
+
   return (
     <PageContainer path="test/db-list-load">
       <div className="flex flex-col gap-4">
@@ -125,8 +155,8 @@ export default function DbListLoadPage() {
 
         <ResultAlert 
           result={result}
-          successTitle="DB 연결 성공"
-          errorTitle="DB 연결 실패"
+          successTitle="Service DB 연결 성공"
+          errorTitle="Service DB 연결 실패"
         />
 
         {connectionStatus.success && (
@@ -134,13 +164,13 @@ export default function DbListLoadPage() {
             <Card>
               <CardHeader className="py-4 bg-gray-50">
                 <CardTitle className="text-lg font-semibold text-gray-900">
-                  Service DB List
+                  DB Collection
                 </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
-                  tableName="Service DB List"
+                  tableName="DB Collection List"
                   data={data}
                   isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
@@ -162,19 +192,27 @@ export default function DbListLoadPage() {
           <CardContent className="py-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
-                <label className="text-sm font-midium font-bold">DB list</label>
-                <Select>
+                <label className="text-sm font-midium font-bold">DB Collection</label>
+                <Select value={selectedDB} onValueChange={setSelectedDB}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select Connect DB" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="test">Test</SelectItem>
+                    {data.map((item: TableData) => (
+                      <SelectItem key={item.id} value={String(item.name)}>
+                        {String(item.name)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>              
               <div className="space-y-2">
                 <label className="text-sm font-midium font-bold opacity-0">Action</label>
-                <Button className="bg-green-500 hover:bg-green-600 w-full">
+                <Button 
+                  className="bg-green-500 hover:bg-green-600 w-full" 
+                  disabled={!selectedDB}
+                  onClick={handleConnectDB}
+                >
                   Connect DB
                 </Button>
               </div>
@@ -182,6 +220,33 @@ export default function DbListLoadPage() {
           </CardContent>
           <Separator className="bg-gray-200" />
         </Card>
+
+        <Card>
+          <CardHeader className="py-4 bg-gray-50">
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              DB Table List
+            </CardTitle>
+          </CardHeader>
+          <Separator className="bg-gray-200" />
+          <CardContent className="py-6">
+            <DataTable
+              tableName="DB Table List"
+              data={data}
+              isLoading={isDataLoading}
+              onCreateNew={handleCreateNew}
+              onRowClick={handleRowClick}
+              onSelectionChange={handleSelectionChange}
+              onSort={handleSort}
+              onPageChange={handlePageChange}
+            />
+          </CardContent>
+        </Card>
+
+        <ResultAlert 
+          result={result}
+          successTitle="Service DB 연결 성공"
+          errorTitle="Service DB 연결 실패"
+        />
       </div>
     </PageContainer>
   );
