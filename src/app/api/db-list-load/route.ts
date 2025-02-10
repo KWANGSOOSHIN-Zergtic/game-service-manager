@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
 import { DB_QUERIES } from '../db-query/queries';
-import { DB_COLLECTION } from '../db-infomation/db-collection';
+import { DB_COLLECTION } from '../db-information/db-collection';
 
 const getDBList = async () => {
     // football_service 데이터베이스를 기본으로 사용

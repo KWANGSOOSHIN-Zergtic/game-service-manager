@@ -3,9 +3,29 @@
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { DBListInfo, DBConfig } from '@/app/api/db-infomation/db-infomation';
 import { ResultAlert, ResultData } from '@/components/ui/result-alert';
 import { PageContainer } from '@/components/layout/page-container';
+
+interface DBListInfo {
+    index: number;
+    name: string;
+    description: string;
+}
+
+interface DBConfig {
+    index: number;
+    name: string;
+    type: string;
+    host: string;
+    port: number;
+    data_base: string;
+    config: {
+        service_db: {
+            user: string;
+            password: string;
+        };
+    };
+}
 
 export default function DBInformation() {
     const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +47,7 @@ export default function DBInformation() {
             console.log('DB Collection 초기화 시작');
 
             // DB Collection 정보 로드
-            const collectionResponse = await fetch('/api/db-infomation');
+            const collectionResponse = await fetch('/api/db-information');
             const collectionResult = await collectionResponse.json();
             
             console.log('DB Collection 초기화 응답:', collectionResult);
@@ -67,14 +87,41 @@ export default function DBInformation() {
     const loadDBList = async () => {
         try {
             console.log('DB 리스트 로드 시작');
-            const response = await fetch('/api/db-list');
-            const result = await response.json();
+            const response = await fetch('/api/db-information', {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                cache: 'no-store'
+            });
             
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API 응답 오류:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    body: errorText
+                });
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('잘못된 응답 형식:', {
+                    contentType,
+                    responseText: text
+                });
+                throw new Error('API가 JSON이 아닌 응답을 반환했습니다.');
+            }
+
+            const result = await response.json();
             console.log('DB 리스트 응답:', result);
             
-            if (result.success && result.dbList) {
-                console.log('로드된 DB 리스트:', result.dbList);
-                setDBList(result.dbList);
+            if (result.success && result.tables) {
+                console.log('로드된 DB 리스트:', result.tables);
+                setDBList(result.tables);
                 setResult({
                     status: 'success',
                     message: 'DB 리스트를 성공적으로 불러왔습니다.'
@@ -105,7 +152,7 @@ export default function DBInformation() {
             console.log('선택된 DB 연결 시도:', selectedDB);
 
             // DB Collection 정보 다시 확인
-            const collectionResponse = await fetch('/api/db-infomation');
+            const collectionResponse = await fetch('/api/db-information');
             const collectionResult = await collectionResponse.json();
             
             console.log('DB Collection 재확인 결과:', collectionResult);
@@ -181,7 +228,7 @@ export default function DBInformation() {
     };
 
     return (
-        <PageContainer path="test/db-infomation">
+        <PageContainer path="test/db-information">
             <div className="flex flex-col gap-4">
                 <div className="flex gap-4 items-center">
                     <Select value={selectedDB} onValueChange={setSelectedDB}>

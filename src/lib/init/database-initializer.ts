@@ -1,6 +1,6 @@
 import { InitializerFunction, InitializationResult } from './types';
-import { DB_COLLECTION } from '@/app/api/db-infomation/db-collection';
-import { saveDBCollection, loadDBList } from '@/app/api/db-infomation/db-infomation';
+import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
+import { saveDBCollection, loadDBList } from '@/app/api/db-information/db-information';
 import { logger } from '@/lib/logger';
 
 export const databaseInitializer: InitializerFunction = {

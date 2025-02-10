@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
-import { DB_COLLECTION } from '../db-infomation/db-collection';
-import { saveDBCollection } from '../db-infomation/db-infomation';
+import { DB_COLLECTION } from '../db-information/db-collection';
+import { saveDBCollection } from '../db-information/db-information';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1초

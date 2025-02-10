@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { DataSource } from 'typeorm';
 import { DB_QUERIES } from './queries';
-import { DB_COLLECTION } from '../db-infomation/db-collection';
-import { saveDBCollection } from '../db-infomation/db-infomation';
+import { DB_COLLECTION } from '../db-information/db-collection';
+import { saveDBCollection } from '../db-information/db-information';
 
 export async function GET(request: Request) {
     console.log('\n========== DB 테이블 목록 조회 시작 ==========');

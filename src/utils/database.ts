@@ -18,6 +18,7 @@ interface DBConnectionResult {
 interface DBListResult {
   success: boolean;
   error?: string;
+  message?: string;
   tables?: Array<{
     name: string;
     description?: string;
@@ -84,18 +85,45 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<DB
   try {
     for (let i = 0; i < retryCount; i++) {
       try {
-        const response = await fetch('/api/db-infomation', {
+        const response = await fetch('/api/db-information', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          cache: 'no-store',
           signal: controller.signal
         });
-        
+
         if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API 응답 오류:', {
+            status: response.status,
+            statusText: response.statusText,
+            body: errorText
+          });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('잘못된 응답 형식:', {
+            contentType,
+            responseText: text
+          });
+          throw new Error('API가 JSON이 아닌 응답을 반환했습니다.');
+        }
+
         const data = await response.json();
+        console.log('API 응답 데이터:', data);
         
         if (data.success && Array.isArray(data.tables)) {
-          return data;
+          return {
+            success: true,
+            tables: data.tables,
+            message: data.message
+          };
         }
         
         if (i < retryCount - 1) {
@@ -108,11 +136,13 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<DB
         }
         if (i === retryCount - 1) throw error;
         console.error(`시도 ${i + 1}/${retryCount} 실패:`, error);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
     throw new Error('최대 재시도 횟수를 초과했습니다.');
   } catch (error) {
+    console.error('DB 목록 조회 최종 실패:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류'

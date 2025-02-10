@@ -1,4 +1,4 @@
-import { DBConfig, ServiceDBConfig } from './db-infomation';
+import { DBConfig, ServiceDBConfig } from './db-information';
 
 interface ParsedConfig extends Record<string, unknown> {
     service_db: ServiceDBConfig;
