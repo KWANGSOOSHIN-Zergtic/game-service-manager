@@ -15,6 +15,16 @@ interface DBConnectionResult {
   };
 }
 
+interface DBListResult {
+  success: boolean;
+  error?: string;
+  tables?: Array<{
+    name: string;
+    description?: string;
+    [key: string]: string | number | boolean | null | undefined;
+  }>;
+}
+
 export const DBConnection = async (options: DBConnectionOptions = {}): Promise<DBConnectionResult> => {
   const { retryCount = 3, timeout = 5000 } = options;
   
@@ -24,7 +34,7 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
   try {
     for (let i = 0; i < retryCount; i++) {
       try {
-        const response = await fetch('/api/db-connection', {
+        const response = await fetch(`/api/db-connection?dbName=${process.env.DB_NAME || 'football_service'}`, {
           signal: controller.signal
         });
         
@@ -44,6 +54,9 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('DB 연결 시간이 초과되었습니다.');
+        }
         if (i === retryCount - 1) throw error;
         console.error(`시도 ${i + 1}/${retryCount} 실패:`, error);
       }
@@ -62,7 +75,7 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
 };
 
 // DB 목록 조회 함수
-export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<any> => {
+export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<DBListResult> => {
   const { retryCount = 3, timeout = 5000 } = options;
   
   const controller = new AbortController();
@@ -71,7 +84,7 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<an
   try {
     for (let i = 0; i < retryCount; i++) {
       try {
-        const response = await fetch('/api/db-list-load', {
+        const response = await fetch('/api/db-infomation', {
           signal: controller.signal
         });
         
@@ -90,6 +103,9 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<an
           await new Promise(resolve => setTimeout(resolve, 1000));
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('DB 목록 조회 시간이 초과되었습니다.');
+        }
         if (i === retryCount - 1) throw error;
         console.error(`시도 ${i + 1}/${retryCount} 실패:`, error);
       }
