@@ -299,6 +299,20 @@ export function DataTable({
     columns.find(column => column.key === 'id')
   , [columns]);
 
+  // 전체 컬럼 수 계산을 위한 함수 추가
+  const getTotalColumnCount = () => {
+    let count = 0;
+    // 체크박스 컬럼
+    count += 1;
+    // ID 컬럼
+    if (idColumn) count += 1;
+    // 필터링된 컬럼들
+    count += filteredColumns.length || 1; // 필터링된 컬럼이 없어도 최소 1개의 컬럼은 존재
+    // 액션 컬럼
+    count += 1;
+    return count;
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       {showActions && (
@@ -416,7 +430,7 @@ export function DataTable({
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
                 {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
-                <TableCell colSpan={filteredColumns.length} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length || 1} className="text-center py-4">
                   데이터를 불러오는 중...
                 </TableCell>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
@@ -425,7 +439,7 @@ export function DataTable({
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
                 {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
-                <TableCell colSpan={filteredColumns.length} className="text-center py-4">
+                <TableCell colSpan={filteredColumns.length || 1} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
@@ -485,9 +499,9 @@ export function DataTable({
               ))
             )}
           </TableBody>
-          <tfoot className="border-t border-gray-100 bg-purple-50/80">
+          <tfoot className="border-t border-gray-100">
             <tr>
-              <td colSpan={columns.length + 2}>
+              <td colSpan={getTotalColumnCount()} className="p-0">
                 <Pagination
                   currentPage={currentPage}
                   totalItems={totalItems}
