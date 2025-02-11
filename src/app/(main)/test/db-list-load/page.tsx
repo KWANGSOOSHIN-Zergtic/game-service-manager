@@ -200,13 +200,13 @@ export default function DbListLoadPage() {
             <Card>
               <CardHeader className="py-4 bg-gray-50">
                 <CardTitle className="text-lg font-semibold text-gray-900">
-                  DB Collection
+                  DB List
                 </CardTitle>
               </CardHeader>
               <Separator className="bg-gray-200" />
               <CardContent className="py-6">
                 <DataTable
-                  tableName="DB Collection List"
+                  tableName="DB List"
                   data={data}
                   isLoading={isDataLoading}
                   onCreateNew={handleCreateNew}
