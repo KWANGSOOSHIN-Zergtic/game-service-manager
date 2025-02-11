@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,15 +9,30 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, UserCog } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login, autoLogin } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
+  const [autoLoginChecked, setAutoLoginChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const checkAutoLogin = async () => {
+      const success = await autoLogin();
+      if (success) {
+        router.push('/');
+      }
+    };
+    
+    checkAutoLogin();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,36 +42,22 @@ export default function LoginPage() {
     const loadingToast = toast.loading('로그인 중...');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const success = await login({
+        email: formData.username,
+        password: formData.password,
+        autoLogin: autoLoginChecked
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        toast.error(data.error || '로그인에 실패했습니다.', {
+      if (!success) {
+        toast.error('로그인에 실패했습니다.', {
           id: loadingToast,
           icon: '❌',
         });
-        setError(data.error || '로그인에 실패했습니다.');
+        setError('로그인에 실패했습니다.');
         return;
       }
 
-      // 토큰과 관리자 정보를 로컬 스토리지에 저장
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('admin', JSON.stringify(data.admin));
-      sessionStorage.setItem('isLoggedIn', 'true');
-      
-      // 관리자 타입에 따른 추가 정보 저장
-      if (data.admin.type) {
-        sessionStorage.setItem('adminType', data.admin.type);
-      }
-
-      toast.success(`환영합니다, ${data.admin.name}님!`, {
+      toast.success('환영합니다!', {
         id: loadingToast,
         icon: '👋',
       });
@@ -132,6 +133,21 @@ export default function LoginPage() {
                 required
                 disabled={isLoading}
               />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="autoLogin"
+                checked={autoLoginChecked}
+                onCheckedChange={(checked) => setAutoLoginChecked(checked as boolean)}
+                disabled={isLoading}
+              />
+              <Label
+                htmlFor="autoLogin"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                자동 로그인
+              </Label>
             </div>
 
             <Button 
