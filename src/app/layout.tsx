@@ -1,6 +1,7 @@
+import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { Toaster } from "sonner"
+import { Toaster } from "react-hot-toast"
 import { initializeServer } from '@/lib/init'
 import { logger } from '@/lib/logger'
 import { getGlobalInitState } from '@/lib/init/global-init-state'
@@ -32,12 +33,9 @@ if (typeof window === 'undefined') {
   initServer();
 }
 
-export const metadata = {
-  title: "1Team Football Game Service Manager",
-  description: "1Team Football Game Service Manager",
-  icons: {
-    icon: "/resource/ci/1tf.ico",
-  },
+export const metadata: Metadata = {
+  title: "Football Service Manager",
+  description: "Football Service Manager",
 }
 
 export default function RootLayout({
@@ -46,10 +44,35 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body className={inter.className}>
         {children}
-        <Toaster position="top-center" />
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#22c55e',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   )
