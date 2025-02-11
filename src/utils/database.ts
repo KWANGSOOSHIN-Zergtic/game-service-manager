@@ -29,7 +29,8 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
@@ -38,12 +39,20 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
           return data;
         }
         
+        // 서버에서 명시적인 실패를 반환한 경우 바로 실패 처리
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
         // 마지막 시도가 아니면 잠시 대기 후 재시도
         if (i < retryCount - 1) {
           console.log(`DB 연결 시도 ${i + 1}/${retryCount} 실패, 재시도 중...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, i), 5000))); // 지수 백오프
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('요청 시간이 초과되었습니다.');
+        }
         if (i === retryCount - 1) throw error;
         console.error(`시도 ${i + 1}/${retryCount} 실패:`, error);
       }
@@ -76,7 +85,8 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<an
         });
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
@@ -85,11 +95,19 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<an
           return data;
         }
         
+        // 서버에서 명시적인 실패를 반환한 경우 바로 실패 처리
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
         if (i < retryCount - 1) {
           console.log(`DB 목록 조회 시도 ${i + 1}/${retryCount} 실패, 재시도 중...`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, Math.min(1000 * Math.pow(2, i), 5000))); // 지수 백오프
         }
       } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error('요청 시간이 초과되었습니다.');
+        }
         if (i === retryCount - 1) throw error;
         console.error(`시도 ${i + 1}/${retryCount} 실패:`, error);
       }

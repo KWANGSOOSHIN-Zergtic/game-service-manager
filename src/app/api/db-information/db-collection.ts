@@ -5,7 +5,22 @@ interface ParsedConfig extends Record<string, unknown> {
 }
 
 // DB 서버 정보를 JSON 구조로 저장
-export const DB_COLLECTION: { [key: string]: DBConfig } = {};
+export const DB_COLLECTION: { [key: string]: DBConfig } = {
+  'football_service': {
+    index: 1,
+    name: 'football_service',
+    type: process.env.DB_TYPE || 'postgres',
+    host: process.env.DEV_DB_HOST || '',
+    port: Number(process.env.DB_PORT) || 5432,
+    data_base: process.env.DB_NAME || 'football_service',
+    config: {
+      service_db: {
+        user: process.env.DB_USERNAME || '',
+        password: process.env.DB_PASSWORD || ''
+      }
+    }
+  }
+};
 
 // DB 정보 업데이트 함수
 export const updateDBCollection = (dbConfigs: DBConfig[]): void => {

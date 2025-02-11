@@ -42,9 +42,18 @@ const getDBList = async () => {
         return { success: true, tables };
     } catch (error) {
         console.error('Error in getDBList:', error);
+        let errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+        
+        // DB 연결 실패 시 상세 정보 추가
+        if (error instanceof Error && error.message.includes('connect ETIMEDOUT')) {
+            errorMessage = `DB 연결 시간 초과. 호스트: ${dbConfig.host}, 포트: ${dbConfig.port}`;
+        } else if (error instanceof Error && error.message.includes('password authentication failed')) {
+            errorMessage = 'DB 인증 실패. 사용자 이름과 비밀번호를 확인해주세요.';
+        }
+        
         return {
             success: false,
-            error: error instanceof Error ? error.message : '알 수 없는 오류'
+            error: errorMessage
         };
     }
 };

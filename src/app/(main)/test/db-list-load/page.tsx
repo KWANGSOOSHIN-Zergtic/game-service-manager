@@ -80,7 +80,7 @@ export default function DbListLoadPage() {
     try {
       const response = await DBConnection({
         retryCount: 3,
-        timeout: 5000
+        timeout: 10000  // 타임아웃을 10초로 증가
       });
       setConnectionStatus(response);
       
@@ -94,10 +94,16 @@ export default function DbListLoadPage() {
         error: response.error
       });
 
-      // DB 연결 성공 시 데이터 로드
+      // DB 연결 성공 시에만 데이터 로드 시도
       if (response.success) {
         await loadData();
       }
+    } catch (error) {
+      setResult({
+        status: 'error',
+        message: 'DB 연결 중 오류가 발생했습니다.',
+        error: error instanceof Error ? error.message : '알 수 없는 오류'
+      });
     } finally {
       setIsLoading(false);
     }
