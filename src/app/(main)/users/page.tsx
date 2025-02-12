@@ -1,283 +1,77 @@
-'use client';
+"use client"
 
-import { Button } from '@/components/ui/button';
-import { useState } from 'react';
-import { DBConnection, fetchDBList } from '@/utils/database';
-import { DataTable, TableData } from '@/components/ui/data-table';
-import { PageContainer } from "@/components/layout/page-container"
-import { ResultAlert, type ResultData } from "@/components/ui/result-alert"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Plus } from "lucide-react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
+import { DataTable, TableData } from "@/components/ui/data-table"
+import { PageContainer } from "@/components/layout/page-container"
 
-interface ConnectionStatus {
-  success?: boolean;
-  message?: string;
-  error?: string;
-  dbInfo?: {
-    host?: string;
-    database?: string;
-  };
-}
-
-interface DBListResponse {
-  name: string;
-  [key: string]: string | number | null | object;
-}
-
-interface TableListResponse {
-  table_name: string;
-  table_schema: string;
+interface InitDBListItem {
+  index: number
+  name: string
+  description: string
 }
 
 export default function UsersPage() {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isDataLoading, setIsDataLoading] = useState(false);
-  const [result, setResult] = useState<ResultData>({ status: null, message: '' });
-  const [connectResult, setConnectResult] = useState<ResultData>({ status: null, message: '' });
-  const [data, setData] = useState<TableData[]>([]);
-  const [selectedDB, setSelectedDB] = useState<string>('');
-  const [tableData, setTableData] = useState<TableData[]>([]);
-  const [isTableLoading, setIsTableLoading] = useState(false);
+  const [data, setData] = useState<TableData[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // 데이터 로딩 함수
-  const loadData = async () => {
-    setIsDataLoading(true);
-    try {
-      const responseData = await fetchDBList({
-        retryCount: 3,
-        timeout: 5000
-      });
-      
-      if (responseData.success && Array.isArray(responseData.tables)) {
-        const formattedData: TableData[] = responseData.tables.map((table: DBListResponse, index: number) => ({
-          id: index + 1,
-          ...table
-        }));
-        setData(formattedData);
-      } else {
-        throw new Error(responseData.error || '데이터를 불러오는데 실패했습니다.');
+  useEffect(() => {
+    // 초기화 정보에서 DB 리스트 가져오기
+    const loadInitialData = () => {
+      try {
+        const dbInitInfo = JSON.parse(sessionStorage.getItem('dbInitInfo') || '{}')
+        if (dbInitInfo.dbList) {
+          // DBListItem 형식에 맞게 데이터 변환
+          const formattedData: TableData[] = dbInitInfo.dbList.map((item: InitDBListItem) => ({
+            id: item.index,
+            index: item.index,
+            name: item.name,
+            description: item.description
+          }))
+          setData(formattedData)
+        }
+      } catch (error) {
+        console.error('DB 리스트 초기화 실패:', error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setResult({
-        status: 'error',
-        message: '데이터 로딩 중 오류가 발생했습니다.',
-        error: error instanceof Error ? error.message : '알 수 없는 오류'
-      });
-      setData([]);
-    } finally {
-      setIsDataLoading(false);
     }
-  };
 
-  const handleDBConnection = async () => {
-    setIsLoading(true);
-    setData([]);
-    try {
-      const response = await DBConnection({
-        retryCount: 3,
-        timeout: 10000
-      });
-      setConnectionStatus(response);
-      
-      const dbInfoText = response.dbInfo 
-        ? `[${response.dbInfo.host} - ${response.dbInfo.database}]`
-        : '';
-
-      setResult({
-        status: response.success ? 'success' : 'error',
-        message: dbInfoText ? `${dbInfoText} > ${response.message}` : response.message,
-        error: response.error
-      });
-
-      if (response.success) {
-        await loadData();
-      }
-    } catch (error) {
-      setResult({
-        status: 'error',
-        message: 'DB 연결 중 오류가 발생했습니다.',
-        error: error instanceof Error ? error.message : '알 수 없는 오류'
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCreateNew = () => {
-    console.log('Create new item clicked');
-  };
+    loadInitialData()
+  }, [])
 
   const handleRowClick = (item: TableData) => {
-    console.log('Row clicked:', item);
-  };
+    console.log('Selected row:', item)
+  }
 
   const handleSelectionChange = (selectedItems: TableData[]) => {
-    console.log('Selection changed:', selectedItems);
-  };
+    console.log('Selection changed:', selectedItems)
+  }
 
   const handleSort = (key: string, direction: 'asc' | 'desc' | null) => {
-    console.log('Sort:', key, direction);
-  };
+    console.log('Sort changed:', { key, direction })
+  }
 
   const handlePageChange = (page: number) => {
-    console.log('Page changed:', page);
-  };
-
-  const handleConnectDB = async () => {
-    if (!selectedDB) return;
-
-    try {
-      const response = await fetch(`/api/db-connection?dbName=${selectedDB}`, {
-        method: 'GET',
-      });
-      
-      const result = await response.json();
-      
-      setConnectResult({
-        status: result.success ? 'success' : 'error',
-        message: result.message,
-        error: result.error
-      });
-
-      if (result.success) {
-        setIsTableLoading(true);
-        try {
-          const tableResponse = await fetch(`/api/db-query?dbName=${selectedDB}`);
-          const tableResult = await tableResponse.json();
-
-          if (tableResult.success) {
-            const formattedTableData: TableData[] = tableResult.tables.map((table: TableListResponse, index: number) => ({
-              id: index + 1,
-              ...table
-            }));
-            setTableData(formattedTableData);
-          } else {
-            throw new Error(tableResult.error);
-          }
-        } catch (error) {
-          setConnectResult({
-            status: 'error',
-            message: '테이블 목록 조회 중 오류가 발생했습니다.',
-            error: error instanceof Error ? error.message : '알 수 없는 오류'
-          });
-        } finally {
-          setIsTableLoading(false);
-        }
-      }
-    } catch (error) {
-      setConnectResult({
-        status: 'error',
-        message: 'DB 연결 중 오류가 발생했습니다.',
-        error: error instanceof Error ? error.message : '알 수 없는 오류'
-      });
-    }
-  };
+    console.log('Page changed:', page)
+  }
 
   return (
     <PageContainer path="users">
       <div className="flex flex-col gap-4">
-        <Button 
-          className="bg-green-500 hover:bg-green-600 w-full font-bold"
-          onClick={handleDBConnection} 
-          disabled={isLoading || isDataLoading}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          {isLoading ? "DB 연결 중..." : 
-           isDataLoading ? "데이터 로딩 중..." : 
-           "DB List Load"}
-        </Button>
-
-        <ResultAlert 
-          result={result}
-          successTitle="Service DB 연결 성공"
-          errorTitle="Service DB 연결 실패"
-        />
-
-        {connectionStatus.success && (
-          <div className="mt-6">
-            <Card>
-              <CardHeader className="py-4 bg-gray-50">
-                <CardTitle className="text-lg font-semibold text-gray-900">
-                  DB List
-                </CardTitle>
-              </CardHeader>
-              <Separator className="bg-gray-200" />
-              <CardContent className="py-6">
-                <DataTable
-                  tableName="DB List"
-                  data={data}
-                  isLoading={isDataLoading}
-                  onCreateNew={handleCreateNew}
-                  onRowClick={handleRowClick}
-                  onSelectionChange={handleSelectionChange}
-                  onSort={handleSort}
-                  onPageChange={handlePageChange}
-                />
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        <Card>
-          <CardHeader className="py-4 bg-gray-50">
-            <CardTitle className="text-lg font-semibold text-gray-900">Connect DB</CardTitle>
-          </CardHeader>
-          <Separator className="bg-gray-200" />
-          <CardContent className="py-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-2">
-                <label className="text-sm font-midium font-bold">DB Collection</label>
-                <Select value={selectedDB} onValueChange={setSelectedDB}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Connect DB" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {data.map((item: TableData) => (
-                      <SelectItem key={item.id} value={String(item.name)}>
-                        {String(item.name)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>              
-              <div className="space-y-2">
-                <label className="text-sm font-midium font-bold opacity-0">Action</label>
-                <Button 
-                  className="bg-green-500 hover:bg-green-600 w-full" 
-                  disabled={!selectedDB}
-                  onClick={handleConnectDB}
-                >
-                  Connect DB
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-          <Separator className="bg-gray-200" />
-        </Card>
-
-        <ResultAlert 
-          result={connectResult}
-          successTitle={`${selectedDB || 'DB'} 연결 성공`}
-          errorTitle={`${selectedDB || 'DB'} 연결 실패`}
-        />
-
         <Card>
           <CardHeader className="py-4 bg-gray-50">
             <CardTitle className="text-lg font-semibold text-gray-900">
-              DB Table List
+              DB List
             </CardTitle>
           </CardHeader>
           <Separator className="bg-gray-200" />
           <CardContent className="py-6">
             <DataTable
-              tableName="DB Table List"
-              data={tableData}
-              isLoading={isTableLoading}
-              onCreateNew={handleCreateNew}
+              tableName="DB List"
+              data={data}
+              isLoading={isLoading}
               onRowClick={handleRowClick}
               onSelectionChange={handleSelectionChange}
               onSort={handleSort}
@@ -287,5 +81,5 @@ export default function UsersPage() {
         </Card>
       </div>
     </PageContainer>
-  );
+  )
 } 
