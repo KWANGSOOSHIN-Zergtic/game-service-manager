@@ -8,6 +8,7 @@ interface DatabaseQueries {
     [key: string]: QueryInfo;
 }
 
+//규모가 커지면 별도로 분리하자 (Service, User, Admin, etc...)
 export const DB_QUERIES: DatabaseQueries = {
     //----------------------------------
     // 여기에 새로운 쿼리들을 추가할 수 있습니다
@@ -19,6 +20,10 @@ export const DB_QUERIES: DatabaseQueries = {
     // }
     //----------------------------------
 
+
+    //----------------------------------
+    // 서비스 쿼리
+    //----------------------------------
     SELECT_PUBLIC_TABLE_LIST: {
         name: 'SELECT_PUBLIC_TABLE_LIST',
         description: 'PostgreSQL의 information_schema에서 public 스키마의 테이블 목록을 조회',
@@ -63,4 +68,18 @@ export const DB_QUERIES: DatabaseQueries = {
         `
     },
 
+    //----------------------------------
+    // 유저 쿼리
+    //----------------------------------
+    SELECT_USER_INFO: {
+        name: 'SELECT_USER_LIST',
+        description: '유저 목록 조회',
+        query: `
+            SELECT
+                *
+            FROM user
+            WHERE id = $1
+            ORDER BY id ASC
+        `
+    }
 }; 

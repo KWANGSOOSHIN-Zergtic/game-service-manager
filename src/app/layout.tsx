@@ -36,6 +36,9 @@ if (typeof window === 'undefined') {
 export const metadata: Metadata = {
   title: "Football Service Manager",
   description: "Football Service Manager",
+  icons: {
+    icon: "/resource/ci/1tf.ico",
+  },  
 }
 
 export default function RootLayout({
