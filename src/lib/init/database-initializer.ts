@@ -2,6 +2,9 @@ import { InitializerFunction, InitializationResult } from './types';
 import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
 import { saveDBCollection, loadDBList } from '@/app/api/db-information/db-information';
 import { logger } from '@/lib/logger';
+import { Pool } from 'pg';
+
+const pools: { [key: string]: Pool } = {};
 
 export const databaseInitializer: InitializerFunction = {
     name: 'Database Initialization',
@@ -82,4 +85,48 @@ export const databaseInitializer: InitializerFunction = {
             logger.info('=== Database Collection Initialization End ===');
         }
     }
-}; 
+};
+
+export async function initializeDatabase(dbName: string, config: any) {
+  try {
+    if (pools[dbName]) {
+      await pools[dbName].end();
+    }
+
+    const pool = new Pool(config);
+    pools[dbName] = pool;
+
+    // Test connection
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+
+    logger.info(`Successfully connected to database: ${dbName}`);
+    return true;
+  } catch (error) {
+    logger.error(`Failed to initialize database ${dbName}:`, error);
+    if (pools[dbName]) {
+      delete pools[dbName];
+    }
+    throw error;
+  }
+}
+
+export async function getConnection(dbName: string): Promise<Pool> {
+  const pool = pools[dbName];
+  if (!pool) {
+    throw new Error(`No connection pool found for database: ${dbName}`);
+  }
+  return pool;
+}
+
+export async function closeAllConnections() {
+  for (const dbName in pools) {
+    try {
+      await pools[dbName].end();
+      delete pools[dbName];
+    } catch (error) {
+      logger.error(`Error closing connection for ${dbName}:`, error);
+    }
+  }
+} 

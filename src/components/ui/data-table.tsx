@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,6 +16,7 @@ import { Search, MoreVertical, Plus, ListOrdered } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
+import { Skeleton } from '@/components/ui/skeleton';
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -28,8 +31,8 @@ export interface TableColumn {
 
 // 동적 데이터 타입
 export interface TableData {
-  [key: string]: string | number | null | object;
-  id: string | number;
+  id: number;
+  [key: string]: string | number | boolean | null | object;
 }
 
 interface DataTableProps {
@@ -70,6 +73,13 @@ const formatValue = (value: string | number | null | object, type?: string) => {
     default:
       return value.toString();
   }
+};
+
+const formatCellValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
 };
 
 export function DataTable({ 
@@ -178,39 +188,16 @@ export function DataTable({
   };
 
   // 정렬 처리
-  const handleSort = (columnKey: string) => {
+  const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' | null = 'asc';
     
-    if (sortConfig.key === columnKey) {
+    if (sortConfig.key === key) {
       if (sortConfig.direction === 'asc') direction = 'desc';
       else if (sortConfig.direction === 'desc') direction = null;
     }
 
-    setSortConfig({ key: columnKey, direction });
-    onSort?.(columnKey, direction);
-    
-    if (!direction) {
-      setFilteredData([...data]);
-      return;
-    }
-
-    const sorted = [...filteredData].sort((a, b) => {
-      const aVal = a[columnKey];
-      const bVal = b[columnKey];
-
-      if (aVal === null) return direction === 'asc' ? 1 : -1;
-      if (bVal === null) return direction === 'asc' ? -1 : 1;
-
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return direction === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-
-      return direction === 'asc' 
-        ? aVal.toString().localeCompare(bVal.toString())
-        : bVal.toString().localeCompare(aVal.toString());
-    });
-
-    setFilteredData(sorted);
+    setSortConfig({ key, direction });
+    if (onSort) onSort(key, direction);
   };
 
   // 선택 처리
@@ -312,6 +299,65 @@ export function DataTable({
     count += 1;
     return count;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">{tableName}</h2>
+          {onCreateNew && (
+            <Button onClick={onCreateNew} className="bg-green-500 hover:bg-green-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Create New
+            </Button>
+          )}
+        </div>
+        <div className="border rounded-md">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {[1, 2, 3, 4].map((n) => (
+                  <TableHead key={n}>
+                    <Skeleton className="h-4 w-[100px]" />
+                  </TableHead>
+                ))}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[1, 2, 3].map((row) => (
+                <TableRow key={row}>
+                  {[1, 2, 3, 4].map((cell) => (
+                    <TableCell key={cell}>
+                      <Skeleton className="h-4 w-[100px]" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">{tableName}</h2>
+          {onCreateNew && (
+            <Button onClick={onCreateNew} className="bg-green-500 hover:bg-green-600">
+              <Plus className="w-4 h-4 mr-2" />
+              Create New
+            </Button>
+          )}
+        </div>
+        <div className="border rounded-md p-4 text-center text-gray-500">
+          No data available
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -426,16 +472,7 @@ export function DataTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
-                {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
-                <TableCell colSpan={filteredColumns.length || 1} className="text-center py-4">
-                  데이터를 불러오는 중...
-                </TableCell>
-                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
-              </TableRow>
-            ) : currentData.length === 0 ? (
+            {currentData.length === 0 ? (
               <TableRow>
                 <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
                 {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}

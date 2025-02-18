@@ -72,14 +72,21 @@ export const DB_QUERIES: DatabaseQueries = {
     // 유저 쿼리
     //----------------------------------
     SELECT_USER_INFO: {
-        name: 'SELECT_USER_LIST',
-        description: '유저 목록 조회',
+        name: 'SELECT_USER_INFO',
+        description: '사용자 정보 조회',
         query: `
             SELECT
-                *
-            FROM user
-            WHERE id = $1
-            ORDER BY id ASC
+                uid,
+                create_at,
+                update_at,
+                uuid,
+                login_id,
+                display_id,
+                nickname,
+                role,
+                nation_index
+            FROM employer
+            WHERE login_id = $1
         `
     }
 }; 
