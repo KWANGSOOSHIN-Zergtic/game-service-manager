@@ -190,7 +190,7 @@ export default function UsersPage() {
           <Card>
             <CardHeader className="py-4 bg-gray-50">
               <CardTitle className="text-lg font-semibold text-gray-900">
-                사용자 정보
+                User Information
               </CardTitle>
             </CardHeader>
             <Separator className="bg-gray-200" />
