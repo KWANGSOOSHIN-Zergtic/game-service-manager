@@ -97,7 +97,7 @@ export default function UsersPage() {
     }
   };
 
-  const handleCreateNew = () => {
+  const handleSelectRows = () => {
     console.log('Create new table')
   }
 
@@ -199,7 +199,7 @@ export default function UsersPage() {
                 tableName="User Information"
                 data={tableData}
                 isLoading={isSearching}
-                onCreateNew={handleCreateNew}
+                onSelectRows={handleSelectRows}
                 onRowClick={handleRowClick}
                 onSelectionChange={handleSelectionChange}
                 onSort={handleSort}

@@ -103,7 +103,7 @@ export default function DbListLoadPage() {
     }
   };
 
-  const handleCreateNew = () => {
+  const handleSelectRows = () => {
     console.log('Create new item clicked');
   };
 
@@ -162,7 +162,7 @@ export default function DbListLoadPage() {
                   tableName="DB List"
                   data={data}
                   isLoading={isDataLoading}
-                  onCreateNew={handleCreateNew}
+                  onSelectRows={handleSelectRows}
                   onRowClick={handleRowClick}
                   onSelectionChange={handleSelectionChange}
                   onSort={handleSort}
@@ -228,7 +228,7 @@ export default function DbListLoadPage() {
               tableName="DB Table List"
               data={tableData}
               isLoading={isTableLoading}
-              onCreateNew={handleCreateNew}
+              onSelectRows={handleSelectRows}
               onRowClick={handleRowClick}
               onSelectionChange={handleSelectionChange}
               onSort={handleSort}

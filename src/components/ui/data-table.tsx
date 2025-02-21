@@ -51,7 +51,7 @@ interface DataTableProps {
   onSort?: (key: string, direction: 'asc' | 'desc' | null) => void;
   onPageChange?: (page: number) => void;
   showActions?: boolean;
-  onCreateNew?: () => void;
+  onSelectRows?: () => void;
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
@@ -96,7 +96,7 @@ export function DataTable({
   onSort,
   onPageChange,
   showActions = true,
-  onCreateNew
+  onSelectRows
 }: DataTableProps) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -305,8 +305,8 @@ export function DataTable({
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">{tableName}</h2>
-          {onCreateNew && (
-            <Button onClick={onCreateNew} className="bg-green-500 hover:bg-green-600">
+          {onSelectRows && (
+            <Button onClick={onSelectRows} className="bg-green-500 hover:bg-green-600">
               <Plus className="w-4 h-4 mr-2" />
               Create New
             </Button>
@@ -345,8 +345,8 @@ export function DataTable({
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">{tableName}</h2>
-          {onCreateNew && (
-            <Button onClick={onCreateNew} className="bg-green-500 hover:bg-green-600">
+          {onSelectRows && (
+            <Button onClick={onSelectRows} className="bg-green-500 hover:bg-green-600">
               <Plus className="w-4 h-4 mr-2" />
               Create New
             </Button>
@@ -381,13 +381,13 @@ export function DataTable({
               />
             </div>
           </div>
-          {onCreateNew && (
+          {onSelectRows && (
             <Button 
               className="bg-purple-600 hover:bg-purple-700 text-white"
-              onClick={onCreateNew}
+              onClick={onSelectRows}
             >
               <Plus className="h-4 w-4 mr-2" />
-              Create New Row
+              Select Rows
             </Button>
           )}
         </div>
