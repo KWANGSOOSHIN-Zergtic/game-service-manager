@@ -4,6 +4,10 @@ import { DBConfig } from './types';
 import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
 import { saveDBCollection } from '@/app/api/db-information/db-information';
 
+declare global {
+    var __DB_MANAGER__: DBConnectionManager;
+}
+
 export interface DBConnectionConfig {
     [key: string]: DBConfig;
 }
@@ -24,20 +28,23 @@ interface PoolStatsMap {
 }
 
 export class DBConnectionManager {
-    private static instance: DBConnectionManager;
     private DB_CONNECT_ARRAY: { [key: string]: Pool } = {};
     private isInitialized: boolean = false;
     private isInitializing: boolean = false;
     private readonly MAX_RETRY_ATTEMPTS = 3;
     private readonly RETRY_DELAY_MS = 5000;
 
-    private constructor() {}
+    private constructor() {
+        // 싱글톤 인스턴스 생성 시 로깅
+        logger.info('[DB Manager] New instance created');
+    }
 
     public static getInstance(): DBConnectionManager {
-        if (!this.instance) {
-            this.instance = new DBConnectionManager();
+        if (!global.__DB_MANAGER__) {
+            global.__DB_MANAGER__ = new DBConnectionManager();
+            logger.info('[DB Manager] Global instance initialized');
         }
-        return this.instance;
+        return global.__DB_MANAGER__;
     }
 
     private async delay(ms: number): Promise<void> {
@@ -248,64 +255,58 @@ export class DBConnectionManager {
 
     // 3. 전체 초기화 프로세스
     public async initialize(): Promise<boolean> {
-        if (this.isInitialized) {
-            logger.info('[DB Manager] 이미 초기화되어 있음');
+        // 이미 초기화된 경우 즉시 반환
+        if (this.isInitialized && Object.keys(this.DB_CONNECT_ARRAY).length > 0) {
+            logger.info('[DB Manager] Already initialized');
             return true;
         }
 
+        // 초기화 중인 경우 대기
         if (this.isInitializing) {
-            logger.info('[DB Manager] 초기화가 진행 중');
+            logger.info('[DB Manager] Initialization in progress');
             return false;
         }
 
         this.isInitializing = true;
         let retryCount = 0;
 
-        logger.info('=== Database Connection Pool Initialization Start ===');
-        
-        while (retryCount < this.MAX_RETRY_ATTEMPTS) {
-            try {
-                // 1단계: DB 정보 업데이트
-                const updated = await this.updateDBInformation();
-                if (!updated) {
-                    throw new Error('DB 정보 업데이트 실패');
-                }
-                
-                // 2단계: 각 DB별 연결 풀 초기화
-                for (const [dbName, config] of Object.entries(DB_COLLECTION)) {
-                    await this.initializePool(dbName, config);
-                }
-                
-                // 3단계: 연결 상태 로깅
-                this.logDBDetails();
-                
-                this.isInitialized = true;
-                this.isInitializing = false;
-                
-                logger.info('[DB Manager] 모든 DB 연결 풀 초기화 완료');
-                return true;
+        try {
+            while (retryCount < this.MAX_RETRY_ATTEMPTS) {
+                try {
+                    const updated = await this.updateDBInformation();
+                    if (!updated) {
+                        throw new Error('DB 정보 업데이트 실패');
+                    }
 
-            } catch (error) {
-                retryCount++;
-                logger.error(`[DB Manager] 초기화 시도 ${retryCount} 실패:`, error);
+                    for (const [dbName, config] of Object.entries(DB_COLLECTION)) {
+                        await this.initializePool(dbName, config);
+                    }
 
-                if (retryCount === this.MAX_RETRY_ATTEMPTS) {
+                    this.logDBDetails();
+                    this.isInitialized = true;
                     this.isInitializing = false;
-                    logger.error('[DB Manager] 모든 초기화 시도 실패');
-                    return false;
+                    return true;
+                } catch (error) {
+                    retryCount++;
+                    logger.error(`[DB Manager] 초기화 시도 ${retryCount} 실패:`, error);
+                    if (retryCount === this.MAX_RETRY_ATTEMPTS) {
+                        throw error;
+                    }
+                    await this.delay(this.RETRY_DELAY_MS);
                 }
-
-                await this.delay(this.RETRY_DELAY_MS);
             }
+            return false;
+        } catch (error) {
+            this.isInitializing = false;
+            throw error;
         }
-
-        return false;
     }
 
     public getPool(dbName: string): Pool {
         const pool = this.DB_CONNECT_ARRAY[dbName];
         if (!pool) {
-            throw new Error(`[DB Manager] DB ${dbName}에 대한 연결 풀을 찾을 수 없음`);
+            logger.error(`[DB Manager] DB ${dbName}에 대한 연결 풀을 찾을 수 없음`);
+            throw new Error(`데이터베이스 ${dbName}에 대한 연결을 찾을 수 없습니다.`);
         }
         return pool;
     }
@@ -328,7 +329,7 @@ export class DBConnectionManager {
     }
 
     public isDBInitialized(): boolean {
-        return this.isInitialized;
+        return this.isInitialized && Object.keys(this.DB_CONNECT_ARRAY).length > 0;
     }
 
     public reset(): void {

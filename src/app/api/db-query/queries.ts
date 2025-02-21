@@ -86,7 +86,12 @@ export const DB_QUERIES: DatabaseQueries = {
                 role,
                 nation_index
             FROM employer
-            WHERE login_id = $1
+            WHERE 
+                CASE 
+                    WHEN $1 ~ '^[0-9]+$' THEN uid = CAST($1 AS BIGINT)
+                    WHEN $1 ~ '^[0-9a-fA-F-]+$' THEN uuid = CAST($1 AS UUID)
+                    ELSE login_id = $1
+                END
         `
     }
 }; 
