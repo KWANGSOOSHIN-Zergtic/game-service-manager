@@ -1,54 +1,34 @@
-import { DataSource } from 'typeorm';
 import { NextResponse } from 'next/server';
 import { DB_QUERIES } from '../db-query/queries';
-import { DB_COLLECTION } from '../db-information/db-collection';
+import { getConnection } from '@/lib/init/database-initializer';
+import { logger } from '@/lib/logger';
 
 const getDBList = async () => {
-    // football_service 데이터베이스를 기본으로 사용
-    const dbConfig = DB_COLLECTION['football_service'];
-    if (!dbConfig) {
-        return {
-            success: false,
-            error: 'football_service DB 설정을 찾을 수 없습니다.'
-        };
-    }
-
-    const serviceDBConfig = dbConfig.config?.service_db;
-    if (!serviceDBConfig) {
-        return {
-            success: false,
-            error: 'DB 인증 정보가 누락되었습니다.'
-        };
-    }
-
-    const AppDataSource = new DataSource({
-        type: 'postgres',
-        host: dbConfig.host,
-        port: Number(dbConfig.port || '5432'),
-        username: serviceDBConfig.user,
-        password: serviceDBConfig.password,
-        database: dbConfig.data_base,
-        synchronize: false,
-        logging: true,
-    });
-
     try {
-        await AppDataSource.initialize();
+        // football_service DB에서 연결 풀 가져오기
+        const pool = await getConnection('football_service');
+        logger.info('[DB List] football_service 연결 풀에서 연결 획득 성공');
         
-        // 쿼리 상수 사용
-        const tables = await AppDataSource.query(DB_QUERIES.SELECT_DB_LIST.query);
+        // DB 목록 조회
+        logger.info('[DB List] DB 목록 조회 시작');
+        const result = await pool.query(DB_QUERIES.SELECT_DB_LIST.query);
+        logger.info('[DB List] DB 목록 조회 완료');
 
-        await AppDataSource.destroy();
-        return { success: true, tables };
+        return { 
+            success: true, 
+            tables: result.rows 
+        };
     } catch (error) {
-        console.error('Error in getDBList:', error);
+        logger.error('[DB List] DB 목록 조회 실패:', error);
         let errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
         
-        // DB 연결 실패 시 상세 정보 추가
-        if (error instanceof Error && error.message.includes('connect ETIMEDOUT')) {
-            errorMessage = `DB 연결 시간 초과. 호스트: ${dbConfig.host}, 포트: ${dbConfig.port}`;
-        } else if (error instanceof Error && error.message.includes('password authentication failed')) {
-            errorMessage = 'DB 인증 실패. 사용자 이름과 비밀번호를 확인해주세요.';
+        // 에러 메시지 상세화
+        if (error instanceof Error) {
+            if (error.message.includes('connect ETIMEDOUT')) {
+                errorMessage = 'DB 연결 시간 초과. 네트워크 연결을 확인해주세요.';
+            } else if (error.message.includes('password authentication failed')) {
+                errorMessage = 'DB 인증 실패. 사용자 이름과 비밀번호를 확인해주세요.';
+            }
         }
         
         return {

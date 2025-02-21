@@ -44,11 +44,41 @@ interface DBListResult {
     dbList?: DBListInfo[];
 }
 
+// 서버 사이드에서만 실행되는 DataSource 생성 함수
+const createDataSource = (config: any) => {
+    if (typeof window !== 'undefined') {
+        throw new Error('This function can only be called on the server side');
+    }
+
+    return new DataSource({
+        type: 'postgres',
+        ...config,
+        synchronize: false,
+        logging: true,
+        entities: [],
+        migrations: [],
+        subscribers: [],
+        cache: false,
+        extra: {
+            max: 5,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000
+        }
+    });
+};
+
 // DB 리스트 조회 함수
 export const loadDBList = async (): Promise<DBListResult> => {
+    if (typeof window !== 'undefined') {
+        return {
+            success: false,
+            message: 'This function can only be called on the server side',
+            error: 'Client-side execution is not allowed'
+        };
+    }
+
     console.log('\n========== DB 리스트 조회 시작 ==========');
     
-    // football_service 데이터베이스를 기본으로 사용
     const dbConfig = DB_COLLECTION['football_service'];
     if (!dbConfig) {
         console.error('football_service DB 설정을 찾을 수 없음');
@@ -59,22 +89,19 @@ export const loadDBList = async (): Promise<DBListResult> => {
         };
     }
 
-    const AppDataSource = new DataSource({
-        type: 'postgres',
-        host: dbConfig.host,
-        port: Number(dbConfig.port || '5432'),
-        username: dbConfig.config.service_db.user,
-        password: dbConfig.config.service_db.password,
-        database: dbConfig.data_base,
-        synchronize: false,
-        logging: true,
-    });
-
+    let AppDataSource;
     try {
+        AppDataSource = createDataSource({
+            host: dbConfig.host,
+            port: Number(dbConfig.port || '5432'),
+            username: dbConfig.config.service_db.user,
+            password: dbConfig.config.service_db.password,
+            database: dbConfig.data_base,
+        });
+
         await AppDataSource.initialize();
         console.log('1. DB 연결 성공');
         
-        // DB 리스트 조회
         const dbList = await AppDataSource.query(DB_QUERIES.SELECT_DB_LIST.query);
         console.log('2. DB 리스트 조회 결과:', dbList);
         
@@ -88,6 +115,9 @@ export const loadDBList = async (): Promise<DBListResult> => {
             dbList
         };
     } catch (error) {
+        if (AppDataSource?.isInitialized) {
+            await AppDataSource.destroy();
+        }
         console.error('DB 리스트 조회 실패:', error);
         return {
             success: false,
@@ -99,20 +129,26 @@ export const loadDBList = async (): Promise<DBListResult> => {
 
 // DB 정보를 가져오고 저장하는 함수
 export const saveDBCollection = async (): Promise<CollectionResult> => {
+    if (typeof window !== 'undefined') {
+        return {
+            success: false,
+            message: 'This function can only be called on the server side',
+            error: 'Client-side execution is not allowed'
+        };
+    }
+
     console.log('\n========== DB Collection 저장 시작 ==========');
     
-    const AppDataSource = new DataSource({
-        type: 'postgres',
-        host: process.env.DEV_DB_HOST,
-        port: parseInt(process.env.DB_PORT || '5432'),
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        synchronize: false,
-        logging: true,
-    });
-
+    let AppDataSource;
     try {
+        AppDataSource = createDataSource({
+            host: process.env.DEV_DB_HOST,
+            port: parseInt(process.env.DB_PORT || '5432'),
+            username: process.env.DB_USERNAME,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+        });
+
         console.log('1. DB 연결 정보:', {
             host: process.env.DEV_DB_HOST,
             port: process.env.DB_PORT,
@@ -122,13 +158,9 @@ export const saveDBCollection = async (): Promise<CollectionResult> => {
         await AppDataSource.initialize();
         console.log('2. DB 연결 성공');
         
-        // DB 정보 조회
-        console.log('3. DB 정보 조회 쿼리:', DB_QUERIES.SELECT_SERVICE_DB_COLLECTION.query);
         const dbConfigs = await AppDataSource.query(DB_QUERIES.SELECT_SERVICE_DB_COLLECTION.query);
         console.log('4. DB 정보 조회 결과:', JSON.stringify(dbConfigs, null, 2));
         
-        // DB 정보를 TypeScript 변수로 저장
-        console.log('5. DB Collection 업데이트 시작');
         updateDBCollection(dbConfigs);
         
         await AppDataSource.destroy();
@@ -141,6 +173,9 @@ export const saveDBCollection = async (): Promise<CollectionResult> => {
             tables: dbConfigs
         };
     } catch (error) {
+        if (AppDataSource?.isInitialized) {
+            await AppDataSource.destroy();
+        }
         console.error('DB Collection 저장 실패:', error);
         return {
             success: false,

@@ -1,132 +1,62 @@
-import { InitializerFunction, InitializationResult } from './types';
-import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
-import { saveDBCollection, loadDBList } from '@/app/api/db-information/db-information';
+import { InitializerFunction } from './types';
+import { DBConnectionManager } from '@/lib/db/db-connection-manager';
 import { logger } from '@/lib/logger';
-import { Pool } from 'pg';
 
-const pools: { [key: string]: Pool } = {};
+// 서버 시작 시 자동으로 실행되는 초기화 함수
+console.log('\n=== 서버 시작: DB 초기화 프로세스 시작 ===');
+console.log('시작 시간:', new Date().toLocaleString(), '\n');
 
 export const databaseInitializer: InitializerFunction = {
     name: 'Database Initialization',
     priority: 1,
-    initialize: async (): Promise<InitializationResult> => {
+    initialize: async () => {
         try {
-            logger.info('=== Database Collection Initialization Start ===');
+            // DB 연결 매니저 인스턴스 가져오기
+            const dbManager = DBConnectionManager.getInstance();
             
-            // DB Collection 초기화를 먼저 수행
-            logger.info('\n[DB Init] Initializing DB Collection...');
-            logger.info('Current DB Collection size:', Object.keys(DB_COLLECTION).length);
+            // DB 초기화 수행
+            const initialized = await dbManager.initialize();
             
-            // DB Collection이 비어있으면 먼저 초기화
-            if (Object.keys(DB_COLLECTION).length === 0) {
-                logger.info('[DB Init] Collection is empty, starting database load process...');
-                const result = await saveDBCollection();
+            if (!initialized) {
+                const errorMsg = 'Database initialization failed';
+                logger.error(`[Server Startup] ${errorMsg}`);
+                console.error('\n=== 서버 시작: DB 초기화 실패 ===');
+                console.error('실패 시간:', new Date().toLocaleString());
+                console.error('원인: DB 초기화 프로세스 실패');
+                console.error('===============================\n');
                 
-                if (!result.success) {
-                    logger.error('[DB Init] Failed to save DB Collection:', result.error || result.message);
-                    throw new Error(result.error || result.message);
-                }
-
-                logger.info('[DB Init] Database load completed successfully');
-                logger.info('[DB Init] Loaded databases:', result.tables?.length || 0);
-                if (result.tables && result.tables.length > 0) {
-                    logger.info('[DB Init] Database configurations:');
-                    result.tables.forEach(db => {
-                        logger.info(`  - [${db.index}] ${db.name} (${db.type}): ${db.host}:${db.port}`);
-                    });
-                }
+                return {
+                    success: false,
+                    message: errorMsg
+                };
             }
-
-            // DB Collection이 초기화된 후 DB 리스트 조회
-            logger.info('[DB Init] Loading database list...');
-            const dbListResult = await loadDBList();
             
-            if (!dbListResult.success) {
-                logger.error('[DB Init] Failed to load DB list:', dbListResult.error);
-                throw new Error(dbListResult.error || dbListResult.message);
-            }
-
-            logger.info('[DB Init] DB List loaded successfully');
-            logger.info('[DB Init] Found databases:', dbListResult.dbList?.length || 0);
-            if (dbListResult.dbList && dbListResult.dbList.length > 0) {
-                logger.info('[DB Init] Database list:');
-                dbListResult.dbList.forEach(db => {
-                    logger.info(`  - [${db.index}] ${db.name}: ${db.description}`);
-                });
-            }
-
-            logger.info('[DB Init] Verifying final DB Collection state...');
-            const finalCollectionSize = Object.keys(DB_COLLECTION).length;
-            logger.info('[DB Init] Final DB Collection size:', finalCollectionSize);
-            
-            if (finalCollectionSize === 0) {
-                logger.warn('[DB Init] Warning: DB Collection is still empty after initialization');
-                throw new Error('DB Collection initialization failed: Collection is empty');
-            }
-
             return {
                 success: true,
-                message: `Database initialization completed successfully with ${finalCollectionSize} databases`
+                message: 'Database initialization completed successfully'
             };
-
         } catch (error) {
-            logger.error('=== Database Collection Initialization Failed ===');
-            logger.error('Error details:', error instanceof Error ? error.message : error);
-            logger.error('Current DB Collection state:', {
-                size: Object.keys(DB_COLLECTION).length,
-                isEmpty: Object.keys(DB_COLLECTION).length === 0
-            });
+            const errorMsg = error instanceof Error ? error.message : 'Unknown database initialization error';
+            logger.error('[Server Startup] Database initialization error:', error);
+            console.error('\n=== 서버 시작: DB 초기화 중 오류 발생 ===');
+            console.error('오류 시간:', new Date().toLocaleString());
+            console.error('오류 내용:', errorMsg);
+            console.error('====================================\n');
+            
             return {
                 success: false,
-                message: 'Failed to initialize database collection',
-                error: error as Error
+                message: errorMsg,
+                error: error instanceof Error ? error : new Error(errorMsg)
             };
-        } finally {
-            logger.info('=== Database Collection Initialization End ===');
         }
     }
 };
 
-export async function initializeDatabase(dbName: string, config: any) {
-  try {
-    if (pools[dbName]) {
-      await pools[dbName].end();
-    }
-
-    const pool = new Pool(config);
-    pools[dbName] = pool;
-
-    // Test connection
-    const client = await pool.connect();
-    await client.query('SELECT NOW()');
-    client.release();
-
-    logger.info(`Successfully connected to database: ${dbName}`);
-    return true;
-  } catch (error) {
-    logger.error(`Failed to initialize database ${dbName}:`, error);
-    if (pools[dbName]) {
-      delete pools[dbName];
-    }
-    throw error;
-  }
-}
-
-export async function getConnection(dbName: string): Promise<Pool> {
-  const pool = pools[dbName];
-  if (!pool) {
-    throw new Error(`No connection pool found for database: ${dbName}`);
-  }
-  return pool;
+// DB 연결 관련 헬퍼 함수들
+export async function getConnection(dbName: string) {
+    return DBConnectionManager.getInstance().getPool(dbName);
 }
 
 export async function closeAllConnections() {
-  for (const dbName in pools) {
-    try {
-      await pools[dbName].end();
-      delete pools[dbName];
-    } catch (error) {
-      logger.error(`Error closing connection for ${dbName}:`, error);
-    }
-  }
+    await DBConnectionManager.getInstance().closeAllPools();
 } 
