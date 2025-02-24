@@ -325,16 +325,16 @@ export default function UsersPage() {
                         <div className="flex items-center gap-2">
                           <Tabs defaultValue="info" className="flex-1">
                             <div className="flex items-center gap-2">
-                              <TabsList className="flex-1 bg-purple-100 p-0 h-8 rounded-lg">
+                              <TabsList className="flex-1 bg-purple-100 p-0 h-8 rounded-none border border-purple-200">
                                 <TabsTrigger 
                                   value="info" 
-                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white rounded-lg h-8 data-[state=active]:rounded-lg font-bold text-sm"
+                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm border-r border-purple-200"
                                 >
                                   Multi Play
                                 </TabsTrigger>
                                 <TabsTrigger 
                                   value="detail" 
-                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white rounded-lg h-8 data-[state=active]:rounded-lg font-bold text-sm"
+                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm"
                                 >
                                   Story
                                 </TabsTrigger>
@@ -342,21 +342,21 @@ export default function UsersPage() {
                               <Button
                                 variant="default"
                                 size="sm"
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold"
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs h-6 px-2"
                               >
                                 Filter
                               </Button>
                               <Button
                                 variant="default"
                                 size="sm"
-                                className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                                className="bg-green-500 hover:bg-green-600 text-white font-bold text-xs h-6 px-2"
                               >
                                 PopUp
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                className="bg-red-500 hover:bg-red-600 text-white font-bold"
+                                className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs h-6 px-2"
                                 onClick={() => {
                                   const updatedUsers = selectedUsers.filter(u => u.user.uid !== userInfo.user.uid);
                                   setSelectedUsers(updatedUsers);
@@ -366,108 +366,108 @@ export default function UsersPage() {
                                 Remove
                               </Button>
                             </div>
-                            <TabsContent value="info">
-                              <Tabs defaultValue="baller" className="w-full mt-2">
-                                <TabsList className="w-full bg-purple-50 p-0 h-7 rounded-lg">
+                            <TabsContent value="info" className="mt-0">
+                              <Tabs defaultValue="baller" className="w-full">
+                                <TabsList className="w-full bg-purple-100 p-0 h-7 rounded-none border border-purple-200 border-t-0">
                                   <TabsTrigger 
                                     value="currency" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     CURRENCY
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="baller" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     BALLER
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="pub" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     PUB
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="record" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     RECORD
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="shop" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     SHOP
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="club" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     CLUB
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="season-pass" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     SEASON PASS
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="menu-tab" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs"
                                   >
                                     MENU TAB
                                   </TabsTrigger>                                    
                                 </TabsList>
                               </Tabs>
                             </TabsContent>
-                            <TabsContent value="detail">
-                              <Tabs defaultValue="baller" className="w-full mt-2">
-                                <TabsList className="w-full bg-purple-50 p-0 h-7 rounded-lg">
+                            <TabsContent value="detail" className="mt-0">
+                              <Tabs defaultValue="baller" className="w-full">
+                                <TabsList className="w-full bg-purple-100 p-0 h-7 rounded-none border border-purple-200 border-t-0">
                                   <TabsTrigger 
                                     value="currency" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     CURRENCY
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="baller" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     BALLER
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="pub" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     PUB
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="record" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     RECORD
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="shop" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     SHOP
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="club" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     CLUB
-                                  </TabsTrigger>                                  
+                                  </TabsTrigger>
                                   <TabsTrigger 
                                     value="season-pass" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
                                   >
                                     SEASON PASS
                                   </TabsTrigger>
                                   <TabsTrigger 
                                     value="menu-tab" 
-                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs"
                                   >
                                     MENU TAB
                                   </TabsTrigger>
