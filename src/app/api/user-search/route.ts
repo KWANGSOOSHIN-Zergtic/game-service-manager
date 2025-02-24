@@ -52,14 +52,39 @@ export async function GET(request: NextRequest) {
             dbManager.getPool(dbName);
             logger.info('[User Search] DB 연결 풀 획득 성공:', { dbName });
             
-            logger.info('[User Search] 쿼리 실행:', { 
-                query: DB_QUERIES.SELECT_USER_INFO.query,
-                userId,
-                userIdType: userId.match(/^[0-9]+$/) ? 'uid' : 
-                          userId.match(/^[0-9a-fA-F-]+$/) ? 'uuid' : 'login_id'
+            const userIdType = userId.match(/^[0-9]+$/) ? 'uid' : 
+                             userId.match(/^[0-9a-fA-F-]+$/) ? 'uuid' : 'login_id';
+
+            // 쿼리 실행 정보 로깅
+            logger.info('[User Search] 쿼리 실행 정보:', {
+                database: dbName,
+                searchType: userIdType,
+                searchValue: userId
             });
+
+            // 실제 쿼리 로깅 (포맷팅된 형태)
+            const formattedQuery = DB_QUERIES.SELECT_USER_INFO.query
+                .split('\n')
+                .map(line => line.trim())
+                .filter(line => line)
+                .join('\n    ');
+            
+            logger.info('[User Search] 실행 쿼리:\n' + 
+                '----------------------------------------\n' + 
+                `    ${formattedQuery}\n` +
+                '----------------------------------------\n' +
+                `파라미터: [${userId}]`
+            );
+
+            const startTime = Date.now();
             const result = await dbManager.withClient(dbName, async (client) => {
                 return await client.query(DB_QUERIES.SELECT_USER_INFO.query, [userId]);
+            });
+
+            // 쿼리 실행 결과 로깅
+            logger.info('[User Search] 쿼리 실행 결과:', {
+                rowCount: result.rows.length,
+                executionTime: `${Date.now() - startTime}ms`
             });
 
             if (result.rows.length === 0) {
