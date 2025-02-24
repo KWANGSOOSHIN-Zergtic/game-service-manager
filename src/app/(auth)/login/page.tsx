@@ -25,9 +25,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     const checkAutoLogin = async () => {
-      const success = await autoLogin();
-      if (success) {
-        router.push('/');
+      try {
+        const success = await autoLogin();
+        if (success) {
+          router.replace('/');
+        }
+      } catch (error) {
+        console.error('자동 로그인 실패:', error);
       }
     };
     
@@ -36,6 +40,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+    
     setIsLoading(true);
     setError(null);
 
@@ -59,13 +65,10 @@ export default function LoginPage() {
 
       toast.success('환영합니다!', {
         id: loadingToast,
-        icon: '👋',
+        icon: '��',
       });
 
-      // 메인 페이지로 리다이렉트
-      setTimeout(() => {
-        router.push('/');
-      }, 1000);
+      router.replace('/');
     } catch (err) {
       console.error('로그인 에러:', err);
       toast.error('로그인 처리 중 오류가 발생했습니다.', {

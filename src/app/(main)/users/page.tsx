@@ -161,7 +161,7 @@ export default function UsersPage() {
                 <User className="absolute left-2 top-2.5 h-4 w-4 text-purple-400" />
                 <Input
                   type="text"
-                  placeholder="Search User ID here..."
+                  placeholder="Search User Infomation [ uid / login_id / display_id / nickname ]..."
                   className="pl-8 w-full bg-purple-50/50 border-purple-100 text-purple-900 placeholder:text-purple-400"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
