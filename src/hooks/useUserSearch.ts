@@ -15,13 +15,17 @@ interface UserInfo {
 
 interface SearchUserResponse {
   success: boolean;
-  user: UserInfo | null;
+  users: UserInfo[] | null;
+  isExactMatch?: boolean;
+  message?: string;
 }
 
-interface UseUserSearchReturn extends DBQueryBase {
-  userInfo: UserInfo | null;
-  searchUser: (dbName: string, userId: string) => Promise<SearchUserResponse>;
+interface UseUserSearchReturn {
+  queryResult: DBQueryBase['queryResult'];
+  userInfoList: UserInfo[];
   isLoading: boolean;
+  isExactMatch: boolean;
+  searchUser: (dbName: string, userId: string) => Promise<SearchUserResponse>;
 }
 
 export const useUserSearch = (): UseUserSearchReturn => {
@@ -29,11 +33,12 @@ export const useUserSearch = (): UseUserSearchReturn => {
     status: null,
     message: '',
   });
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [userInfoList, setUserInfoList] = useState<UserInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExactMatch, setIsExactMatch] = useState(false);
 
   const searchUser = async (dbName: string, userId: string): Promise<SearchUserResponse> => {
-    if (!dbName || !userId) return { success: false, user: null };
+    if (!dbName || !userId) return { success: false, users: null };
 
     setIsLoading(true);
     try {
@@ -41,13 +46,15 @@ export const useUserSearch = (): UseUserSearchReturn => {
       const result = await response.json();
 
       if (result.success) {
-        const user = result.user;
-        setUserInfo(user);
+        const users = result.users;
+        setUserInfoList(users);
+        setIsExactMatch(result.isExactMatch);
         setQueryResult({
           status: 'success',
-          message: '사용자 정보를 성공적으로 조회했습니다.',
+          message: result.message,
+          type: result.isExactMatch ? 'default' : 'warning'
         });
-        return { success: true, user };
+        return { success: true, users, isExactMatch: result.isExactMatch };
       } else {
         throw new Error(result.error);
       }
@@ -57,8 +64,9 @@ export const useUserSearch = (): UseUserSearchReturn => {
         message: '사용자 정보 조회 중 오류가 발생했습니다.',
         error: error instanceof Error ? error.message : '알 수 없는 오류'
       });
-      setUserInfo(null);
-      return { success: false, user: null };
+      setUserInfoList([]);
+      setIsExactMatch(false);
+      return { success: false, users: null };
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +74,9 @@ export const useUserSearch = (): UseUserSearchReturn => {
 
   return {
     queryResult,
-    userInfo,
+    userInfoList,
     isLoading,
+    isExactMatch,
     searchUser,
   };
 }; 

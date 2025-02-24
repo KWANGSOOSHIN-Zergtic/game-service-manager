@@ -100,10 +100,10 @@ export default function UsersPage() {
 
     try {
       setTableData([]); // 검색 시도 시 기존 결과 초기화
-      const { success, user } = await searchUser(selectedDB, searchQuery);
+      const { success, users } = await searchUser(selectedDB, searchQuery);
       
-      if (success && user) {
-        const formattedData = [{
+      if (success && users) {
+        const formattedData = users.map(user => ({
           id: Number(user.uid),
           uid: user.uid,
           create_at: user.create_at,
@@ -114,7 +114,7 @@ export default function UsersPage() {
           nickname: user.nickname,
           role: user.role,
           nation_index: user.nation_index
-        }];
+        }));
         setTableData(formattedData);
       }
     } catch (error) {

@@ -67,15 +67,32 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({
                     success: false,
                     error: '사용자를 찾을 수 없습니다.',
-                    user: null
+                    users: []
                 });
             }
 
-            logger.info('[User Search] 사용자 검색 성공:', { userId });
+            // exact_match 결과만 있는지 확인
+            const hasExactMatch = result.rows.some(row => 
+                row.uid.toString() === userId || 
+                row.uuid === userId || 
+                row.login_id === userId || 
+                row.display_id === userId || 
+                row.nickname === userId
+            );
+
+            logger.info('[User Search] 사용자 검색 성공:', { 
+                userId, 
+                count: result.rows.length,
+                isExactMatch: hasExactMatch 
+            });
+
             return NextResponse.json({
                 success: true,
-                message: '사용자를 찾았습니다.',
-                user: result.rows[0]
+                isExactMatch: hasExactMatch,
+                message: hasExactMatch 
+                    ? `검색에 일치하는 ${result.rows.length}명의 사용자를 찾았습니다.`
+                    : `일치하는 검색어가 존재하지 않아 유사 검색어를 검색하였습니다\n검색에 일치하는 ${result.rows.length}명의 사용자를 찾았습니다.`,
+                users: result.rows
             });
         } catch (error) {
             if (error instanceof Error && error.message.includes('연결을 찾을 수 없습니다')) {

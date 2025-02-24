@@ -2,17 +2,22 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { DB_COLLECTION } from './db-collection';
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export async function GET() {
     try {
-        // 헤더에서 토큰 확인
-        const headersList = await headers();
-        const token = headersList.get('Authorization')?.replace('Bearer ', '');
+        // 개발 환경이 아닐 때만 토큰 검증
+        if (!isDevelopment) {
+            // 헤더에서 토큰 확인
+            const headersList = await headers();
+            const token = headersList.get('Authorization')?.replace('Bearer ', '');
 
-        if (!token) {
-            return NextResponse.json({
-                success: false,
-                message: '인증 토큰이 필요합니다.'
-            }, { status: 401 });
+            if (!token) {
+                return NextResponse.json({
+                    success: false,
+                    message: '인증 토큰이 필요합니다.'
+                }, { status: 401 });
+            }
         }
 
         // DB Collection이 비어있는지 확인

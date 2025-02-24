@@ -2,6 +2,7 @@ export interface DBQueryResult {
   status: 'success' | 'error' | null;
   message: string;
   error?: string;
+  type?: 'default' | 'warning' | 'error';
 }
 
 export interface DBQueryBase {
