@@ -383,7 +383,7 @@ export function DataTable({
           </div>
           {onSelectRows && (
             <Button 
-              className="bg-purple-600 hover:bg-purple-700 text-white"
+              className="bg-purple-500 hover:bg-purple-600 text-white"
               onClick={onSelectRows}
             >
               <Plus className="h-4 w-4 mr-2" />

@@ -66,7 +66,7 @@ export default function AccountSettingPage() {
 
           {/* Save Button */}
           <div className="flex justify-end pt-6 border-t">
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white">
+            <Button className="bg-purple-500 hover:bg-purple-600 text-white">
               변경사항 저장
             </Button>
           </div>

@@ -12,6 +12,12 @@ import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUserSearch } from "@/hooks/useUserSearch"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface InitDBListInfo {
   index: number
@@ -244,15 +250,77 @@ export default function UsersPage() {
           </CardHeader>
           <Separator className="bg-gray-200" />
           <CardContent className="py-6">
-            <DataTable
-              tableName="Select Users"
-              data={selectedUsers}
-              isLoading={false}
-              onRowClick={handleRowClick}
-              onSelectionChange={handleSelectedUsersChange}
-              onSort={handleSort}
-              onPageChange={handlePageChange}
-            />
+            <Accordion type="multiple" className="w-full space-y-2">
+              {selectedUsers.map((user, index) => (
+                <AccordionItem 
+                  key={String(user.uid)} 
+                  value={String(user.uid)}
+                  className="border rounded-none first:rounded-t-lg last:rounded-b-lg bg-white overflow-hidden"
+                >
+                  <AccordionTrigger 
+                    className="bg-purple-500 hover:bg-purple-600 px-4 py-3 [&[data-state=open]]:bg-purple-700 transition-colors [&>svg]:text-white [&>svg]:stroke-[3] [&>svg]:h-4 [&>svg]:w-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-bold text-white">#{index + 1}</span>
+                      <span className="text-sm font-bold text-white">{String(user.nickname || user.login_id)}</span>
+                      <span className="text-sm font-bold text-white/80">({String(user.uid)})</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="border-t">
+                    <div className="space-y-2 p-4 bg-gray-50/50">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">UID</p>
+                          <p className="text-sm">{String(user.uid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">UUID</p>
+                          <p className="text-sm">{String(user.uuid)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Login ID</p>
+                          <p className="text-sm">{String(user.login_id)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Display ID</p>
+                          <p className="text-sm">{String(user.display_id)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Nickname</p>
+                          <p className="text-sm">{String(user.nickname)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Role</p>
+                          <p className="text-sm">{String(user.role)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Nation Index</p>
+                          <p className="text-sm">{String(user.nation_index)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Created At</p>
+                          <p className="text-sm">{String(user.create_at)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Updated At</p>
+                          <p className="text-sm">{String(user.update_at)}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-end mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => handleSelectedUsersChange(selectedUsers.filter(u => u.uid !== user.uid))}
+                        >
+                          제거
+                        </Button>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </CardContent>
         </Card>
       </div>
