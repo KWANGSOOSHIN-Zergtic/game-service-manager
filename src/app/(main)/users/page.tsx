@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { DataTable, TableData } from "@/components/ui/data-table"
 import { PageContainer } from "@/components/layout/page-container"
 import { ResultAlert } from "@/components/ui/result-alert"
-//import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
@@ -46,10 +46,6 @@ export default function UsersPage() {
   const [tableData, setTableData] = useState<TableData[]>([])
   const [selectedUsers, setSelectedUsers] = useState<SelectedUserInfo[]>([])
   const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
-  
-  // 선택된 행 상태를 ref로 관리
-  const selectedRowsRef = useRef<TableData[]>([]);
-  const pendingSelectionRef = useRef<TableData[] | null>(null);
 
   useEffect(() => {
     // 초기화 정보에서 DB 리스트 가져오기
@@ -87,11 +83,9 @@ export default function UsersPage() {
 
   // 사용자 정보 선택 처리
   const handleUserSelectionChange = useCallback((rows: TableData[]) => {
-    if (!selectedDB) return; // selectedDB가 없으면 처리하지 않음
+    if (!selectedDB) return;
     
-    pendingSelectionRef.current = rows;
-    selectedRowsRef.current = rows;
-    
+    // 선택된 사용자 정보 즉시 업데이트
     const selectedUids = new Set(rows.map(row => row.uid));
     
     setSelectedUsers(prev => {
@@ -156,17 +150,6 @@ export default function UsersPage() {
     setSelectedDB(value)
     setTableData([])
   }, [])
-
-  // 선택된 사용자 제거 처리
-  const handleSelectedUsersChange = useCallback((users: SelectedUserInfo[]) => {
-    setSelectedUsers(users);
-    
-    // 선택된 행 상태도 함께 업데이트
-    const remainingUids = new Set(users.map(u => u.user.uid));
-    const updatedRows = selectedRowsRef.current.filter(row => remainingUids.has(row.uid));
-    selectedRowsRef.current = updatedRows;
-    pendingSelectionRef.current = updatedRows;
-  }, []);
 
   return (
     <PageContainer path="users">
@@ -338,15 +321,161 @@ export default function UsersPage() {
                           </TableBody>
                         </Table>
                       </div>
-                      <div className="flex justify-end mt-4">
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          className="bg-red-500 hover:bg-red-600 text-white font-bold"
-                          onClick={() => handleSelectedUsersChange(selectedUsers.filter(u => u.user.uid !== userInfo.user.uid))}
-                        >
-                          Remove
-                        </Button>
+                      <div className="flex flex-col gap-2 mt-4">
+                        <div className="flex items-center gap-2">
+                          <Tabs defaultValue="info" className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <TabsList className="flex-1 bg-purple-100 p-0 h-8 rounded-lg">
+                                <TabsTrigger 
+                                  value="info" 
+                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white rounded-lg h-8 data-[state=active]:rounded-lg font-bold text-sm"
+                                >
+                                  Multi Play
+                                </TabsTrigger>
+                                <TabsTrigger 
+                                  value="detail" 
+                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white rounded-lg h-8 data-[state=active]:rounded-lg font-bold text-sm"
+                                >
+                                  Story
+                                </TabsTrigger>
+                              </TabsList>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold"
+                              >
+                                Filter
+                              </Button>
+                              <Button
+                                variant="default"
+                                size="sm"
+                                className="bg-green-500 hover:bg-green-600 text-white font-bold"
+                              >
+                                PopUp
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="bg-red-500 hover:bg-red-600 text-white font-bold"
+                                onClick={() => {
+                                  const updatedUsers = selectedUsers.filter(u => u.user.uid !== userInfo.user.uid);
+                                  setSelectedUsers(updatedUsers);
+                                  handleUserSelectionChange(updatedUsers.map(u => u.user));
+                                }}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                            <TabsContent value="info">
+                              <Tabs defaultValue="baller" className="w-full mt-2">
+                                <TabsList className="w-full bg-purple-50 p-0 h-7 rounded-lg">
+                                  <TabsTrigger 
+                                    value="currency" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    CURRENCY
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="baller" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    BALLER
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="pub" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    PUB
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="record" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    RECORD
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="shop" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    SHOP
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="club" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    CLUB
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="season-pass" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    SEASON PASS
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="menu-tab" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    MENU TAB
+                                  </TabsTrigger>                                    
+                                </TabsList>
+                              </Tabs>
+                            </TabsContent>
+                            <TabsContent value="detail">
+                              <Tabs defaultValue="baller" className="w-full mt-2">
+                                <TabsList className="w-full bg-purple-50 p-0 h-7 rounded-lg">
+                                  <TabsTrigger 
+                                    value="currency" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    CURRENCY
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="baller" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    BALLER
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="pub" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    PUB
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="record" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    RECORD
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="shop" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    SHOP
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="club" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    CLUB
+                                  </TabsTrigger>                                  
+                                  <TabsTrigger 
+                                    value="season-pass" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    SEASON PASS
+                                  </TabsTrigger>
+                                  <TabsTrigger 
+                                    value="menu-tab" 
+                                    className="w-full data-[state=active]:bg-purple-300 data-[state=active]:text-white rounded-lg h-7 data-[state=active]:rounded-lg font-medium text-xs"
+                                  >
+                                    MENU TAB
+                                  </TabsTrigger>
+                                </TabsList>
+                              </Tabs>
+                            </TabsContent>
+                          </Tabs>
+                        </div>
                       </div>
                     </div>
                   </AccordionContent>
