@@ -13,7 +13,7 @@ import { User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUserSearch } from "@/hooks/useUserSearch"
 
-interface InitDBListItem {
+interface InitDBListInfo {
   index: number
   name: string
   description: string
@@ -25,7 +25,7 @@ export default function UsersPage() {
   const [selectedDB, setSelectedDB] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [tableData, setTableData] = useState<TableData[]>([])
-  const { queryResult: userSearchResult, userInfo, isLoading: isSearching, searchUser } = useUserSearch()
+  const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
 
   useEffect(() => {
     // 초기화 정보에서 DB 리스트 가져오기
@@ -33,11 +33,11 @@ export default function UsersPage() {
       try {
         const dbInitInfo = JSON.parse(sessionStorage.getItem('dbInitInfo') || '{}')
         if (dbInitInfo.dbList) {
-          const formattedData: TableData[] = dbInitInfo.dbList.map((item: InitDBListItem) => ({
-            id: item.index,
-            index: item.index,
-            name: item.name,
-            description: item.description
+          const formattedData: TableData[] = dbInitInfo.dbList.map((dbUnit: InitDBListInfo) => ({
+            id: dbUnit.index,
+            index: dbUnit.index,
+            name: dbUnit.name,
+            description: dbUnit.description
           }))
           setData(formattedData)
         }
@@ -51,12 +51,12 @@ export default function UsersPage() {
     loadInitialData()
   }, [])
 
-  const handleRowClick = (item: TableData) => {
-    console.log('Selected row:', item)
+  const handleRowClick = (row: TableData) => {
+    console.log('Selected row:', row)
   }
 
-  const handleSelectionChange = (selectedItems: TableData[]) => {
-    console.log('Selection changed:', selectedItems)
+  const handleSelectionChange = (selectedRows: TableData[]) => {
+    console.log('Selection changed:', selectedRows)
   }
 
   const handleSort = (key: string, direction: 'asc' | 'desc' | null) => {
@@ -74,20 +74,20 @@ export default function UsersPage() {
 
     try {
       setTableData([]); // 검색 시도 시 기존 결과 초기화
-      const success = await searchUser(selectedDB, searchQuery);
+      const { success, user } = await searchUser(selectedDB, searchQuery);
       
-      if (success && userInfo) {
+      if (success && user) {
         const formattedData = [{
           id: 1,
-          uid: userInfo.uid,
-          create_at: userInfo.create_at,
-          update_at: userInfo.update_at,
-          uuid: userInfo.uuid,
-          login_id: userInfo.login_id,
-          display_id: userInfo.display_id,
-          nickname: userInfo.nickname,
-          role: userInfo.role,
-          nation_index: userInfo.nation_index
+          uid: user.uid,
+          create_at: user.create_at,
+          update_at: user.update_at,
+          uuid: user.uuid,
+          login_id: user.login_id,
+          display_id: user.display_id,
+          nickname: user.nickname,
+          role: user.role,
+          nation_index: user.nation_index
         }];
         setTableData(formattedData);
       }
@@ -149,9 +149,9 @@ export default function UsersPage() {
                     <SelectValue placeholder="DB 선택" />
                   </SelectTrigger>
                   <SelectContent>
-                    {data.filter(item => item.name !== "football_service").map((item) => (
-                      <SelectItem key={item.id} value={String(item.name)}>
-                        {String(item.name)}
+                    {data.filter(dbUnit => dbUnit.name !== "football_service").map((dbUnit) => (
+                      <SelectItem key={dbUnit.id} value={String(dbUnit.name)}>
+                        {String(dbUnit.name)}
                       </SelectItem>
                     ))}
                   </SelectContent>

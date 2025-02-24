@@ -13,9 +13,15 @@ interface UserInfo {
   nation_index: number;
 }
 
+interface SearchUserResponse {
+  success: boolean;
+  user: UserInfo | null;
+}
+
 interface UseUserSearchReturn extends DBQueryBase {
   userInfo: UserInfo | null;
-  searchUser: (dbName: string, userId: string) => Promise<boolean>;
+  searchUser: (dbName: string, userId: string) => Promise<SearchUserResponse>;
+  isLoading: boolean;
 }
 
 export const useUserSearch = (): UseUserSearchReturn => {
@@ -26,8 +32,8 @@ export const useUserSearch = (): UseUserSearchReturn => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const searchUser = async (dbName: string, userId: string): Promise<boolean> => {
-    if (!dbName || !userId) return false;
+  const searchUser = async (dbName: string, userId: string): Promise<SearchUserResponse> => {
+    if (!dbName || !userId) return { success: false, user: null };
 
     setIsLoading(true);
     try {
@@ -35,12 +41,13 @@ export const useUserSearch = (): UseUserSearchReturn => {
       const result = await response.json();
 
       if (result.success) {
-        setUserInfo(result.user);
+        const user = result.user;
+        setUserInfo(user);
         setQueryResult({
           status: 'success',
           message: '사용자 정보를 성공적으로 조회했습니다.',
         });
-        return true;
+        return { success: true, user };
       } else {
         throw new Error(result.error);
       }
@@ -51,7 +58,7 @@ export const useUserSearch = (): UseUserSearchReturn => {
         error: error instanceof Error ? error.message : '알 수 없는 오류'
       });
       setUserInfo(null);
-      return false;
+      return { success: false, user: null };
     } finally {
       setIsLoading(false);
     }
