@@ -18,6 +18,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface InitDBListInfo {
   index: number
@@ -271,53 +279,51 @@ export default function UsersPage() {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="border-t">
-                    <div className="space-y-2 p-4 bg-gray-50/50">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">UID</p>
-                          <p className="text-sm">{String(userInfo.user.uid)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">UUID</p>
-                          <p className="text-sm">{String(userInfo.user.uuid)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Login ID</p>
-                          <p className="text-sm">{String(userInfo.user.login_id)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Display ID</p>
-                          <p className="text-sm">{String(userInfo.user.display_id)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Nickname</p>
-                          <p className="text-sm">{String(userInfo.user.nickname)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Role</p>
-                          <p className="text-sm">{String(userInfo.user.role)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Nation Index</p>
-                          <p className="text-sm">{String(userInfo.user.nation_index)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Created At</p>
-                          <p className="text-sm">{String(userInfo.user.create_at)}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">Updated At</p>
-                          <p className="text-sm">{String(userInfo.user.update_at)}</p>
-                        </div>
+                    <div className="p-4 bg-gray-50/50">
+                      <div className="rounded-md border border-gray-200 overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-purple-50/80">
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">UID</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">UUID</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Login ID</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Display ID</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Nickname</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Role</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Nation Index</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Created At</TableHead>
+                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Updated At</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            <TableRow className="hover:bg-purple-50/30">
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.uid)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.uuid)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.login_id)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.display_id)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">
+                                <div className="flex justify-center">
+                                  <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
+                                    {String(userInfo.user.nickname)}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.role)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.nation_index)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.create_at)}</TableCell>
+                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.update_at)}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
                       </div>
                       <div className="flex justify-end mt-4">
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="bg-red-500 hover:bg-red-600 text-white font-bold"
                           onClick={() => handleSelectedUsersChange(selectedUsers.filter(u => u.user.uid !== userInfo.user.uid))}
                         >
-                          제거
+                          Remove
                         </Button>
                       </div>
                     </div>
