@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator"
 import { DataTable, TableData } from "@/components/ui/data-table"
 import { PageContainer } from "@/components/layout/page-container"
 import { ResultAlert } from "@/components/ui/result-alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
@@ -26,6 +25,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { UserTabs } from "@/components/user/UserTabs"
+import { userTabsConfig } from "@/types/tabs"
 
 interface InitDBListInfo {
   index: number
@@ -77,7 +78,7 @@ export default function UsersPage() {
   }, [])
 
   // DB 리스트 선택 처리
-  const handleDBListSelectionChange = useCallback((rows: TableData[]) => {
+  const handleDBListSelectionChange = useCallback(() => {
     // DB 리스트는 선택 처리하지 않음
   }, []);
 
@@ -322,23 +323,11 @@ export default function UsersPage() {
                         </Table>
                       </div>
                       <div className="flex flex-col gap-2 mt-4">
-                        <div className="flex items-center gap-2">
-                          <Tabs defaultValue="info" className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <TabsList className="flex-1 bg-purple-100 p-0 h-8 rounded-none border border-purple-200">
-                                <TabsTrigger 
-                                  value="info" 
-                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm border-r border-purple-200"
-                                >
-                                  Multi Play
-                                </TabsTrigger>
-                                <TabsTrigger 
-                                  value="detail" 
-                                  className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm"
-                                >
-                                  Story
-                                </TabsTrigger>
-                              </TabsList>
+                        <UserTabs 
+                          config={userTabsConfig.mainTabs} 
+                          variant="main"
+                          actions={
+                            <>
                               <Button
                                 variant="default"
                                 size="sm"
@@ -365,117 +354,9 @@ export default function UsersPage() {
                               >
                                 Remove
                               </Button>
-                            </div>
-                            <TabsContent value="info" className="mt-0">
-                              <Tabs defaultValue="baller" className="w-full">
-                                <TabsList className="w-full bg-purple-100 p-0 h-7 rounded-none border border-purple-200 border-t-0">
-                                  <TabsTrigger 
-                                    value="currency" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    CURRENCY
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="baller" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    BALLER
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="pub" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    PUB
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="record" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    RECORD
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="shop" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    SHOP
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="club" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    CLUB
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="season-pass" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    SEASON PASS
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="menu-tab" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs"
-                                  >
-                                    MENU TAB
-                                  </TabsTrigger>                                    
-                                </TabsList>
-                              </Tabs>
-                            </TabsContent>
-                            <TabsContent value="detail" className="mt-0">
-                              <Tabs defaultValue="baller" className="w-full">
-                                <TabsList className="w-full bg-purple-100 p-0 h-7 rounded-none border border-purple-200 border-t-0">
-                                  <TabsTrigger 
-                                    value="currency" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    CURRENCY
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="baller" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    BALLER
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="pub" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    PUB
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="record" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    RECORD
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="shop" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    SHOP
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="club" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    CLUB
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="season-pass" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs border-r border-purple-200"
-                                  >
-                                    SEASON PASS
-                                  </TabsTrigger>
-                                  <TabsTrigger 
-                                    value="menu-tab" 
-                                    className="w-full data-[state=active]:bg-purple-400 data-[state=active]:text-white h-7 rounded-none font-medium text-xs"
-                                  >
-                                    MENU TAB
-                                  </TabsTrigger>
-                                </TabsList>
-                              </Tabs>
-                            </TabsContent>
-                          </Tabs>
-                        </div>
+                            </>
+                          }
+                        />
                       </div>
                     </div>
                   </AccordionContent>
