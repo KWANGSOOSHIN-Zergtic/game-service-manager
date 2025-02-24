@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { DataTable, TableData } from "@/components/ui/data-table"
@@ -25,7 +25,9 @@ export default function UsersPage() {
   const [selectedDB, setSelectedDB] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [tableData, setTableData] = useState<TableData[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<TableData[]>([])
   const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
+  const selectedRowsRef = useRef<TableData[]>([]);
 
   useEffect(() => {
     // 초기화 정보에서 DB 리스트 가져오기
@@ -51,23 +53,41 @@ export default function UsersPage() {
     loadInitialData()
   }, [])
 
-  const handleRowClick = (row: TableData) => {
+  const handleRowClick = useCallback((row: TableData) => {
     console.log('Selected row:', row)
-  }
+  }, [])
 
-  const handleSelectionChange = (selectedRows: TableData[]) => {
-    console.log('Selection changed:', selectedRows)
-  }
+  const handleSelectionChange = useCallback((rows: TableData[]) => {
+    selectedRowsRef.current = rows;
+    
+    // 다음 렌더링 사이클에서 상태 업데이트
+    setTimeout(() => {
+      const existingIds = new Set(selectedUsers.map(user => user.uid));
+      const newUsers = rows.filter(row => !existingIds.has(row.uid));
+      
+      if (newUsers.length > 0) {
+        setSelectedUsers(prev => {
+          const updatedUsers = [...prev];
+          newUsers.forEach(user => {
+            if (!updatedUsers.some(existing => existing.uid === user.uid)) {
+              updatedUsers.push(user);
+            }
+          });
+          return updatedUsers;
+        });
+      }
+    }, 0);
+  }, [selectedUsers]);
 
-  const handleSort = (key: string, direction: 'asc' | 'desc' | null) => {
+  const handleSort = useCallback((key: string, direction: 'asc' | 'desc' | null) => {
     console.log('Sort changed:', { key, direction })
-  }
+  }, [])
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     console.log('Page changed:', page)
-  }
+  }, [])
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     if (!selectedDB || !searchQuery) {
       return;
     }
@@ -78,7 +98,7 @@ export default function UsersPage() {
       
       if (success && user) {
         const formattedData = [{
-          id: 1,
+          id: Number(user.uid),
           uid: user.uid,
           create_at: user.create_at,
           update_at: user.update_at,
@@ -95,18 +115,20 @@ export default function UsersPage() {
       console.error('사용자 검색 중 오류:', error);
       setTableData([]);
     }
-  };
+  }, [selectedDB, searchQuery, searchUser]);
 
-  const handleSelectRows = () => {
-    console.log('Create new table')
-  }
+  const handleSelectRows = useCallback(() => {
+    console.log('Rows selected')
+  }, [])
 
-  // DB 선택 변경 시 상태 초기화
-  const handleDBChange = (value: string) => {
+  const handleDBChange = useCallback((value: string) => {
     setSelectedDB(value)
     setTableData([])
-    setSearchQuery('')
-  }
+  }, [])
+
+  const handleSelectedUsersChange = useCallback((rows: TableData[]) => {
+    setSelectedUsers(rows.filter(Boolean));
+  }, []);
 
   return (
     <PageContainer path="users">
@@ -208,6 +230,31 @@ export default function UsersPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader className="py-4 bg-gray-50">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Select Users
+              </CardTitle>
+              <div className="text-sm text-purple-500">
+                선택된 사용자: <span className="font-bold">{selectedUsers.length}</span>명
+              </div>
+            </div>
+          </CardHeader>
+          <Separator className="bg-gray-200" />
+          <CardContent className="py-6">
+            <DataTable
+              tableName="Select Users"
+              data={selectedUsers}
+              isLoading={false}
+              onRowClick={handleRowClick}
+              onSelectionChange={handleSelectedUsersChange}
+              onSort={handleSort}
+              onPageChange={handlePageChange}
+            />
+          </CardContent>
+        </Card>
       </div>
     </PageContainer>
   )
