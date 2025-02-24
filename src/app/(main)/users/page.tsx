@@ -46,7 +46,10 @@ export default function UsersPage() {
   const [tableData, setTableData] = useState<TableData[]>([])
   const [selectedUsers, setSelectedUsers] = useState<SelectedUserInfo[]>([])
   const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
+  
+  // 선택된 행 상태를 ref로 관리
   const selectedRowsRef = useRef<TableData[]>([]);
+  const pendingSelectionRef = useRef<TableData[] | null>(null);
 
   useEffect(() => {
     // 초기화 정보에서 DB 리스트 가져오기
@@ -54,8 +57,9 @@ export default function UsersPage() {
       try {
         const dbInitInfo = JSON.parse(sessionStorage.getItem('dbInitInfo') || '{}')
         if (dbInitInfo.dbList) {
-          const formattedData: TableData[] = dbInitInfo.dbList.map((dbUnit: InitDBListInfo) => ({
+          const formattedData: TableData[] = dbInitInfo.dbList.map((dbUnit: InitDBListInfo, index: number) => ({
             id: dbUnit.index,
+            displayIndex: index + 1,
             index: dbUnit.index,
             name: dbUnit.name,
             description: dbUnit.description
@@ -76,11 +80,21 @@ export default function UsersPage() {
     console.log('Selected row:', row)
   }, [])
 
-  const handleSelectionChange = useCallback((rows: TableData[]) => {
+  // DB 리스트 선택 처리
+  const handleDBListSelectionChange = useCallback((rows: TableData[]) => {
+    // DB 리스트는 선택 처리하지 않음
+  }, []);
+
+  // 사용자 정보 선택 처리
+  const handleUserSelectionChange = useCallback((rows: TableData[]) => {
+    if (!selectedDB) return; // selectedDB가 없으면 처리하지 않음
+    
+    pendingSelectionRef.current = rows;
     selectedRowsRef.current = rows;
     
+    const selectedUids = new Set(rows.map(row => row.uid));
+    
     setSelectedUsers(prev => {
-      const selectedUids = new Set(rows.map(row => row.uid));
       const filteredUsers = prev.filter(userInfo => selectedUids.has(userInfo.user.uid));
       
       const existingIds = new Set(filteredUsers.map(userInfo => userInfo.user.uid));
@@ -113,8 +127,9 @@ export default function UsersPage() {
       const { success, users } = await searchUser(selectedDB, searchQuery);
       
       if (success && users) {
-        const formattedData = users.map(user => ({
+        const formattedData = users.map((user, index) => ({
           id: Number(user.uid),
+          displayIndex: index + 1,
           uid: user.uid,
           create_at: user.create_at,
           update_at: user.update_at,
@@ -142,8 +157,15 @@ export default function UsersPage() {
     setTableData([])
   }, [])
 
+  // 선택된 사용자 제거 처리
   const handleSelectedUsersChange = useCallback((users: SelectedUserInfo[]) => {
-    setSelectedUsers(users.filter(Boolean));
+    setSelectedUsers(users);
+    
+    // 선택된 행 상태도 함께 업데이트
+    const remainingUids = new Set(users.map(u => u.user.uid));
+    const updatedRows = selectedRowsRef.current.filter(row => remainingUids.has(row.uid));
+    selectedRowsRef.current = updatedRows;
+    pendingSelectionRef.current = updatedRows;
   }, []);
 
   return (
@@ -162,7 +184,7 @@ export default function UsersPage() {
               data={data}
               isLoading={isLoading}
               onRowClick={handleRowClick}
-              onSelectionChange={handleSelectionChange}
+              onSelectionChange={handleDBListSelectionChange}
               onSort={handleSort}
               onPageChange={handlePageChange}
             />
@@ -239,7 +261,7 @@ export default function UsersPage() {
                 isLoading={isSearching}
                 onSelectRows={handleSelectRows}
                 onRowClick={handleRowClick}
-                onSelectionChange={handleSelectionChange}
+                onSelectionChange={handleUserSelectionChange}
                 onSort={handleSort}
                 onPageChange={handlePageChange}
               />

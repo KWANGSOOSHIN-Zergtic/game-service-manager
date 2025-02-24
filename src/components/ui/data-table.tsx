@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
@@ -23,7 +23,7 @@ export interface TableColumn {
   key: string;
   label: string;
   width?: string;
-  format?: (value: string | number | null | object) => string | number | React.ReactNode;
+  format?: (value: string | number | boolean | object | null | undefined) => string | number | React.ReactNode;
   type?: 'string' | 'number' | 'currency' | 'percentage' | 'object';
   sortable?: boolean;
   align?: 'left' | 'center' | 'right';
@@ -32,7 +32,8 @@ export interface TableColumn {
 // 동적 데이터 타입
 export interface TableData {
   id: number;
-  [key: string]: string | number | boolean | null | object;
+  displayIndex?: number;
+  [key: string]: string | number | boolean | null | object | undefined;
 }
 
 interface DataTableProps {
@@ -55,12 +56,17 @@ interface DataTableProps {
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
-const formatValue = (value: string | number | null | object, type?: string) => {
+const formatValue = (value: string | number | boolean | object | null | undefined, type?: string) => {
   if (value === null || value === undefined) return '-';
   
   // Object 타입 체크 추가
   if (typeof value === 'object') {
     return <ObjectDisplay value={value} />;
+  }
+  
+  // boolean 타입 처리 추가
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No';
   }
   
   switch (type) {
@@ -71,7 +77,7 @@ const formatValue = (value: string | number | null | object, type?: string) => {
     case 'number':
       return Number(value).toString();
     default:
-      return value.toString();
+      return String(value);
   }
 };
 
@@ -104,6 +110,19 @@ export function DataTable({
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [isAllColumnsVisible, setIsAllColumnsVisible] = useState(true);
 
+  // 순번 컬럼 정의
+  const indexColumn = useMemo(() => ({
+    key: 'displayIndex',
+    label: '#',
+    width: 'w-16',
+    type: 'number' as const,
+    sortable: false,
+    format: (value: string | number | boolean | object | null | undefined) => {
+      if (value === null || value === undefined) return '-';
+      return String(value);
+    }
+  }), []);
+
   // 데이터 유효성 검사
   const validateData = (data: TableData[]): boolean => {
     return data.every(item => 
@@ -113,61 +132,74 @@ export function DataTable({
     );
   };
 
-  // 컬럼 정보 생성
+  // 데이터 처리 함수
+  const processTableData = useCallback((inputData: TableData[]) => {
+    return inputData.map((item, index) => ({
+      ...item,
+      displayIndex: itemsPerPage === 'all' 
+        ? index + 1 
+        : ((currentPage - 1) * (itemsPerPage as number)) + index + 1
+    }));
+  }, [currentPage, itemsPerPage]);
+
+  // 초기 데이터 설정
   useEffect(() => {
-    try {
-      if (data.length > 0 && !validateData(data)) {
+    if (data.length > 0) {
+      const processedData = processTableData(data);
+      setFilteredData(processedData);
+
+      if (!validateData(data)) {
         console.error('Invalid data format: Each item must have an id property');
         return;
       }
 
-      if (data.length > 0) {
-        const firstItem = data[0];
-        const extractedColumns: TableColumn[] = Object.keys(firstItem).map(key => {
-          const value = firstItem[key];
-          let type: TableColumn['type'] = 'string';
-          
-          if (typeof value === 'number') {
-            if (key.toLowerCase().includes('price') || key.toLowerCase().includes('total')) {
-              type = 'currency';
-            } else if (key.toLowerCase().includes('rate')) {
-              type = 'percentage';
-            } else {
-              type = 'number';
+      const firstItem = data[0];
+      const extractedColumns: TableColumn[] = [
+        indexColumn,
+        ...Object.keys(firstItem)
+          .filter(key => key !== 'id' && key !== 'displayIndex')
+          .map(key => {
+            const value = firstItem[key];
+            let type: TableColumn['type'] = 'string';
+            
+            // 타입 감지 로직 개선
+            if (typeof value === 'number' || (typeof value === 'string' && !isNaN(Number(value)))) {
+              if (key.toLowerCase().includes('price') || key.toLowerCase().includes('total')) {
+                type = 'currency';
+              } else if (key.toLowerCase().includes('rate')) {
+                type = 'percentage';
+              } else {
+                type = 'number';
+              }
+            } else if (typeof value === 'object' && value !== null) {
+              type = 'object';
             }
-          } else if (typeof value === 'object' && value !== null) {
-            type = 'object';
-          }
 
-          return {
-            key,
-            label: key === 'id' ? 'ID' : key.toUpperCase().replace(/_/g, ' '),
-            type,
-            sortable: true,
-            format: (value) => customFormatters?.[key]?.(value) ?? formatValue(value, type)
-          };
-        });
+            return {
+              key,
+              label: key.toUpperCase().replace(/_/g, ' '),
+              type,
+              sortable: true,
+              format: (value: string | number | boolean | object | null | undefined) => 
+                customFormatters?.[key]?.(value as string | number | object | null) ?? formatValue(value, type)
+            };
+          })
+      ];
 
-        setColumns(extractedColumns);
-      }
-    } catch (error) {
-      console.error('Error processing table data:', error);
+      setColumns(extractedColumns);
+      setVisibleColumns(new Set(['displayIndex', ...Object.keys(firstItem).filter(key => key !== 'id')]));
+    } else {
+      setFilteredData([]);
+      setColumns([indexColumn]);
+      setVisibleColumns(new Set(['displayIndex']));
     }
-  }, [data, customFormatters]);
-
-  // 컬럼 정보 생성 시 visibleColumns 초기화
-  useEffect(() => {
-    if (data.length > 0) {
-      const columnKeys = Object.keys(data[0]);
-      setVisibleColumns(new Set(columnKeys));
-    }
-  }, [data]);
+  }, [data, indexColumn, customFormatters, processTableData]);
 
   // 검색 처리
-  const handleSearch = (value: string) => {
+  const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
     if (!value.trim()) {
-      setFilteredData(data);
+      setFilteredData(processTableData(data));
       return;
     }
 
@@ -176,12 +208,12 @@ export function DataTable({
         val?.toString().toLowerCase().includes(value.toLowerCase())
       )
     );
-    setFilteredData(filtered);
+    setFilteredData(processTableData(filtered));
     setCurrentPage(1);
-  };
+  }, [data, processTableData]);
 
   // 정렬 처리
-  const handleSort = (key: string) => {
+  const handleSort = useCallback((key: string) => {
     let direction: 'asc' | 'desc' | null = 'asc';
     
     if (sortConfig.key === key) {
@@ -192,22 +224,27 @@ export function DataTable({
     setSortConfig({ key, direction });
 
     if (direction === null) {
-      setFilteredData([...data]);
+      setFilteredData(processTableData(data));
     } else {
       const sortedData = [...filteredData].sort((a, b) => {
         const aValue = a[key];
         const bValue = b[key];
 
-        // null 값 처리
-        if (aValue === null) return direction === 'asc' ? -1 : 1;
-        if (bValue === null) return direction === 'asc' ? 1 : -1;
+        // null/undefined 처리
+        if (aValue === null || aValue === undefined) return direction === 'asc' ? -1 : 1;
+        if (bValue === null || bValue === undefined) return direction === 'asc' ? 1 : -1;
 
-        // 숫자 비교
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return direction === 'asc' ? aValue - bValue : bValue - aValue;
+        // 숫자 정렬 처리 개선
+        if (
+          (typeof aValue === 'number' && typeof bValue === 'number') ||
+          (typeof aValue === 'string' && typeof bValue === 'string' && !isNaN(Number(aValue)) && !isNaN(Number(bValue)))
+        ) {
+          const aNum = Number(aValue);
+          const bNum = Number(bValue);
+          return direction === 'asc' ? aNum - bNum : bNum - aNum;
         }
 
-        // 문자열 비교
+        // 문자열 정렬
         const aString = String(aValue).toLowerCase();
         const bString = String(bValue).toLowerCase();
         return direction === 'asc' 
@@ -219,7 +256,7 @@ export function DataTable({
     }
 
     if (onSort) onSort(key, direction);
-  };
+  }, [sortConfig, filteredData, data, processTableData, onSort]);
 
   // 선택 처리
   const handleSelectAll = (checked: boolean) => {
@@ -244,10 +281,12 @@ export function DataTable({
   };
 
   // 페이지네이션 처리
-  const handlePageChange = (newPage: number) => {
+  const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
+    const newData = processTableData(data);
+    setFilteredData(newData);
     onPageChange?.(newPage);
-  };
+  }, [data, processTableData, onPageChange]);
 
   // 페이지당 항목 수 변경 처리
   const handleItemsPerPageChange = (value: string) => {
@@ -256,7 +295,7 @@ export function DataTable({
     setCurrentPage(1); // 페이지 수가 변경되면 첫 페이지로 이동
   };
 
-  // 현재 페이지 데이터 계산 로직 수정
+  // 현재 페이지 데이터 계산
   const currentData = useMemo(() => {
     if (itemsPerPage === 'all') {
       return filteredData;
@@ -266,11 +305,6 @@ export function DataTable({
   }, [filteredData, currentPage, itemsPerPage]);
 
   const totalItems = filteredData.length;
-
-  // 데이터 변경 시 필터된 데이터 초기화
-  useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
 
   // 컬럼 표시/숨김 토글
   const toggleColumn = (columnKey: string) => {
