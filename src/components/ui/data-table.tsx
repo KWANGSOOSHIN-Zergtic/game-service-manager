@@ -75,13 +75,6 @@ const formatValue = (value: string | number | null | object, type?: string) => {
   }
 };
 
-const formatCellValue = (value: unknown): string => {
-  if (value === null || value === undefined) return '';
-  if (typeof value === 'boolean') return value ? 'Yes' : 'No';
-  if (typeof value === 'object') return JSON.stringify(value);
-  return String(value);
-};
-
 export function DataTable({ 
   tableName = '', 
   data = [], 
@@ -197,6 +190,34 @@ export function DataTable({
     }
 
     setSortConfig({ key, direction });
+
+    if (direction === null) {
+      setFilteredData([...data]);
+    } else {
+      const sortedData = [...filteredData].sort((a, b) => {
+        const aValue = a[key];
+        const bValue = b[key];
+
+        // null 값 처리
+        if (aValue === null) return direction === 'asc' ? -1 : 1;
+        if (bValue === null) return direction === 'asc' ? 1 : -1;
+
+        // 숫자 비교
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+          return direction === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        // 문자열 비교
+        const aString = String(aValue).toLowerCase();
+        const bString = String(bValue).toLowerCase();
+        return direction === 'asc' 
+          ? aString.localeCompare(bString)
+          : bString.localeCompare(aString);
+      });
+
+      setFilteredData(sortedData);
+    }
+
     if (onSort) onSort(key, direction);
   };
 
@@ -440,7 +461,7 @@ export function DataTable({
                   <TableHead
                     key={column.key}
                     className={`text-xs font-bold text-gray-600 h-10 py-2 ${
-                      column.sortable ? 'cursor-pointer select-none' : ''
+                      column.sortable ? 'cursor-pointer select-none hover:bg-purple-100/50' : ''
                     } border-r border-gray-200 text-center`}
                     onClick={() => column.sortable && handleSort(column.key)}
                     role={column.sortable ? 'button' : undefined}
@@ -455,9 +476,15 @@ export function DataTable({
                   >
                     <div className="flex items-center justify-center gap-1">
                       {column.label}
-                      {column.sortable && sortConfig.key === column.key && (
+                      {column.sortable && (
                         <span className="text-gray-400">
-                          {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                          {sortConfig.key === column.key
+                            ? sortConfig.direction === 'asc'
+                              ? '▲'
+                              : sortConfig.direction === 'desc'
+                                ? '▼'
+                                : '↕'
+                            : '↕'}
                         </span>
                       )}
                     </div>
