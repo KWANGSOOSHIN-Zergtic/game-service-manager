@@ -71,7 +71,20 @@ export function ResultAlert({
           </AlertTitle>
         </div>
         <AlertDescription className="mt-2 ml-7 whitespace-pre-line">
-          <div className="font-medium">{result.message}</div>
+          <div className="font-medium">
+            {result.message.split(/(\d+명)/).map((part, index) => {
+              if (part.match(/\d+명/)) {
+                const number = part.replace('명', '');
+                return (
+                  <span key={index}>
+                    <span className="text-lg font-bold">{number}</span>
+                    <span>명</span>
+                  </span>
+                );
+              }
+              return part;
+            })}
+          </div>
           {result.error && (
             <div className="mt-2 text-sm opacity-90">
               에러 코드: {result.error}
