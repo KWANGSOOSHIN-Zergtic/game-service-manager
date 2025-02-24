@@ -25,13 +25,18 @@ interface InitDBListInfo {
   description: string
 }
 
+interface SelectedUserInfo {
+  user: TableData;
+  dbName: string;
+}
+
 export default function UsersPage() {
   const [data, setData] = useState<TableData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedDB, setSelectedDB] = useState<string>("")
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [tableData, setTableData] = useState<TableData[]>([])
-  const [selectedUsers, setSelectedUsers] = useState<TableData[]>([])
+  const [selectedUsers, setSelectedUsers] = useState<SelectedUserInfo[]>([])
   const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
   const selectedRowsRef = useRef<TableData[]>([]);
 
@@ -66,24 +71,21 @@ export default function UsersPage() {
   const handleSelectionChange = useCallback((rows: TableData[]) => {
     selectedRowsRef.current = rows;
     
-    // 다음 렌더링 사이클에서 상태 업데이트
-    setTimeout(() => {
-      const existingIds = new Set(selectedUsers.map(user => user.uid));
-      const newUsers = rows.filter(row => !existingIds.has(row.uid));
+    setSelectedUsers(prev => {
+      const selectedUids = new Set(rows.map(row => row.uid));
+      const filteredUsers = prev.filter(userInfo => selectedUids.has(userInfo.user.uid));
       
-      if (newUsers.length > 0) {
-        setSelectedUsers(prev => {
-          const updatedUsers = [...prev];
-          newUsers.forEach(user => {
-            if (!updatedUsers.some(existing => existing.uid === user.uid)) {
-              updatedUsers.push(user);
-            }
-          });
-          return updatedUsers;
-        });
-      }
-    }, 0);
-  }, [selectedUsers]);
+      const existingIds = new Set(filteredUsers.map(userInfo => userInfo.user.uid));
+      const newUsers = rows
+        .filter(row => !existingIds.has(row.uid))
+        .map(user => ({
+          user,
+          dbName: selectedDB
+        }));
+      
+      return [...filteredUsers, ...newUsers];
+    });
+  }, [selectedDB]);
 
   const handleSort = useCallback((key: string, direction: 'asc' | 'desc' | null) => {
     console.log('Sort changed:', { key, direction })
@@ -132,8 +134,8 @@ export default function UsersPage() {
     setTableData([])
   }, [])
 
-  const handleSelectedUsersChange = useCallback((rows: TableData[]) => {
-    setSelectedUsers(rows.filter(Boolean));
+  const handleSelectedUsersChange = useCallback((users: SelectedUserInfo[]) => {
+    setSelectedUsers(users.filter(Boolean));
   }, []);
 
   return (
@@ -251,19 +253,21 @@ export default function UsersPage() {
           <Separator className="bg-gray-200" />
           <CardContent className="py-6">
             <Accordion type="multiple" className="w-full space-y-2">
-              {selectedUsers.map((user, index) => (
+              {selectedUsers.map((userInfo, index) => (
                 <AccordionItem 
-                  key={String(user.uid)} 
-                  value={String(user.uid)}
+                  key={String(userInfo.user.uid)} 
+                  value={String(userInfo.user.uid)}
                   className="border rounded-none first:rounded-t-lg last:rounded-b-lg bg-white overflow-hidden"
                 >
                   <AccordionTrigger 
-                    className="bg-purple-500 hover:bg-purple-600 px-4 py-3 [&[data-state=open]]:bg-purple-700 transition-colors [&>svg]:text-white [&>svg]:stroke-[3] [&>svg]:h-4 [&>svg]:w-4"
+                    className="bg-purple-400 hover:bg-purple-600 px-4 py-3 [&[data-state=open]]:bg-purple-700 transition-colors [&>svg]:text-white [&>svg]:stroke-[3] [&>svg]:h-4 [&>svg]:w-4"
                   >
                     <div className="flex items-center gap-4">
                       <span className="text-sm font-bold text-white">#{index + 1}</span>
-                      <span className="text-sm font-bold text-white">{String(user.nickname || user.login_id)}</span>
-                      <span className="text-sm font-bold text-white/80">({String(user.uid)})</span>
+                      <span className="text-sm text-white">[ {userInfo.dbName} ]</span>
+                      <span className="text-sm font-bold text-white">&gt;</span>
+                      <span className="text-sm font-bold text-white">{String(userInfo.user.nickname || userInfo.user.login_id)}</span>
+                      <span className="text-sm text-white/80">( uid : {String(userInfo.user.uid)} )</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent className="border-t">
@@ -271,39 +275,39 @@ export default function UsersPage() {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm font-medium text-gray-500">UID</p>
-                          <p className="text-sm">{String(user.uid)}</p>
+                          <p className="text-sm">{String(userInfo.user.uid)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">UUID</p>
-                          <p className="text-sm">{String(user.uuid)}</p>
+                          <p className="text-sm">{String(userInfo.user.uuid)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Login ID</p>
-                          <p className="text-sm">{String(user.login_id)}</p>
+                          <p className="text-sm">{String(userInfo.user.login_id)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Display ID</p>
-                          <p className="text-sm">{String(user.display_id)}</p>
+                          <p className="text-sm">{String(userInfo.user.display_id)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Nickname</p>
-                          <p className="text-sm">{String(user.nickname)}</p>
+                          <p className="text-sm">{String(userInfo.user.nickname)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Role</p>
-                          <p className="text-sm">{String(user.role)}</p>
+                          <p className="text-sm">{String(userInfo.user.role)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Nation Index</p>
-                          <p className="text-sm">{String(user.nation_index)}</p>
+                          <p className="text-sm">{String(userInfo.user.nation_index)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Created At</p>
-                          <p className="text-sm">{String(user.create_at)}</p>
+                          <p className="text-sm">{String(userInfo.user.create_at)}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-gray-500">Updated At</p>
-                          <p className="text-sm">{String(user.update_at)}</p>
+                          <p className="text-sm">{String(userInfo.user.update_at)}</p>
                         </div>
                       </div>
                       <div className="flex justify-end mt-4">
@@ -311,7 +315,7 @@ export default function UsersPage() {
                           variant="outline"
                           size="sm"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleSelectedUsersChange(selectedUsers.filter(u => u.uid !== user.uid))}
+                          onClick={() => handleSelectedUsersChange(selectedUsers.filter(u => u.user.uid !== userInfo.user.uid))}
                         >
                           제거
                         </Button>
