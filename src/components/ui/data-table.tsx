@@ -427,10 +427,10 @@ export function DataTable({
               onToggleAllColumns={toggleAllColumns}
             />
             <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-purple-400" />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-purple-400" />
               <Input
                 placeholder={`Search ${tableName || 'items'}...`}
-                className="pl-8 w-[250px] bg-purple-50/50 border-purple-100 text-purple-900 placeholder:text-purple-400"
+                className="pl-8 h-9 w-[250px] bg-purple-50/50 border-purple-100 text-purple-900 placeholder:text-purple-400"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -438,7 +438,7 @@ export function DataTable({
           </div>
           {onSelectRows && (
             <Button 
-              className="bg-purple-500 hover:bg-purple-600 text-white"
+              className="bg-purple-500 hover:bg-purple-600 text-white h-9"
               onClick={onSelectRows}
             >
               <Plus className="h-4 w-4 mr-2" />
