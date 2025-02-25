@@ -58,9 +58,9 @@ export function DynamicTabs({
               onValueChange={onValueChange ? (value) => onValueChange(`${item.id}-${value}`) : undefined}
             />
           ) : item.content ? (
-            <TabContentRenderer content={item.content} className="mt-2" />
+            <TabContentRenderer content={item.content} className="" />
           ) : (
-            <div className="p-4 border rounded-md mt-2">
+            <div className="p-4 border rounded-md">
               <p className="text-sm text-gray-500">컨텐츠가 없습니다.</p>
             </div>
           )}
