@@ -11,22 +11,7 @@ import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUserSearch } from "@/hooks/useUserSearch"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { UserTabs } from "@/components/user/UserTabs"
-import { userTabsConfig } from "@/types/tabs"
+import { UserAccordion } from "@/components/user/user-accordion"
 
 interface InitDBListInfo {
   index: number
@@ -46,6 +31,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState<string>("")
   const [tableData, setTableData] = useState<TableData[]>([])
   const [selectedUsers, setSelectedUsers] = useState<SelectedUserInfo[]>([])
+  const [selectedRowsTemp, setSelectedRowsTemp] = useState<TableData[]>([])
   const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
 
   useEffect(() => {
@@ -73,27 +59,17 @@ export default function UsersPage() {
     loadInitialData()
   }, [])
 
-  const handleRowClick = useCallback((row: TableData) => {
-    console.log('Selected row:', row)
-  }, [])
-
-  // DB 리스트 선택 처리
-  const handleDBListSelectionChange = useCallback(() => {
-    // DB 리스트는 선택 처리하지 않음
-  }, []);
-
-  // 사용자 정보 선택 처리
-  const handleUserSelectionChange = useCallback((rows: TableData[]) => {
-    if (!selectedDB) return;
+  // 선택된 행이 변경될 때 사용자 정보 업데이트
+  useEffect(() => {
+    if (!selectedDB || !selectedRowsTemp.length) return;
     
-    // 선택된 사용자 정보 즉시 업데이트
-    const selectedUids = new Set(rows.map(row => row.uid));
+    const selectedUids = new Set(selectedRowsTemp.map(row => row.uid));
     
     setSelectedUsers(prev => {
       const filteredUsers = prev.filter(userInfo => selectedUids.has(userInfo.user.uid));
       
       const existingIds = new Set(filteredUsers.map(userInfo => userInfo.user.uid));
-      const newUsers = rows
+      const newUsers = selectedRowsTemp
         .filter(row => !existingIds.has(row.uid))
         .map(user => ({
           user,
@@ -102,7 +78,31 @@ export default function UsersPage() {
       
       return [...filteredUsers, ...newUsers];
     });
-  }, [selectedDB]);
+  }, [selectedRowsTemp, selectedDB]);
+
+  const handleRowClick = useCallback((row: TableData) => {
+    console.log('Selected row:', row)
+  }, [])
+
+  // DB 리스트 선택 처리
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleDBListSelectionChange = useCallback((_: TableData[]) => {
+    // DB 리스트는 선택 처리하지 않음
+  }, []);
+
+  // DataTable의 선택 변경 이벤트를 처리하는 함수
+  const handleSelectionUpdate = useCallback((rows: TableData[]) => {
+    // setTimeout을 사용하여 상태 업데이트를 다음 이벤트 루프로 지연
+    setTimeout(() => {
+      setSelectedRowsTemp(rows);
+    }, 0);
+  }, []);
+
+  // 사용자 제거 처리
+  const handleRemoveUser = useCallback((uid: string) => {
+    const updatedUsers = selectedUsers.filter(u => String(u.user.uid) !== uid);
+    setSelectedUsers(updatedUsers);
+  }, [selectedUsers]);
 
   const handleSort = useCallback((key: string, direction: 'asc' | 'desc' | null) => {
     console.log('Sort changed:', { key, direction })
@@ -245,7 +245,7 @@ export default function UsersPage() {
                 isLoading={isSearching}
                 onSelectRows={handleSelectRows}
                 onRowClick={handleRowClick}
-                onSelectionChange={handleUserSelectionChange}
+                onSelectionChange={handleSelectionUpdate}
                 onSort={handleSort}
                 onPageChange={handlePageChange}
               />
@@ -266,103 +266,10 @@ export default function UsersPage() {
           </CardHeader>
           <Separator className="bg-gray-200" />
           <CardContent className="py-6">
-            <Accordion type="multiple" className="w-full space-y-2">
-              {selectedUsers.map((userInfo, index) => (
-                <AccordionItem 
-                  key={String(userInfo.user.uid)} 
-                  value={String(userInfo.user.uid)}
-                  className="border rounded-none first:rounded-t-lg last:rounded-b-lg bg-white overflow-hidden"
-                >
-                  <AccordionTrigger 
-                    className="bg-purple-400 hover:bg-purple-600 px-4 py-3 [&[data-state=open]]:bg-purple-700 transition-colors [&>svg]:text-white [&>svg]:stroke-[3] [&>svg]:h-4 [&>svg]:w-4"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-white">#{index + 1}</span>
-                      <span className="text-sm text-white">[ {userInfo.dbName} ]</span>
-                      <span className="text-sm font-bold text-white">&gt;</span>
-                      <span className="text-sm font-bold text-white">{String(userInfo.user.nickname || userInfo.user.login_id)}</span>
-                      <span className="text-sm text-white/80">( uid : {String(userInfo.user.uid)} )</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="border-t">
-                    <div className="p-4 bg-gray-50/50">
-                      <div className="rounded-md border border-gray-200 overflow-hidden">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-purple-50/80">
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">UID</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">UUID</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Login ID</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Display ID</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Nickname</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Role</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Nation Index</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Created At</TableHead>
-                              <TableHead className="text-xs font-bold text-gray-600 h-10 py-2 border-r border-gray-200 text-center">Updated At</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            <TableRow className="hover:bg-purple-50/30">
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.uid)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.uuid)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.login_id)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.display_id)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">
-                                <div className="flex justify-center">
-                                  <span className="text-purple-600 font-medium bg-purple-50 px-3 py-1 rounded-full">
-                                    {String(userInfo.user.nickname)}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.role)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.nation_index)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.create_at)}</TableCell>
-                              <TableCell className="py-3 text-center border-r border-gray-200">{String(userInfo.user.update_at)}</TableCell>
-                            </TableRow>
-                          </TableBody>
-                        </Table>
-                      </div>
-                      <div className="flex flex-col gap-2 mt-4">
-                        <UserTabs 
-                          config={userTabsConfig.mainTabs} 
-                          variant="main"
-                          actions={
-                            <>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold text-xs h-6 px-2"
-                              >
-                                Filter
-                              </Button>
-                              <Button
-                                variant="default"
-                                size="sm"
-                                className="bg-green-500 hover:bg-green-600 text-white font-bold text-xs h-6 px-2"
-                              >
-                                PopUp
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                className="bg-red-500 hover:bg-red-600 text-white font-bold text-xs h-6 px-2"
-                                onClick={() => {
-                                  const updatedUsers = selectedUsers.filter(u => u.user.uid !== userInfo.user.uid);
-                                  setSelectedUsers(updatedUsers);
-                                  handleUserSelectionChange(updatedUsers.map(u => u.user));
-                                }}
-                              >
-                                Remove
-                              </Button>
-                            </>
-                          }
-                        />
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <UserAccordion 
+              selectedUsers={selectedUsers} 
+              onRemoveUser={handleRemoveUser}
+            />
           </CardContent>
         </Card>
       </div>
