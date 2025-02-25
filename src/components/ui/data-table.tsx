@@ -452,8 +452,8 @@ export function DataTable({
         <Table>
           <TableHeader>
             <TableRow className={`bg-purple-50/80 ${headerClassName}`}>
-              <TableHead className="w-12 h-10 py-2 border-r border-gray-200 text-center">
-                <div className="flex justify-center items-center">
+              <TableHead className="w-10 h-10 py-2 px-0 border-r border-gray-200 text-center">
+                <div className="flex justify-center items-center w-full px-2">
                   <Checkbox
                     checked={data.length > 0 && selectedRows.length === data.length}
                     onCheckedChange={handleSelectAll}
@@ -525,8 +525,8 @@ export function DataTable({
                   </TableHead>
                 ))
               )}
-              <TableHead className="w-12 h-10 py-2 border-r border-gray-200">
-                <div className="flex items-center justify-center">
+              <TableHead className="w-10 h-10 py-2 px-0 border-r border-gray-200">
+                <div className="flex items-center justify-center w-full px-2">
                   <MoreVertical className="h-4 w-4 text-gray-400" />
                 </div>
               </TableHead>
@@ -535,12 +535,14 @@ export function DataTable({
           <TableBody>
             {currentData.length === 0 ? (
               <TableRow>
-                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                <TableCell className="w-10 px-0 border-r border-gray-200 text-center">
+                  <div className="flex justify-center items-center w-full px-2">-</div>
+                </TableCell>
                 {idColumn && <TableCell className="w-16 border-r border-gray-200 text-center">-</TableCell>}
                 <TableCell colSpan={filteredColumns.length || 1} className="text-center py-4">
                   데이터가 없습니다.
                 </TableCell>
-                <TableCell className="w-12 border-r border-gray-200 text-center">-</TableCell>
+                <TableCell className="w-10 border-r border-gray-200 text-center">-</TableCell>
               </TableRow>
             ) : (
               currentData.map((item) => (
@@ -549,8 +551,8 @@ export function DataTable({
                   className={`hover:bg-purple-50/30 ${rowClassName}`}
                   onClick={() => onRowClick?.(item)}
                 >
-                  <TableCell className={`w-12 py-3 ${cellClassName} border-r border-gray-200 text-center`}>
-                    <div className="flex justify-center items-center">
+                  <TableCell className={`w-10 py-3 px-0 ${cellClassName} border-r border-gray-200 text-center`}>
+                    <div className="flex justify-center items-center w-full px-2">
                       <Checkbox
                         checked={selectedRows.includes(item.id?.toString())}
                         onCheckedChange={() => handleSelectRow(item.id?.toString())}
@@ -588,10 +590,12 @@ export function DataTable({
                       </TableCell>
                     ))
                   )}
-                  <TableCell className={`w-12 py-3 text-right ${cellClassName} border-r border-gray-200`}>
-                    <Button variant="ghost" size="icon" className="hover:bg-purple-50">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
+                  <TableCell className={`w-10 py-3 px-0 text-center ${cellClassName} border-r border-gray-200`}>
+                    <div className="flex justify-center items-center w-full px-2">
+                      <Button variant="ghost" size="icon" className="hover:bg-purple-50">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
