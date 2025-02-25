@@ -14,6 +14,7 @@ import {
 import { DynamicTabs } from '@/components/ui/dynamic-tabs';
 import { userTabsStructure } from '@/data/user-tabs-structure';
 import { TableData } from '@/components/ui/data-table';
+import { getTabState, saveTabState } from '@/lib/tab-state';
 
 interface SelectedUserInfo {
   user: TableData;
@@ -23,6 +24,7 @@ interface SelectedUserInfo {
 export default function UserDetailsPage() {
   const [userInfo, setUserInfo] = useState<SelectedUserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string | undefined>(undefined);
   
   // 컴포넌트 마운트 시 사용자 정보 로드
   useEffect(() => {
@@ -34,6 +36,12 @@ export default function UserDetailsPage() {
         if (storedInfo) {
           const parsedInfo = JSON.parse(storedInfo);
           setUserInfo(parsedInfo);
+          
+          // 저장된 탭 상태 불러오기
+          const savedTabState = getTabState(String(parsedInfo.user.uid));
+          if (savedTabState) {
+            setActiveTab(savedTabState);
+          }
           
           // 페이지 타이틀 설정
           const nickname = parsedInfo.user.nickname || parsedInfo.user.login_id;
@@ -59,6 +67,14 @@ export default function UserDetailsPage() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
+  
+  // 탭 변경 핸들러
+  const handleTabChange = (tabId: string) => {
+    if (userInfo) {
+      saveTabState(String(userInfo.user.uid), tabId);
+      setActiveTab(tabId);
+    }
+  };
   
   if (isLoading) {
     return (
@@ -155,6 +171,8 @@ export default function UserDetailsPage() {
               triggerClassName="data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm"
               contentClassName="mt-0"
               equalTabs={true}
+              defaultValue={activeTab}
+              onValueChange={handleTabChange}
             />
           </CardContent>
         </Card>

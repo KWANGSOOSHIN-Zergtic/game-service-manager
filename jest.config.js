@@ -11,7 +11,10 @@ const config = {
     }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  testMatch: ['**/__tests__/**/*.test.(ts|tsx)'],
+  testMatch: [
+    '**/__tests__/**/*.test.(ts|tsx)',
+    '**/src/test/**/*.test.(ts|tsx)'
+  ],
   globals: {
     'ts-jest': {
       isolatedModules: true,

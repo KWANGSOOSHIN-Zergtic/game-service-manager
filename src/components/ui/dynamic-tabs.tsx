@@ -11,6 +11,7 @@ interface DynamicTabsProps {
   contentClassName?: string;
   orientation?: 'horizontal' | 'vertical';
   equalTabs?: boolean; // 탭을 균등하게 분할할지 여부
+  onValueChange?: (value: string) => void; // 탭 변경 이벤트 콜백 추가
 }
 
 export function DynamicTabs({
@@ -20,14 +21,19 @@ export function DynamicTabs({
   triggerClassName = '',
   contentClassName = '',
   orientation = 'horizontal',
-  equalTabs = true // 기본값은 균등 분할
+  equalTabs = true, // 기본값은 균등 분할
+  onValueChange
 }: DynamicTabsProps) {
   // 기본 선택값이 없으면 첫 번째 항목을 기본값으로 설정
   const firstTabId = items.length > 0 ? items[0].id : '';
   const activeTab = defaultValue || firstTabId;
 
   return (
-    <Tabs defaultValue={activeTab} className={className}>
+    <Tabs 
+      defaultValue={activeTab} 
+      className={className}
+      onValueChange={onValueChange}
+    >
       <TabsList className={`w-full ${orientation === 'vertical' ? 'flex-col' : 'flex'}`}>
         {items.map(item => (
           <TabsTrigger
@@ -49,6 +55,7 @@ export function DynamicTabs({
               triggerClassName={triggerClassName}
               contentClassName={contentClassName}
               equalTabs={equalTabs}
+              onValueChange={onValueChange ? (value) => onValueChange(`${item.id}-${value}`) : undefined}
             />
           ) : item.content ? (
             <TabContentRenderer content={item.content} className="mt-2" />

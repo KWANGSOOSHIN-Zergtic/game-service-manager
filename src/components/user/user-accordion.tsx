@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   Accordion,
   AccordionContent,
@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { DynamicTabs } from '@/components/ui/dynamic-tabs';
 import { userTabsStructure } from '@/data/user-tabs-structure';
 import { TableData } from '@/components/ui/data-table';
+import { saveTabState } from '@/lib/tab-state';
 
 interface SelectedUserInfo {
   user: TableData;
@@ -51,6 +52,11 @@ export function UserAccordion({ selectedUsers, onRemoveUser }: UserAccordionProp
       popup.focus();
     }
   };
+
+  // 탭 변경 핸들러 추가
+  const handleTabChange = useCallback((userId: string, tabId: string) => {
+    saveTabState(userId, tabId);
+  }, []);
 
   return (
     <>
@@ -142,6 +148,7 @@ export function UserAccordion({ selectedUsers, onRemoveUser }: UserAccordionProp
                     triggerClassName="data-[state=active]:bg-purple-400 data-[state=active]:text-white h-8 rounded-none font-bold text-sm"
                     contentClassName="mt-0"
                     equalTabs={true}
+                    onValueChange={(value) => handleTabChange(String(userInfo.user.uid), value)}
                   />
                 </div>
               </div>
