@@ -61,13 +61,20 @@ export default function UsersPage() {
 
   // 선택된 행이 변경될 때 사용자 정보 업데이트
   useEffect(() => {
-    if (!selectedDB || !selectedRowsTemp.length) return;
+    if (!selectedDB) return;
     
     const selectedUids = new Set(selectedRowsTemp.map(row => row.uid));
     
     setSelectedUsers(prev => {
+      // 현재 체크된 행에 대응하는 uid가 있는 유저만 필터링
       const filteredUsers = prev.filter(userInfo => selectedUids.has(userInfo.user.uid));
       
+      // 체크된 행이 없으면 필터링된 빈 배열만 반환
+      if (!selectedRowsTemp.length) {
+        return filteredUsers; // 이 시점에서 빈 배열임
+      }
+      
+      // 신규 유저 추가 로직 (체크된 행이 있을 때만 실행)
       const existingIds = new Set(filteredUsers.map(userInfo => userInfo.user.uid));
       const newUsers = selectedRowsTemp
         .filter(row => !existingIds.has(row.uid))
