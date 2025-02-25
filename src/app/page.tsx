@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Github } from "lucide-react"
+import { Github, Mail, Lock, LogIn } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
@@ -73,24 +73,26 @@ export default function LoginPage() {
             />
 
             <form onSubmit={handleSubmit} className="w-full space-y-4">
-              <div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
                   placeholder="E-mail"
                   value={loginData.email}
                   onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                  className="w-full"
+                  className="w-full pl-10"
                   required
                   disabled={isLoading}
                 />
               </div>
-              <div>
+              <div className="relative">
+                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="password"
                   placeholder="Password"
                   value={loginData.password}
                   onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  className="w-full"
+                  className="w-full pl-10"
                   required
                   disabled={isLoading}
                 />
@@ -111,7 +113,12 @@ export default function LoginPage() {
                 className="w-full bg-purple-500 hover:bg-purple-600"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Signing in..." : (
+                  <>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </>
+                )}
               </Button>
 
               <div className="relative my-6">
@@ -130,7 +137,7 @@ export default function LoginPage() {
               </div>
 
               <div className="text-center text-sm text-gray-600">
-                No account yet? <Link href="/register" className="text-purple-600 hover:underline">Sign up</Link>
+                No account yet? <Link href="/register" className="text-purple-600 hover:underline font-bold">Sign up</Link>
               </div>
             </form>
           </div>

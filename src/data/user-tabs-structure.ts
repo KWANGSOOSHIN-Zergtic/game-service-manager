@@ -162,6 +162,13 @@ export const userTabsStructure: TabStructure = {
         type: 'dataTable',
         props: {
           endpoint: '/api/user/currency',
+          tableName: '화폐 정보',
+          formatters: {
+            count: (value: string | number | null) => `${Number(value || 0).toLocaleString()} 개`,
+            excel_item_index: (value: string | number | null) => `#${value || '-'}`,
+            create_at: (value: string | Date | null) => value ? new Date(value).toLocaleString('ko-KR') : '-',
+            update_at: (value: string | Date | null) => value ? new Date(value).toLocaleString('ko-KR') : '-'
+          }
         }
       }
     },

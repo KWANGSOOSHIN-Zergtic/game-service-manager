@@ -172,7 +172,7 @@ export function useAuth() {
       localStorage.removeItem('autoLoginPassword')
 
       // 로그인 페이지로 리다이렉트
-      router.push('/login')
+      router.push('/')
       toast.success('로그아웃되었습니다.')
     } catch (error) {
       console.error('로그아웃 에러:', error)

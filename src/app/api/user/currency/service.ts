@@ -4,6 +4,43 @@ import { USER_CURRENCY_QUERIES } from '@/app/api/db-query/queries-users-currency
 import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
 import { saveDBCollection } from '@/app/api/db-information/db-information';
 
+// 파라미터가 포함된 실제 쿼리 문자열 생성 유틸리티 함수
+function formatQueryWithParams(query: string, params: (string | number | boolean | Date | null | undefined)[]): string {
+  let formattedQuery = query;
+  
+  // 쿼리 문자열 포맷팅
+  formattedQuery = formattedQuery
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line)
+    .join('\n    ');
+  
+  // 각 파라미터를 적절한 형식으로 변환하여 쿼리에 삽입
+  params.forEach((param, index) => {
+    const placeholder = `$${index + 1}`;
+    let paramValue: string;
+    
+    if (param === null) {
+      paramValue = 'NULL';
+    } else if (typeof param === 'string') {
+      // 문자열 파라미터는 따옴표로 감싸기
+      paramValue = `'${param}'`;
+    } else if (param instanceof Date) {
+      // 날짜 파라미터 처리
+      paramValue = `'${param.toISOString()}'`;
+    } else {
+      // 숫자 등 다른 타입의 파라미터
+      paramValue = String(param);
+    }
+    
+    // 정규식을 사용하여 모든 $n 파라미터 교체
+    const regex = new RegExp('\\' + placeholder, 'g');
+    formattedQuery = formattedQuery.replace(regex, paramValue);
+  });
+  
+  return formattedQuery;
+}
+
 export interface UserCurrencyParams {
   employerUid: string | null;
   dbName: string | null;
@@ -86,18 +123,13 @@ export async function getUserCurrency(params: UserCurrencyParams): Promise<UserC
               searchValue: employerUid
           });
 
-          // 실제 쿼리 로깅 (포맷팅된 형태)
-          const formattedQuery = USER_CURRENCY_QUERIES.SELECT_USER_CURRENCY.query
-              .split('\n')
-              .map(line => line.trim())
-              .filter(line => line)
-              .join('\n    ');
+          // 실제 파라미터 값이 포함된 쿼리로 변환
+          const actualQuery = formatQueryWithParams(USER_CURRENCY_QUERIES.SELECT_USER_CURRENCY.query, [employerUid]);
           
           logger.info('[User Currency] 실행 쿼리:\n' + 
               '----------------------------------------\n' + 
-              `    ${formattedQuery}\n` +
-              '----------------------------------------\n' +
-              `파라미터: [${employerUid}]`
+              `    ${actualQuery}\n` +
+              '----------------------------------------\n'
           );
 
           const startTime = Date.now();

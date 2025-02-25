@@ -260,3 +260,63 @@ JWT_SECRET=
 ### 3. 린트 이슈
 - 린트 실행: `npm run lint`
 - 자동 수정: `npm run lint -- --fix`
+
+## JSON Viewer 컴포넌트
+
+### 설치된 패키지
+- `react-json-pretty`: JSON 데이터를 시각적으로 표현하기 위한 라이브러리
+- `react-json-view`: 트리 형태로 JSON 데이터를 시각화하고 조작할 수 있는 라이브러리
+
+```bash
+npm install react-json-pretty react-json-view --force
+```
+
+> **참고**: React 19와의 호환성 문제로 `--force` 옵션을 사용하여 설치해야 합니다.
+
+### 컴포넌트 구성
+
+1. **JsonViewer** (`src/components/ui/json-viewer.tsx`)
+   - 기본 JSON 뷰어 컴포넌트
+   - `react-json-view` 라이브러리 사용
+   - 다음 속성을 지원:
+     - `data`: 표시할 JSON 데이터
+     - `className`: 추가 CSS 클래스
+     - `collapsed`: 초기에 접혀있는 상태 여부
+     - `displayDataTypes`: 데이터 타입 표시 여부
+     - `displayObjectSize`: 객체 크기 표시 여부
+     - `enableClipboard`: 클립보드 복사 기능 활성화 여부
+     - `indentWidth`: 들여쓰기 너비
+
+2. **JsonViewerCustom** (`src/components/ui/json-viewer-custom.tsx`)
+   - 커스텀 테마를 지원하는 JSON 뷰어 컴포넌트
+   - `react-json-pretty` 라이브러리 사용
+   - 지원하는 테마: 
+     - `MONOKAI`
+     - `DARK`
+     - `LIGHT` 
+     - `CUSTOM`
+   - 다음 속성을 지원:
+     - `data`: 표시할 JSON 데이터
+     - `className`: 추가 CSS 클래스
+     - `theme`: 사용할 테마 (기본값: MONOKAI)
+     - `copyable`: 클립보드 복사 버튼 표시 여부
+     - `onCopy`: 복사 후 호출될 콜백 함수
+
+### 사용 예시
+
+```tsx
+// 기본 JsonViewer 사용
+<JsonViewer data={apiResponse} />
+
+// 커스텀 테마 JsonViewer 사용
+<JsonViewerCustom 
+  data={apiResponse} 
+  theme={JsonTheme.DARK}
+  copyable
+  onCopy={() => console.log('JSON이 복사되었습니다')}
+/>
+```
+
+### 예제 페이지
+
+`/json-viewer-examples` 경로에서 다양한 테마와 옵션을 적용한 JSON Viewer 예제를 확인할 수 있습니다.
