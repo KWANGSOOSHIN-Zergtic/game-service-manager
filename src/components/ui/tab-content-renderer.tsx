@@ -16,9 +16,16 @@ import {
   Bug,
   Search,
   Copy,
-  Check
+  Check,
+  Clock,
+  ChevronDown
 } from 'lucide-react';
 import { JsonViewerCustom, JsonTheme } from '@/components/ui/json-viewer-custom';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -65,88 +72,112 @@ const ResponseInfoSection: React.FC<ResponseInfoSectionProps> = ({
   copyToClipboard, 
   copiedSection 
 }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(true);
+  
   return (
-    <div>
-      <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
-        {debugInfo?.success === true ? (
-          <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" />
-        ) : debugInfo?.success === false ? (
-          <X className="w-5 h-5 mr-2 text-red-600" />
-        ) : (
-          <AlertTriangle className="w-5 h-5 mr-2 text-yellow-600" />
-        )}
-        <strong>[응답]</strong> 
-        {debugInfo?.success !== undefined ? (
-          debugInfo.success ? (
-            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
-              <CheckCircle2 className="w-3 h-3 mr-1" />성공
-            </span>
-          ) : (
-            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center">
-              <X className="w-3 h-3 mr-1" />실패
-            </span>
-          )
-        ) : (
-          <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full flex items-center">
-            <AlertTriangle className="w-3 h-3 mr-1" />처리 중
-          </span>
-        )}
-      </div>
-      <div className={`p-3 ${
-        debugInfo?.success === true
-          ? 'bg-green-50'
-          : debugInfo?.success === false
-            ? 'bg-red-50'
-            : 'bg-yellow-50'
-      }`}>
-        {debugInfo?.message && (
-          <div className="mb-2">
-            <span className="font-semibold">메시지:</span>
-            <span className={`ml-2 ${
-              debugInfo.success ? 'text-green-700' : 'text-red-700'
-            }`}>
-              {debugInfo.message}
-            </span>
-          </div>
-        )}
-        
-        {debugInfo?.error && (
-          <div className="mb-2 flex items-start">
-            <AlertCircle className="w-4 h-4 mt-0.5 mr-1 text-red-600 flex-shrink-0" />
-            <span className="font-semibold">오류:</span>
-            <span className="ml-2 text-red-600">{debugInfo.error}</span>
-          </div>
-        )}
-        
-        <div>
-          <div className="flex items-center justify-between">
-            <span className="font-semibold">응답 데이터:</span>
-            <button
-              onClick={() => copyToClipboard(JSON.stringify(debugInfo, null, 2), 'response')}
-              className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-              title="응답 데이터 클립보드에 복사"
-            >
-              {copiedSection === 'response' ? (
-                <>
-                  <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                  <span className="text-xs text-green-600">복사됨</span>
-                </>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border-t border-gray-200">
+      <CollapsibleTrigger className="w-full">
+        <div className="px-3 py-2 bg-blue-50 font-medium text-gray-700 flex items-center justify-between cursor-pointer hover:bg-blue-200 transition-colors">
+          <div className="flex items-center">
+            {debugInfo?.success === true ? (
+              <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" />
+            ) : debugInfo?.success === false ? (
+              <X className="w-5 h-5 mr-2 text-red-600" />
+            ) : (
+              <AlertTriangle className="w-5 h-5 mr-2 text-yellow-600" />
+            )}
+            <strong>[응답]</strong> 
+            {debugInfo?.success !== undefined ? (
+              debugInfo.success ? (
+                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />성공
+                </span>
               ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 mr-1" />
-                  <span className="text-xs">복사</span>
-                </>
-              )}
-            </button>
+                <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center">
+                  <X className="w-3 h-3 mr-1" />실패
+                </span>
+              )
+            ) : (
+              <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full flex items-center">
+                <AlertTriangle className="w-3 h-3 mr-1" />처리 중
+              </span>
+            )}
           </div>
-          <JsonViewerCustom 
-            data={debugInfo} 
-            theme={JsonTheme.LIGHT}
-            className="mt-1"
-          />
+          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'transform rotate-180' : ''}`} />
         </div>
-      </div>
-    </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className={`p-3 ${
+          debugInfo?.success === true
+            ? 'bg-green-50'
+            : debugInfo?.success === false
+              ? 'bg-red-50'
+              : 'bg-yellow-50'
+        }`}>
+          {/* 응답 시간 표시 - 본문 첫 부분 좌측 상단에 배치 */}
+          {debugInfo && (
+            <div className="mb-4 text-xs text-gray-700 flex items-center">
+              <Clock className="w-3.5 h-3.5 mr-1 text-gray-600" />
+              <span className="font-semibold">응답 시간:</span>
+              <span className="ml-2">
+                {debugInfo.timestamp 
+                  ? new Date(debugInfo.timestamp as string).toLocaleString()
+                  : debugInfo.responseTime
+                    ? new Date(debugInfo.responseTime as string).toLocaleString()
+                    : new Date().toLocaleString()}
+              </span>
+            </div>
+          )}
+          
+          {debugInfo?.message && (
+            <div className="mb-2">
+              <span className="font-semibold">메시지:</span>
+              <span className={`ml-2 ${
+                debugInfo.success ? 'text-green-700' : 'text-red-700'
+              }`}>
+                {debugInfo.message}
+              </span>
+            </div>
+          )}
+          
+          {debugInfo?.error && (
+            <div className="mb-2 flex items-start">
+              <AlertCircle className="w-4 h-4 mt-0.5 mr-1 text-red-600 flex-shrink-0" />
+              <span className="font-semibold">오류:</span>
+              <span className="ml-2 text-red-600">{debugInfo.error}</span>
+            </div>
+          )}
+          
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="font-semibold">응답 데이터:</span>
+              <button
+                onClick={() => copyToClipboard(JSON.stringify(debugInfo, null, 2), 'response')}
+                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                title="응답 데이터 클립보드에 복사"
+              >
+                {copiedSection === 'response' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                    <span className="text-xs text-green-600">복사됨</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    <span className="text-xs">복사</span>
+                  </>
+                )}
+              </button>
+            </div>
+            <JsonViewerCustom 
+              data={debugInfo} 
+              theme={JsonTheme.LIGHT}
+              className="mt-1"
+            />
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
@@ -170,6 +201,8 @@ const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({
   copiedSection,
   debugInfo
 }) => {
+  const [isOpen, setIsOpen] = useState<boolean>(true);
+  
   // method나 url이 없지만 debugInfo가 있는 경우, debugInfo에서 정보 추출 시도
   if ((!method || !url) && debugInfo) {
     // API 엔드포인트가 응답에 있는 경우 사용
@@ -196,148 +229,189 @@ const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({
   };
 
   return (
-    <div>
-      <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
-        <strong>[요청]</strong>
-        {method && (
-          <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${getMethodBgColor(method)}`}>
-            {method.toUpperCase()}
-          </span>
-        )}
-        {url ? (
-          <span className="ml-2 text-sm text-gray-600 truncate flex-1 font-mono">
-            {url}
-          </span>
-        ) : (
-          <span className="ml-2 text-sm text-gray-500 italic">URL 정보 없음</span>
-        )}
-        {url && (
-          <button
-            onClick={() => copyToClipboard(url || '', 'url')}
-            className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100 ml-2"
-            title="URL 클립보드에 복사"
-          >
-            {copiedSection === 'url' ? (
-              <>
-                <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                <span className="text-xs text-green-600">복사됨</span>
-              </>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border-b border-gray-200">
+      <CollapsibleTrigger className="w-full">
+        <div className="px-3 py-2 bg-blue-50 font-medium text-gray-700 flex items-center justify-between cursor-pointer hover:bg-blue-100 transition-colors">
+          <div className="flex items-center flex-1 overflow-hidden">
+            {debugInfo?.success === true ? (
+              <CheckCircle2 className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" />
+            ) : debugInfo?.success === false ? (
+              <X className="w-5 h-5 mr-2 text-red-600 flex-shrink-0" />
             ) : (
-              <>
-                <Copy className="w-3.5 h-3.5 mr-1" />
-                <span className="text-xs">복사</span>
-              </>
+              <AlertTriangle className="w-5 h-5 mr-2 text-yellow-600 flex-shrink-0" />
             )}
-          </button>
-        )}
-      </div>
-      <div className="p-3 bg-white border-t border-gray-200">
-        {/* 헤더 정보 표시 */}
-        {apiDebugInfo?.requestHeaders && Object.keys(apiDebugInfo.requestHeaders).length > 0 && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold">Headers:</span>
-                <button
-                  onClick={() => apiDebugInfo && copyToClipboard(JSON.stringify(apiDebugInfo.requestHeaders, null, 2), 'headers')}
-                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                  title="헤더 정보 클립보드에 복사"
-                >
-                  {copiedSection === 'headers' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                      <span className="text-xs text-green-600">복사됨</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 mr-1" />
-                      <span className="text-xs">복사</span>
-                    </>
-                  )}
-                </button>
+            <strong className="flex-shrink-0">[요청]</strong>
+            {method && (
+              <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${getMethodBgColor(method)}`}>
+                {method.toUpperCase()}
+              </span>
+            )}
+            {debugInfo?.success !== undefined && (
+              debugInfo.success ? (
+                <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center flex-shrink-0">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />성공
+                </span>
+              ) : (
+                <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center flex-shrink-0">
+                  <X className="w-3 h-3 mr-1" />실패
+                </span>
+              )
+            )}
+            {url ? (
+              <span className="ml-2 text-sm text-gray-600 truncate font-mono flex-1">
+                {url}
+              </span>
+            ) : (
+              <span className="ml-2 text-sm text-gray-500 italic">URL 정보 없음</span>
+            )}
+            {url && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation(); // 아코디언 토글 방지
+                  copyToClipboard(url || '', 'url');
+                }}
+                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100 ml-2"
+                title="URL 클립보드에 복사"
+              >
+                {copiedSection === 'url' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                    <span className="text-xs text-green-600">복사됨</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                    <span className="text-xs">복사</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'transform rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="p-3 bg-white border-t border-gray-200">
+          {/* 요청 시간 표시 - 본문 첫 부분 좌측 상단에 배치 */}
+          {(apiDebugInfo?.timestamp || requestInfo?.timestamp) && (
+            <div className="mb-4 text-xs text-gray-700 flex items-center">
+              <Clock className="w-3.5 h-3.5 mr-1 text-gray-600" />
+              <span className="font-semibold">요청 시간:</span>
+              <span className="ml-2">
+                {apiDebugInfo?.timestamp 
+                  ? new Date(apiDebugInfo.timestamp).toLocaleString() 
+                  : requestInfo?.timestamp ? requestInfo.timestamp.toLocaleString() : ''}
+              </span>
+            </div>
+          )}
+          
+          {/* 헤더 정보 표시 */}
+          {apiDebugInfo?.requestHeaders && Object.keys(apiDebugInfo.requestHeaders).length > 0 && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold">Headers:</span>
+                  <button
+                    onClick={() => apiDebugInfo && copyToClipboard(JSON.stringify(apiDebugInfo.requestHeaders, null, 2), 'headers')}
+                    className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                    title="헤더 정보 클립보드에 복사"
+                  >
+                    {copiedSection === 'headers' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                        <span className="text-xs text-green-600">복사됨</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                        <span className="text-xs">복사</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <JsonViewerCustom 
+                data={apiDebugInfo?.requestHeaders || {}} 
+                theme={JsonTheme.LIGHT}
+                className="mt-1"
+              />
+            </div>
+          )}
+          
+          {/* 요청 바디 표시 */}
+          {apiDebugInfo?.requestBody && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold">Request Body:</span>
+                  <button
+                    onClick={() => apiDebugInfo && copyToClipboard(apiDebugInfo.requestBody || '', 'body')}
+                    className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                    title="요청 바디 클립보드에 복사"
+                  >
+                    {copiedSection === 'body' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                        <span className="text-xs text-green-600">복사됨</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                        <span className="text-xs">복사</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 font-mono text-xs overflow-auto">
+                <pre>{apiDebugInfo?.requestBody || ''}</pre>
               </div>
             </div>
-            <JsonViewerCustom 
-              data={apiDebugInfo?.requestHeaders || {}} 
-              theme={JsonTheme.LIGHT}
-              className="mt-1"
-            />
-          </div>
-        )}
-        
-        {/* 요청 바디 표시 */}
-        {apiDebugInfo?.requestBody && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold">Request Body:</span>
-                <button
-                  onClick={() => apiDebugInfo && copyToClipboard(apiDebugInfo.requestBody || '', 'body')}
-                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                  title="요청 바디 클립보드에 복사"
-                >
-                  {copiedSection === 'body' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                      <span className="text-xs text-green-600">복사됨</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 mr-1" />
-                      <span className="text-xs">복사</span>
-                    </>
-                  )}
-                </button>
+          )}
+          
+          {/* 파라미터 정보 표시 */}
+          {requestInfo?.params && Object.keys(requestInfo.params).length > 0 && (
+            <div className="mb-2">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="font-semibold">Parameters:</span>
+                  <button
+                    onClick={() => copyToClipboard(JSON.stringify(requestInfo.params, null, 2), 'params')}
+                    className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                    title="파라미터 정보 클립보드에 복사"
+                  >
+                    {copiedSection === 'params' ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                        <span className="text-xs text-green-600">복사됨</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 mr-1" />
+                        <span className="text-xs">복사</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
+              <JsonViewerCustom 
+                data={requestInfo.params} 
+                theme={JsonTheme.LIGHT}
+                className="mt-1"
+              />
             </div>
-            <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 font-mono text-xs overflow-auto">
-              <pre>{apiDebugInfo?.requestBody || ''}</pre>
+          )}
+          
+          {/* 파라미터가 없거나 요청 정보가 없는 경우 */}
+          {(!requestInfo?.params || Object.keys(requestInfo.params).length === 0) && !apiDebugInfo?.requestBody && (
+            <div className="bg-yellow-50 p-2 rounded text-yellow-700 text-xs flex items-center">
+              <Info className="w-3.5 h-3.5 mr-1" />
+              <span>요청 파라미터 정보가 없습니다.</span>
             </div>
-          </div>
-        )}
-        
-        {/* 파라미터 정보 표시 */}
-        {requestInfo?.params && Object.keys(requestInfo.params).length > 0 && (
-          <div className="mb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="font-semibold">Parameters:</span>
-                <button
-                  onClick={() => copyToClipboard(JSON.stringify(requestInfo.params, null, 2), 'params')}
-                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                  title="파라미터 정보 클립보드에 복사"
-                >
-                  {copiedSection === 'params' ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                      <span className="text-xs text-green-600">복사됨</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3.5 h-3.5 mr-1" />
-                      <span className="text-xs">복사</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-            <JsonViewerCustom 
-              data={requestInfo.params} 
-              theme={JsonTheme.LIGHT}
-              className="mt-1"
-            />
-          </div>
-        )}
-        
-        {/* 파라미터가 없거나 요청 정보가 없는 경우 */}
-        {(!requestInfo?.params || Object.keys(requestInfo.params).length === 0) && !apiDebugInfo?.requestBody && (
-          <div className="bg-yellow-50 p-2 rounded text-yellow-700 text-xs flex items-center">
-            <Info className="w-3.5 h-3.5 mr-1" />
-            <span>요청 파라미터 정보가 없습니다.</span>
-          </div>
-        )}
-      </div>
-    </div>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 
@@ -916,7 +990,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             <div className="flex items-center">
               <Bug className="w-4 h-4 mr-1 text-gray-600" />
               <span className="text-blue-600">API 디버그 정보</span>
-              {debugInfo?.success && <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" />성공</span>}
+              {debugInfo?.success === true && <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" />성공</span>}
               {debugInfo?.success === false && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center"><X className="w-3 h-3 mr-1" />실패</span>}
             </div>
             <button
@@ -949,7 +1023,6 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           
           <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
             {/* API 요청 정보 섹션 - 개선된 로직 */}
-            {/* 디버그 정보 출력 */}
             {(() => { 
               try {
                 console.log('디버그 정보 현황:', { 
@@ -965,10 +1038,33 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             
             {/* 디버그 정보 표시 여부 */}
             <div className="bg-gray-100 p-2 text-xs">
-              <span>디버그 정보 상태: </span>
-              <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}, </span>
-              <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}, </span>
-              <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+              <span className="flex items-center">
+                <Info className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                <span className="font-medium">디버그 정보 상태:</span>
+              </span>
+              <div className="mt-1 ml-2 flex flex-wrap gap-2">
+                <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                  {requestInfo ? 
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                    <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                  }
+                  <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}</span>
+                </span>
+                <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                  {apiDebugInfo ? 
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                    <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                  }
+                  <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}</span>
+                </span>
+                <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                  {debugInfo ? 
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                    <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                  }
+                  <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+                </span>
+              </div>
             </div>
             
             {(requestInfo || apiDebugInfo) ? (
@@ -1102,10 +1198,33 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                     
                     {/* 디버그 정보 표시 여부 */}
                     <div className="bg-gray-100 p-2 text-xs">
-                      <span>디버그 정보 상태: </span>
-                      <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}, </span>
-                      <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}, </span>
-                      <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+                      <span className="flex items-center">
+                        <Info className="w-3.5 h-3.5 mr-1 text-blue-600" />
+                        <span className="font-medium">디버그 정보 상태:</span>
+                      </span>
+                      <div className="mt-1 ml-2 flex flex-wrap gap-2">
+                        <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                          {requestInfo ? 
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                            <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                          }
+                          <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}</span>
+                        </span>
+                        <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                          {apiDebugInfo ? 
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                            <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                          }
+                          <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}</span>
+                        </span>
+                        <span className="flex items-center bg-gray-50 px-2 py-1 rounded">
+                          {debugInfo ? 
+                            <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-green-600" /> : 
+                            <X className="w-3.5 h-3.5 mr-1 text-red-500" />
+                          }
+                          <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
