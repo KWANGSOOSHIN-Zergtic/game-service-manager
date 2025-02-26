@@ -9,7 +9,6 @@
 - Test 데이터는 src/test/test-data 폴더 내에 작성 되어야 합니다.
 - Test Jest 를 통해서 실행 되어야 합니다.
 - 테스트 실행시 오류가 발생하면 관련 오류를 반드시 수정하여야 합니다.
-- 작성된 코드는 직접 실행을 통해 구동을 확인하여야 하며 로그분석을 통해서 문제가 있는 부분을 수정하여야 합니다.
 - 요청에 필요한 라이브러리나 패키지, 컴포넌트들은 요청시 모두 설치 되어야 합니다.
     - 설치된 항목은 '/dosc/project-setup.md'에 목적과, 설치 방법이 기재 되어야 합니다.
 
@@ -22,10 +21,10 @@
     - 주의: 'npx shadcn—ui@latest add' 명령어는 deprecated. 반드시 'npx shadcn@latest add'를 사용해야 합니다.
 
 ### lcons
-
 - 모든 아이콘은 Lucide React를 사용해야 합니다
 - 아이콘 임포트 방법: 'import { IconName } from "lucide—react"'
 - 예시: 'import { Search, Menu } from "lucide—react"'
+- 카타고리 정보, String 출력 정보중 아이콘의 사용이 필요한 단어들은 아이콘을 같이 사용하여 표시합니다.
 
 ### Component Structure
 
@@ -33,25 +32,9 @@
 - UI 컴포넌트는 '/components/ui' 디렉토리에 위치해야 합니다
 - 페이지별 컴포넌트는 '/app' 디렉토리 내 해당 라우트에 위치해야 합니다
 
-### Core Practices
-
-- TypeScript types must be strictly defined.
-- Follow the user requirements carefully and precisely.
-- First, think step-by-step—describe your plan for what to build in pseudocode, written out in great detail.
-- Confirm the plan with the user, then write the code!
-- Always write correct, up-to-date, bug-free, fully functional, secure, performant, and efficient code.
-- Focus on readability over performance.
-- Fully implement all requested functionality.
-- Leave NO to-dos, placeholders, or missing pieces in the code.
-- Ensure the code is complete! Thoroughly verify the final version.
-- Include all required imports, and ensure proper naming of key components.
-- Be concise. Minimize unnecessary explanations and redundancy.
-- If you believe there might not be a correct answer, say so. If you do not know the answer, admit it instead of guessing.
-- Always provide concise, precise answers.
-- Ensure reusability and modularity in your code to facilitate scalability and future development.
-- Components must be designed to be reusable.
-- Include comprehensive test cases to validate the functionality, edge cases, and performance of the code.
-- Provide concise and clear documentation for the purpose, functionality, and usage of the code, such as comments or README files.
-- Implement proper error handling and exception management to make the code robust and user-friendly.
-- Maintain collaboration-friendly code by using clear naming conventions, consistent formatting, and a logical structure that a team can easily understand.
-- Please answer in Korean.
+## 프로그램 실행 및 테스트
+- jest test 를 제외한 직접 실행 테스트의 경우 아래의 조건을 준수 해야 합니다.
+- 프로그램 실행 명령어: 'npm run dev'
+- 프로그램 실행 후 접속 주소: 'http://localhost:3000'
+- 개발용 포트인 3000 포트를 사용하여 실행 해야 합니다.
+- 만약 3000번 포트가 이미 실행 중이면 종료후 실행 하여야 합니다

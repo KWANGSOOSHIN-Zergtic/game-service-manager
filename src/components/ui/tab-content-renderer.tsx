@@ -18,7 +18,6 @@ import {
   Copy,
   Check
 } from 'lucide-react';
-import { JsonViewer } from '@/components/ui/json-viewer';
 import { JsonViewerCustom, JsonTheme } from '@/components/ui/json-viewer-custom';
 
 interface TabContentRendererProps {
@@ -36,7 +35,7 @@ interface ApiResponse {
   [key: string]: unknown;
 }
 
-// API 요청 정보를 저장하는 인터페이스
+// API 요청 정보를 저장하는 인터페이스 - useApiRequest.ts와 일치시킴
 interface ApiRequestInfo {
   url: string;
   params: Record<string, unknown>;
@@ -45,13 +44,312 @@ interface ApiRequestInfo {
   timestamp: Date;
 }
 
+// API 디버그 정보 인터페이스 - useApiRequest.ts에서 사용하는 구조
+interface ApiDebugInfo {
+  requestUrl: string;
+  requestMethod: string;
+  requestHeaders: Record<string, string>;
+  requestBody?: string;
+  timestamp: string;
+}
+
+// 응답 정보 섹션을 컴포넌트로 분리
+interface ResponseInfoSectionProps {
+  debugInfo: ApiResponse | null;
+  copyToClipboard: (text: string, section: string) => void;
+  copiedSection: string | null;
+}
+
+const ResponseInfoSection: React.FC<ResponseInfoSectionProps> = ({ 
+  debugInfo, 
+  copyToClipboard, 
+  copiedSection 
+}) => {
+  return (
+    <div>
+      <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
+        {debugInfo?.success === true ? (
+          <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" />
+        ) : debugInfo?.success === false ? (
+          <X className="w-5 h-5 mr-2 text-red-600" />
+        ) : (
+          <AlertTriangle className="w-5 h-5 mr-2 text-yellow-600" />
+        )}
+        <strong>[응답]</strong> 
+        {debugInfo?.success !== undefined ? (
+          debugInfo.success ? (
+            <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
+              <CheckCircle2 className="w-3 h-3 mr-1" />성공
+            </span>
+          ) : (
+            <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center">
+              <X className="w-3 h-3 mr-1" />실패
+            </span>
+          )
+        ) : (
+          <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full flex items-center">
+            <AlertTriangle className="w-3 h-3 mr-1" />처리 중
+          </span>
+        )}
+      </div>
+      <div className={`p-3 ${
+        debugInfo?.success === true
+          ? 'bg-green-50'
+          : debugInfo?.success === false
+            ? 'bg-red-50'
+            : 'bg-yellow-50'
+      }`}>
+        {debugInfo?.message && (
+          <div className="mb-2">
+            <span className="font-semibold">메시지:</span>
+            <span className={`ml-2 ${
+              debugInfo.success ? 'text-green-700' : 'text-red-700'
+            }`}>
+              {debugInfo.message}
+            </span>
+          </div>
+        )}
+        
+        {debugInfo?.error && (
+          <div className="mb-2 flex items-start">
+            <AlertCircle className="w-4 h-4 mt-0.5 mr-1 text-red-600 flex-shrink-0" />
+            <span className="font-semibold">오류:</span>
+            <span className="ml-2 text-red-600">{debugInfo.error}</span>
+          </div>
+        )}
+        
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="font-semibold">응답 데이터:</span>
+            <button
+              onClick={() => copyToClipboard(JSON.stringify(debugInfo, null, 2), 'response')}
+              className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+              title="응답 데이터 클립보드에 복사"
+            >
+              {copiedSection === 'response' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                  <span className="text-xs text-green-600">복사됨</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  <span className="text-xs">복사</span>
+                </>
+              )}
+            </button>
+          </div>
+          <JsonViewerCustom 
+            data={debugInfo} 
+            theme={JsonTheme.LIGHT}
+            className="mt-1"
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// API 요청 정보 섹션을 컴포넌트로 분리 - ResponseInfoSection 위에 추가
+interface RequestInfoSectionProps {
+  apiDebugInfo: ApiDebugInfo | null;
+  requestInfo: ApiRequestInfo | null;
+  method: string | null | undefined;
+  url: string | null | undefined;
+  copyToClipboard: (text: string, section: string) => void;
+  copiedSection: string | null;
+  debugInfo?: ApiResponse | null; // debugInfo 추가
+}
+
+const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({ 
+  apiDebugInfo, 
+  requestInfo, 
+  method, 
+  url,
+  copyToClipboard, 
+  copiedSection,
+  debugInfo
+}) => {
+  // method나 url이 없지만 debugInfo가 있는 경우, debugInfo에서 정보 추출 시도
+  if ((!method || !url) && debugInfo) {
+    // API 엔드포인트가 응답에 있는 경우 사용
+    if (!url && debugInfo.url) {
+      url = debugInfo.url as string;
+    }
+    
+    // 메소드는 기본으로 GET 설정
+    if (!method) {
+      method = 'GET';
+    }
+  }
+
+  // HTTP 메소드에 따른 배경색 지정
+  const getMethodBgColor = (method: string | null | undefined): string => {
+    if (!method) return 'bg-gray-100 text-gray-700';
+    
+    const methodLower = method.toLowerCase();
+    if (methodLower === 'get') return 'bg-blue-100 text-blue-700';
+    if (methodLower === 'post') return 'bg-green-100 text-green-700';
+    if (methodLower === 'put') return 'bg-yellow-100 text-yellow-700';
+    if (methodLower === 'delete') return 'bg-red-100 text-red-700';
+    return 'bg-gray-100 text-gray-700';
+  };
+
+  return (
+    <div>
+      <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
+        <strong>[요청]</strong>
+        {method && (
+          <span className={`ml-2 px-2 py-0.5 rounded text-xs font-medium ${getMethodBgColor(method)}`}>
+            {method.toUpperCase()}
+          </span>
+        )}
+        {url ? (
+          <span className="ml-2 text-sm text-gray-600 truncate flex-1 font-mono">
+            {url}
+          </span>
+        ) : (
+          <span className="ml-2 text-sm text-gray-500 italic">URL 정보 없음</span>
+        )}
+        {url && (
+          <button
+            onClick={() => copyToClipboard(url || '', 'url')}
+            className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100 ml-2"
+            title="URL 클립보드에 복사"
+          >
+            {copiedSection === 'url' ? (
+              <>
+                <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                <span className="text-xs text-green-600">복사됨</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 mr-1" />
+                <span className="text-xs">복사</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+      <div className="p-3 bg-white border-t border-gray-200">
+        {/* 헤더 정보 표시 */}
+        {apiDebugInfo?.requestHeaders && Object.keys(apiDebugInfo.requestHeaders).length > 0 && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold">Headers:</span>
+                <button
+                  onClick={() => apiDebugInfo && copyToClipboard(JSON.stringify(apiDebugInfo.requestHeaders, null, 2), 'headers')}
+                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                  title="헤더 정보 클립보드에 복사"
+                >
+                  {copiedSection === 'headers' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                      <span className="text-xs text-green-600">복사됨</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      <span className="text-xs">복사</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            <JsonViewerCustom 
+              data={apiDebugInfo?.requestHeaders || {}} 
+              theme={JsonTheme.LIGHT}
+              className="mt-1"
+            />
+          </div>
+        )}
+        
+        {/* 요청 바디 표시 */}
+        {apiDebugInfo?.requestBody && (
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold">Request Body:</span>
+                <button
+                  onClick={() => apiDebugInfo && copyToClipboard(apiDebugInfo.requestBody || '', 'body')}
+                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                  title="요청 바디 클립보드에 복사"
+                >
+                  {copiedSection === 'body' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                      <span className="text-xs text-green-600">복사됨</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      <span className="text-xs">복사</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 font-mono text-xs overflow-auto">
+              <pre>{apiDebugInfo?.requestBody || ''}</pre>
+            </div>
+          </div>
+        )}
+        
+        {/* 파라미터 정보 표시 */}
+        {requestInfo?.params && Object.keys(requestInfo.params).length > 0 && (
+          <div className="mb-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="font-semibold">Parameters:</span>
+                <button
+                  onClick={() => copyToClipboard(JSON.stringify(requestInfo.params, null, 2), 'params')}
+                  className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+                  title="파라미터 정보 클립보드에 복사"
+                >
+                  {copiedSection === 'params' ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                      <span className="text-xs text-green-600">복사됨</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5 mr-1" />
+                      <span className="text-xs">복사</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+            <JsonViewerCustom 
+              data={requestInfo.params} 
+              theme={JsonTheme.LIGHT}
+              className="mt-1"
+            />
+          </div>
+        )}
+        
+        {/* 파라미터가 없거나 요청 정보가 없는 경우 */}
+        {(!requestInfo?.params || Object.keys(requestInfo.params).length === 0) && !apiDebugInfo?.requestBody && (
+          <div className="bg-yellow-50 p-2 rounded text-yellow-700 text-xs flex items-center">
+            <Info className="w-3.5 h-3.5 mr-1" />
+            <span>요청 파라미터 정보가 없습니다.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export function TabContentRenderer({ content, className = '' }: TabContentRendererProps) {
   const [data, setData] = useState<TableData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<ApiResponse | null>(null);
   const [requestInfo, setRequestInfo] = useState<ApiRequestInfo | null>(null);
+  const [apiDebugInfo, setApiDebugInfo] = useState<ApiDebugInfo | null>(null); // API 디버그 정보 상태 추가
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [showDebugSection, setShowDebugSection] = useState<boolean>(true); // 디버그 섹션 표시 상태
 
   // 페이지 리로드 함수
   const reloadPage = () => {
@@ -79,6 +377,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       });
   };
 
+  // 디버그 섹션 토글 함수
+  const toggleDebugSection = () => {
+    setShowDebugSection(prev => !prev);
+  };
+
   // 데이터 테이블 타입일 경우 API 호출
   useEffect(() => {
     const fetchData = async () => {
@@ -87,12 +390,18 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       setIsLoading(true);
       setError(null);
       setDebugInfo(null);
+      setApiDebugInfo(null); // API 디버그 정보 초기화
+      setRequestInfo(null); // 요청 정보 초기화
       
       try {
         console.log('[TabContentRenderer] 데이터 요청 시작:', {
           contentType: content.type,
           endpoint: content.props.endpoint
         });
+        
+        // API 엔드포인트 경로 가져오기 (앞에 슬래시(/)가 있는지 확인)
+        let url = content.props.endpoint as string;
+        url = url.startsWith('/') ? url : `/${url}`;
         
         // employerStorage에서 사용자 정보 가져오기
         const employerInfo = sessionStorage.getItem('employerStorage');
@@ -120,49 +429,30 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               const testUrl = `${endpoint}?employerUid=97&dbName=${savedDbName}`;
               console.log('[TabContentRenderer] 테스트 URL 호출:', testUrl);
               
+              // 테스트 URL에 대한 요청 정보 설정
+              setRequestInfo({
+                url: testUrl,
+                params: {
+                  employerUid: 97,
+                  dbName: savedDbName
+                },
+                method: 'GET',
+                timestamp: new Date()
+              });
+              
+              // API 디버그 정보 설정
+              setApiDebugInfo({
+                requestUrl: testUrl,
+                requestMethod: 'GET',
+                requestHeaders: { 'Content-Type': 'application/json' },
+                timestamp: new Date().toISOString()
+              });
+              
               try {
                 const response = await fetch(testUrl);
                 
                 // 응답 상태 확인 및 로깅
                 console.log('[TabContentRenderer] 테스트 API 응답 상태:', response.status);
-                
-                if (!response.ok) {
-                  // 오류 응답일 경우 상세 내용 로깅
-                  const errorText = await response.text();
-                  console.error('[TabContentRenderer] 테스트 API 오류 응답:', {
-                    status: response.status,
-                    url: testUrl,
-                    error: errorText
-                  });
-                  
-                  // 개발 환경에서는 오류 메시지에 더 자세한 정보 제공
-                  setError(`
-                    테스트 데이터를 불러올 수 없습니다. 
-                    - 현재 API URL: ${testUrl}
-                    - 데이터베이스 이름: ${savedDbName}
-                    - 사용 가능한 DB 목록: football_service, football_release, football_develop, football_develop_backup
-                    - 서버가 실행 중인지 확인해주세요.
-                    - API 경로가 올바른지 확인해주세요.
-                  `.trim().replace(/\s+/g, ' '));
-                  
-                  // 디버그 정보가 없을 경우 설정
-                  if (!debugInfo) {
-                    setDebugInfo({
-                      success: false,
-                      error: `API 응답 오류: ${response.status}`,
-                      url: testUrl,
-                      dbName: savedDbName,
-                      availableDBs: ['football_service', 'football_release', 'football_develop', 'football_develop_backup'],
-                      locationInfo: {
-                        origin: window.location.origin,
-                        port: window.location.port,
-                        host: window.location.host
-                      }
-                    });
-                  }
-                  
-                  throw new Error(`API 응답 오류: ${response.status} - URL: ${testUrl}`);
-                }
                 
                 const result = await response.json();
                 setDebugInfo(result);
@@ -223,24 +513,21 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         }
         
         // endpoint에 따라 다른 파라미터 설정
-        let url = content.props.endpoint as string;
-        
-        // API 엔드포인트 경로 가져오기 (앞에 슬래시(/)가 있는지 확인)
-        url = url.startsWith('/') ? url : `/${url}`;
+        let finalUrl = '';
         
         if (url.includes('/api/user/currency')) {
           // CURRENCY 탭을 위한 API 호출
-          url = `${url}?employerUid=${employerUid}&dbName=${dbName}`;
-          console.log('[TabContentRenderer] CURRENCY API 호출 URL:', url);
+          finalUrl = `${url}?employerUid=${employerUid}&dbName=${dbName}`;
+          console.log('[TabContentRenderer] CURRENCY API 호출 URL:', finalUrl);
           console.log('[TabContentRenderer] CURRENCY API 호출 파라미터:', {
             employerUid,
             dbName,
             parsedEmployerInfo
           });
           
-          // 요청 정보 저장
+          // 요청 정보 미리 설정
           setRequestInfo({
-            url,
+            url: finalUrl,
             params: {
               employerUid,
               dbName
@@ -248,18 +535,26 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             method: 'GET',
             timestamp: new Date()
           });
+          
+          // API 디버그 정보도 미리 설정
+          setApiDebugInfo({
+            requestUrl: finalUrl,
+            requestMethod: 'GET',
+            requestHeaders: { 'Content-Type': 'application/json' },
+            timestamp: new Date().toISOString()
+          });
         } else {
           // 다른 탭들을 위한 기본 파라미터 설정
-          url = `${url}?userId=${employerUid}&dbName=${dbName}`;
-          console.log('[TabContentRenderer] 일반 API 호출 URL:', url);
+          finalUrl = `${url}?userId=${employerUid}&dbName=${dbName}`;
+          console.log('[TabContentRenderer] 일반 API 호출 URL:', finalUrl);
           console.log('[TabContentRenderer] 일반 API 호출 파라미터:', {
             userId: employerUid,
             dbName
           });
           
-          // 요청 정보 저장
+          // 요청 정보 미리 설정
           setRequestInfo({
-            url,
+            url: finalUrl,
             params: {
               userId: employerUid,
               dbName
@@ -267,10 +562,18 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             method: 'GET',
             timestamp: new Date()
           });
+          
+          // API 디버그 정보도 미리 설정
+          setApiDebugInfo({
+            requestUrl: finalUrl,
+            requestMethod: 'GET',
+            requestHeaders: { 'Content-Type': 'application/json' },
+            timestamp: new Date().toISOString()
+          });
         }
         
-        console.log('[TabContentRenderer] API 요청 시작:', url);
-        const response = await fetch(url);
+        console.log('[TabContentRenderer] API 요청 시작:', finalUrl);
+        const response = await fetch(finalUrl);
         
         // 응답 상태 확인 및 로깅
         console.log('[TabContentRenderer] API 응답 상태:', response.status, '응답 URL:', response.url);
@@ -279,21 +582,43 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           const errorText = await response.text();
           console.error('[TabContentRenderer] API 오류 응답:', {
             status: response.status,
-            url: url,
+            url: finalUrl,
             error: errorText
           });
-          setError(`API 오류: ${response.status} - ${errorText || '알 수 없는 오류'} (URL: ${url})`);
+          setError(`API 오류: ${response.status} - ${errorText || '알 수 없는 오류'} (URL: ${finalUrl})`);
           setIsLoading(false);
           return;
         }
         
         const result = await response.json();
         console.log('[TabContentRenderer] API 응답 데이터:', result);
-        setDebugInfo(result); // 디버깅을 위해 전체 응답 저장
+        
+        // 그 다음 API 디버그 정보 처리
+        if (result.debugInfo) {
+          console.log('[TabContentRenderer] API 디버그 정보 발견:', result.debugInfo);
+          setApiDebugInfo({
+            requestUrl: result.debugInfo.requestUrl || finalUrl,
+            requestMethod: result.debugInfo.requestMethod || 'GET',
+            requestHeaders: result.debugInfo.requestHeaders || {},
+            requestBody: result.debugInfo.requestBody,
+            timestamp: result.debugInfo.timestamp || new Date().toISOString()
+          });
+        } else {
+          // 디버그 정보가 없는 경우 요청 정보로부터 만들기
+          console.log('[TabContentRenderer] API 디버그 정보 없음, 요청 정보 사용');
+          setApiDebugInfo({
+            requestUrl: finalUrl,
+            requestMethod: 'GET',
+            requestHeaders: { 'Content-Type': 'application/json' },
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        setDebugInfo(result);
         
         if (result.success) {
           // API 응답 형식에 따라 데이터 설정
-          if (url.includes('/api/user/currency') && result.currencies) {
+          if (finalUrl.includes('/api/user/currency') && result.currencies) {
             console.log('[TabContentRenderer] 화폐 데이터 처리:', {
               count: result.currencies.length,
               sample: result.currencies[0] || null
@@ -316,11 +641,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               sample: result.data[0] || null
             });
             
-            // 데이터에 ID 필드가 없는 경우 추가
-            const processedData = result.data.map((item: Record<string, unknown>, index: number) => ({
-              id: (item.id as number) || index + 1, // ID가 없으면 index 기반으로 생성
+            const isDataArray = Array.isArray(result.data);
+            const processedData = isDataArray ? result.data.map((item: Record<string, unknown>, index: number) => ({
+              id: (item.id as number) || index + 1,
               ...item
-            }));
+            })) : [];
             
             setData(processedData);
           } else {
@@ -336,6 +661,37 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       } catch (err) {
         console.error('[TabContentRenderer] API 호출 오류:', err);
         setError('데이터를 불러오는 중 오류가 발생했습니다.');
+        // 오류 발생 시에도 디버그 정보 설정
+        setDebugInfo({
+          success: false,
+          error: err instanceof Error ? err.message : '알 수 없는 오류',
+          message: '데이터를 불러오는 중 오류가 발생했습니다.'
+        });
+        
+        // API 디버그 정보도 설정
+        if (!apiDebugInfo) {
+          setApiDebugInfo({
+            requestUrl: content.props?.endpoint as string || '',
+            requestMethod: 'GET',
+            requestHeaders: { 'Content-Type': 'application/json' },
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        // 요청 정보가 없을 경우 기본 정보 설정
+        if (!requestInfo) {
+          const employerUid = sessionStorage.getItem('employerStorage') 
+            ? JSON.parse(sessionStorage.getItem('employerStorage') || '{}').uid 
+            : null;
+          const dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+          
+          setRequestInfo({
+            url: content.props?.endpoint as string || '',
+            params: { employerUid, dbName },
+            method: 'GET',
+            timestamp: new Date()
+          });
+        }
       } finally {
         setIsLoading(false);
       }
@@ -359,47 +715,6 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     } else {
       return <AlertTriangle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />;
     }
-  };
-
-  // API 요청 디버그 정보를 표시하는 함수
-  const renderDebugInfo = () => {
-    if (!requestInfo) return null;
-    
-    return (
-      <div className="bg-slate-100 p-4 my-4 rounded-md text-sm">
-        <h3 className="font-semibold mb-2 text-slate-700">API 디버그 정보</h3>
-        <div className="mb-3">
-          <p className="font-medium text-slate-600">요청 URL:</p>
-          <code className="bg-slate-200 p-1 rounded text-xs block whitespace-pre-wrap">
-            {requestInfo.url}
-          </code>
-        </div>
-        
-        <div className="mb-3">
-          <p className="font-medium text-slate-600">요청 파라미터:</p>
-          <div className="bg-slate-200 p-2 rounded text-xs">
-            <JsonViewerCustom 
-              data={requestInfo.params} 
-              theme={JsonTheme.LIGHT}
-              copyable
-            />
-          </div>
-        </div>
-        
-        {requestInfo.response && (
-          <div>
-            <p className="font-medium text-slate-600">응답 데이터:</p>
-            <div className="bg-slate-200 p-2 rounded text-xs max-h-96 overflow-auto">
-              <JsonViewerCustom 
-                data={requestInfo.response} 
-                theme={JsonTheme.LIGHT}
-                copyable
-              />
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   // 에러 상태의 UI에 디버그 정보 추가
@@ -450,28 +765,84 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       
       {debugInfo && (
         <details className="mt-2 text-sm">
-          <summary className="cursor-pointer flex items-center">
-            <Bug className="w-4 h-4 mr-1 text-gray-600" />
-            <span>디버그 정보</span>
-            {requestInfo && (
-              <span className="ml-2 text-xs text-gray-500">
-                (URL: {requestInfo.url})
-              </span>
-            )}
+          <summary className="cursor-pointer flex items-center justify-between">
+            <div className="flex items-center">
+              <Bug className="w-4 h-4 mr-1 text-gray-600" />
+              <span className="text-blue-600">API 디버그 정보</span>
+              {debugInfo?.success && <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" />성공</span>}
+              {debugInfo?.success === false && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center"><X className="w-3 h-3 mr-1" />실패</span>}
+            </div>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // 모든 디버그 데이터 복사
+                const allData = {
+                  request: apiDebugInfo || requestInfo,
+                  response: debugInfo,
+                };
+                copyToClipboard(JSON.stringify(allData, null, 2), 'all');
+              }}
+              className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
+              title="모든 디버그 정보 클립보드에 복사"
+            >
+              {copiedSection === 'all' ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
+                  <span className="text-xs text-green-600">복사됨</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  <span className="text-xs">전체 복사</span>
+                </>
+              )}
+            </button>
           </summary>
-          <div className="mt-2 space-y-2">
-            {requestInfo && (
-              <div className="bg-gray-100 p-2 rounded">
-                <h4 className="font-medium">API 요청 정보</h4>
-                <div className="mt-1 text-xs">
-                  <div><strong>URL:</strong> {requestInfo.url}</div>
-                  <div><strong>Method:</strong> {requestInfo.method}</div>
-                  <div><strong>Params:</strong> <JsonViewer data={requestInfo.params} className="mt-1 inline-block" /></div>
-                  <div><strong>Timestamp:</strong> {requestInfo.timestamp.toISOString()}</div>
-                </div>
+          
+          <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
+            {/* API 요청 정보 섹션 - 개선된 로직 */}
+            {/* 디버그 정보 출력 */}
+            {(() => { console.log('디버그 정보 현황:', { requestInfo, apiDebugInfo, debugInfo }); return null; })()}
+            
+            {/* 디버그 정보 표시 여부 */}
+            <div className="bg-gray-100 p-2 text-xs">
+              <span>디버그 정보 상태: </span>
+              <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}, </span>
+              <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}, </span>
+              <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+            </div>
+            
+            {(requestInfo || apiDebugInfo) ? (
+              <RequestInfoSection
+                apiDebugInfo={apiDebugInfo}
+                requestInfo={requestInfo}
+                method={apiDebugInfo?.requestMethod || requestInfo?.method}
+                url={apiDebugInfo?.requestUrl || requestInfo?.url}
+                copyToClipboard={copyToClipboard}
+                copiedSection={copiedSection}
+                debugInfo={debugInfo}
+              />
+            ) : (
+              <div className="p-3 bg-yellow-50 text-yellow-700">
+                <AlertTriangle className="w-4 h-4 mr-1 inline-block" />
+                API 요청 정보가 없습니다. API 호출이 아직 이루어지지 않았거나 요청 정보가 캡처되지 않았습니다.
               </div>
             )}
-            <JsonViewer data={debugInfo} className="rounded" />
+            
+            {/* 응답 정보 섹션 */}
+            {debugInfo ? (
+              <ResponseInfoSection 
+                debugInfo={debugInfo} 
+                copyToClipboard={copyToClipboard}
+                copiedSection={copiedSection}
+              />
+            ) : (
+              <div className="p-3 bg-yellow-50 text-yellow-700">
+                <AlertTriangle className="w-4 h-4 mr-1 inline-block" />
+                API 응답 정보가 없습니다. API 호출이 아직 완료되지 않았거나 응답이 캡처되지 않았습니다.
+              </div>
+            )}
           </div>
         </details>
       )}
@@ -500,26 +871,47 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                   </div>
                 </div>
               )}
-              {process.env.NODE_ENV === 'development' && (debugInfo || requestInfo) && (
-                <details className="mt-4 text-xs text-gray-700 border-t pt-2">
-                  <summary className="cursor-pointer font-semibold flex items-center justify-between">
+              
+              {/* 항상 디버그 버튼 표시 (개발 환경에서만) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 flex justify-end">
+                  <button 
+                    onClick={toggleDebugSection}
+                    className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded"
+                  >
+                    <Bug className="w-3.5 h-3.5 mr-1" />
+                    {showDebugSection ? '디버그 정보 숨기기' : '디버그 정보 표시'}
+                  </button>
+                </div>
+              )}
+
+              {/* 디버그 정보 섹션 - 항상 렌더링되지만 상태에 따라 표시/숨김 */}
+              {process.env.NODE_ENV === 'development' && showDebugSection && (
+                <div className="mt-2 border rounded shadow-sm bg-gray-50">
+                  <div className="p-3 bg-gray-100 font-medium text-sm border-b flex items-center justify-between">
                     <div className="flex items-center">
-                      <Info className="w-4 h-4 mr-1" />
-                      <span className="text-blue-600">API 디버그 정보</span>
-                      {debugInfo?.success && <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" />성공</span>}
-                      {debugInfo?.success === false && <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center"><X className="w-3 h-3 mr-1" />실패</span>}
+                      <Bug className="w-4 h-4 mr-2 text-blue-600" />
+                      <span className="text-blue-700">API 디버그 정보</span>
+                      {debugInfo?.success === true && 
+                        <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />성공
+                        </span>
+                      }
+                      {debugInfo?.success === false && 
+                        <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center">
+                          <X className="w-3 h-3 mr-1" />실패
+                        </span>
+                      }
                     </div>
                     <button
-                      onClick={(e) => {
-                        e.preventDefault(); // details가 토글되는 것을 방지
+                      onClick={() => {
                         const allData = {
-                          request: requestInfo,
-                          response: debugInfo
+                          request: apiDebugInfo || requestInfo,
+                          response: debugInfo,
                         };
                         copyToClipboard(JSON.stringify(allData, null, 2), 'all');
                       }}
-                      className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                      title="모든 디버그 정보 클립보드에 복사"
+                      className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-200"
                     >
                       {copiedSection === 'all' ? (
                         <>
@@ -533,163 +925,72 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                         </>
                       )}
                     </button>
-                  </summary>
+                  </div>
                   
-                  <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
-                    {/* 요청 정보 섹션 */}
-                    {requestInfo && (
-                      <div className="border-b">
-                        <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
-                          <AlertTriangle className="w-4 h-4 mr-2 text-blue-600" />
-                          <strong>[요청]</strong> <span className="ml-1">{requestInfo.timestamp.toLocaleTimeString()}</span>
-                        </div>
-                        <div className="p-3 bg-white">
-                          <div className="mb-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-semibold">URL:</span> 
-                                <span className="ml-2 text-blue-600">{requestInfo.url}</span>
-                              </div>
-                              <button
-                                onClick={() => copyToClipboard(requestInfo.url, 'url')}
-                                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                                title="URL 클립보드에 복사"
-                              >
-                                {copiedSection === 'url' ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                                    <span className="text-xs text-green-600">복사됨</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5 mr-1" />
-                                    <span className="text-xs">복사</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                          <div className="mb-2">
-                            <span className="font-semibold">Method:</span> 
-                            <span className="ml-2 text-purple-600">{requestInfo.method}</span>
-                          </div>
+                  <div className="border-b border-gray-200">
+                    {/* 디버그 정보 출력 */}
+                    {(() => { console.log('디버그 정보 현황:', { requestInfo, apiDebugInfo, debugInfo }); return null; })()}
+                    
+                    {/* 디버그 정보 표시 여부 */}
+                    <div className="bg-gray-100 p-2 text-xs">
+                      <span>디버그 정보 상태: </span>
+                      <span className="font-mono">requestInfo: {requestInfo ? '✅' : '❌'}, </span>
+                      <span className="font-mono">apiDebugInfo: {apiDebugInfo ? '✅' : '❌'}, </span>
+                      <span className="font-mono">debugInfo: {debugInfo ? '✅' : '❌'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="border-gray-200 overflow-hidden">  
+                    {/* API 요청 정보 섹션 */}
+                    {(requestInfo || apiDebugInfo) ? (
+                      <RequestInfoSection
+                        apiDebugInfo={apiDebugInfo}
+                        requestInfo={requestInfo}
+                        method={apiDebugInfo?.requestMethod || requestInfo?.method}
+                        url={apiDebugInfo?.requestUrl || requestInfo?.url}
+                        copyToClipboard={copyToClipboard}
+                        copiedSection={copiedSection}
+                        debugInfo={debugInfo}
+                      />
+                    ) : (
+                      <div className="p-3 bg-yellow-50 text-yellow-700">
+                        <div className="flex items-start">
+                          <AlertTriangle className="w-4 h-4 mr-1 inline-block" />
                           <div>
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold">Parameters:</span>
-                              <button
-                                onClick={() => copyToClipboard(JSON.stringify(requestInfo.params, null, 2), 'params')}
-                                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                                title="파라미터 정보 클립보드에 복사"
-                              >
-                                {copiedSection === 'params' ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                                    <span className="text-xs text-green-600">복사됨</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5 mr-1" />
-                                    <span className="text-xs">복사</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            <JsonViewerCustom 
-                              data={requestInfo.params} 
-                              theme={JsonTheme.LIGHT}
-                              className="mt-1"
-                            />
+                            <p className="font-medium">API 요청 정보가 없습니다.</p>
+                            <p className="text-xs mt-1">API 호출이 아직 이루어지지 않았거나 요청 정보가 캡처되지 않았습니다.</p>
+                            
+                            {debugInfo && (
+                              <div className="mt-2 p-2 bg-blue-50 rounded text-blue-700 text-xs">
+                                <Info className="w-3.5 h-3.5 mr-1 inline-block" />
+                                응답 데이터는 있지만 요청 정보가 없습니다. 이는 API 응답 처리 중에 요청 정보가 설정되지 않았을 수 있습니다.
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
                     )}
                     
                     {/* 응답 정보 섹션 */}
-                    {debugInfo && (
-                      <div>
-                        <div className="px-3 py-2 bg-gray-100 font-medium text-gray-700 flex items-center">
-                          {debugInfo.success === true ? (
-                            <CheckCircle2 className="w-5 h-5 mr-2 text-green-600" />
-                          ) : debugInfo.success === false ? (
-                            <X className="w-5 h-5 mr-2 text-red-600" />
-                          ) : (
-                            <AlertTriangle className="w-5 h-5 mr-2 text-yellow-600" />
-                          )}
-                          <strong>[결과]</strong> 
-                          {debugInfo.success !== undefined ? (
-                            debugInfo.success ? (
-                              <span className="ml-2 px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded-full flex items-center">
-                                <CheckCircle2 className="w-3 h-3 mr-1" />성공
-                              </span>
-                            ) : (
-                              <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-800 text-xs rounded-full flex items-center">
-                                <X className="w-3 h-3 mr-1" />실패
-                              </span>
-                            )
-                          ) : (
-                            <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs rounded-full flex items-center">
-                              <AlertTriangle className="w-3 h-3 mr-1" />처리 중
-                            </span>
-                          )}
-                        </div>
-                        <div className={`p-3 ${
-                          debugInfo.success === true
-                            ? 'bg-green-50'
-                            : debugInfo.success === false
-                              ? 'bg-red-50'
-                              : 'bg-yellow-50'
-                        }`}>
-                          {debugInfo.message && (
-                            <div className="mb-2">
-                              <span className="font-semibold">메시지:</span>
-                              <span className={`ml-2 ${
-                                debugInfo.success ? 'text-green-700' : 'text-red-700'
-                              }`}>
-                                {debugInfo.message}
-                              </span>
-                            </div>
-                          )}
-                          
-                          {debugInfo.error && (
-                            <div className="mb-2 flex items-start">
-                              <AlertCircle className="w-4 h-4 mt-0.5 mr-1 text-red-600 flex-shrink-0" />
-                              <span className="font-semibold">오류:</span>
-                              <span className="ml-2 text-red-600">{debugInfo.error}</span>
-                            </div>
-                          )}
-                          
+                    {debugInfo ? (
+                      <ResponseInfoSection 
+                        debugInfo={debugInfo} 
+                        copyToClipboard={copyToClipboard}
+                        copiedSection={copiedSection}
+                      />
+                    ) : (
+                      <div className="p-3 bg-yellow-50 text-yellow-700">
+                        <div className="flex items-start">
+                          <AlertTriangle className="w-4 h-4 mr-1 inline-block" />
                           <div>
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold">응답 데이터:</span>
-                              <button
-                                onClick={() => copyToClipboard(JSON.stringify(debugInfo, null, 2), 'response')}
-                                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100"
-                                title="응답 데이터 클립보드에 복사"
-                              >
-                                {copiedSection === 'response' ? (
-                                  <>
-                                    <Check className="w-3.5 h-3.5 mr-1 text-green-600" />
-                                    <span className="text-xs text-green-600">복사됨</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="w-3.5 h-3.5 mr-1" />
-                                    <span className="text-xs">복사</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-                            <JsonViewerCustom 
-                              data={debugInfo} 
-                              theme={JsonTheme.LIGHT}
-                              className="mt-1"
-                            />
+                            <p className="font-medium">API 응답 정보가 없습니다.</p>
+                            <p className="text-xs mt-1">API 호출이 아직 완료되지 않았거나 응답이 캡처되지 않았습니다.</p>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
-                </details>
+                </div>
               )}
             </>
           )}

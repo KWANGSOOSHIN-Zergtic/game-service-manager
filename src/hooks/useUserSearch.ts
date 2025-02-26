@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useApiRequest } from './useApiRequest';
 import type { DBQueryBase } from './types/db-query.types';
 
 interface UserInfo {
@@ -20,11 +21,20 @@ interface SearchUserResponse {
   message?: string;
 }
 
+interface ApiDebugInfo {
+  requestUrl: string;
+  requestMethod: string;
+  requestHeaders: Record<string, string>;
+  requestBody?: string;
+  timestamp: string;
+}
+
 interface UseUserSearchReturn {
   queryResult: DBQueryBase['queryResult'];
   userInfoList: UserInfo[];
   isLoading: boolean;
   isExactMatch: boolean;
+  debugInfo: ApiDebugInfo | null;
   searchUser: (dbName: string, userId: string) => Promise<SearchUserResponse>;
 }
 
@@ -36,27 +46,40 @@ export const useUserSearch = (): UseUserSearchReturn => {
   const [userInfoList, setUserInfoList] = useState<UserInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isExactMatch, setIsExactMatch] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<ApiDebugInfo | null>(null);
+  
+  const apiRequest = useApiRequest<SearchUserResponse>();
 
   const searchUser = async (dbName: string, userId: string): Promise<SearchUserResponse> => {
     if (!dbName || !userId) return { success: false, users: null };
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/user-search?dbName=${dbName}&userId=${userId}`);
-      const result = await response.json();
+      const response = await apiRequest.get('/api/user-search', {
+        params: { dbName, userId }
+      });
+      
+      if (!response.data) {
+        throw new Error('API 응답 데이터가 없습니다.');
+      }
+      
+      // 디버그 정보 저장
+      setDebugInfo(response.debugInfo);
+
+      const result = response.data;
 
       if (result.success) {
-        const users = result.users;
+        const users = result.users || [];
         setUserInfoList(users);
-        setIsExactMatch(result.isExactMatch);
+        setIsExactMatch(!!result.isExactMatch);
         setQueryResult({
           status: 'success',
-          message: result.message,
+          message: result.message || '사용자 정보를 조회했습니다.',
           type: result.isExactMatch ? 'default' : 'warning'
         });
         return { success: true, users, isExactMatch: result.isExactMatch };
       } else {
-        throw new Error(result.error);
+        throw new Error(result.message || '사용자 정보 조회에 실패했습니다.');
       }
     } catch (error) {
       setQueryResult({
@@ -77,6 +100,7 @@ export const useUserSearch = (): UseUserSearchReturn => {
     userInfoList,
     isLoading,
     isExactMatch,
+    debugInfo,
     searchUser,
   };
 }; 

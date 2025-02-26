@@ -12,6 +12,7 @@ import { User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUserSearch } from "@/hooks/useUserSearch"
 import { UserAccordion } from "@/components/user/user-accordion"
+import { ApiDebugInfo } from "@/components/ApiDebugInfo"
 
 interface InitDBListInfo {
   index: number
@@ -32,7 +33,7 @@ export default function UsersPage() {
   const [tableData, setTableData] = useState<TableData[]>([])
   const [selectedUsers, setSelectedUsers] = useState<SelectedUserInfo[]>([])
   const [selectedRowsTemp, setSelectedRowsTemp] = useState<TableData[]>([])
-  const { queryResult: userSearchResult, isLoading: isSearching, searchUser } = useUserSearch()
+  const { queryResult: userSearchResult, isLoading: isSearching, searchUser, debugInfo } = useUserSearch()
 
   useEffect(() => {
     // 초기화 정보에서 DB 리스트 가져오기
@@ -228,6 +229,16 @@ export default function UsersPage() {
             </div>
           </CardContent>
         </Card>
+
+        {debugInfo && (
+          <ApiDebugInfo
+            requestUrl={debugInfo.requestUrl}
+            requestMethod={debugInfo.requestMethod}
+            requestHeaders={debugInfo.requestHeaders}
+            requestBody={debugInfo.requestBody}
+            timestamp={debugInfo.timestamp}
+          />
+        )}
 
         {userSearchResult.status && (
           <ResultAlert 

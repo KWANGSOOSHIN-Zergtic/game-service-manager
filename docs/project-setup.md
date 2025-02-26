@@ -320,3 +320,28 @@ npm install react-json-pretty react-json-view --force
 ### 예제 페이지
 
 `/json-viewer-examples` 경로에서 다양한 테마와 옵션을 적용한 JSON Viewer 예제를 확인할 수 있습니다.
+
+## API Debug 정보 기능
+
+### 목적
+- API 요청 시 사용한 REST API 원문을 디버그 정보로 표시하여 개발과 디버깅을 용이하게 함
+- 사용자 인터페이스에 통합된 디버그 정보를 통해 API 호출의 세부 정보를 쉽게 확인 가능
+
+### 구성 요소
+1. **useApiRequest 훅**: API 요청을 보내고 디버그 정보를 함께 반환하는 커스텀 훅
+2. **ApiDebugInfo 컴포넌트**: 디버그 정보를 표시하는 UI 컴포넌트
+3. **API 엔드포인트**: 디버그 정보 제공을 위한 백엔드 API
+
+### 설치 방법
+- 추가 패키지 설치 없이 기존 프로젝트 구조에 통합됨
+
+### 사용법
+1. API 요청 시 `useApiRequest` 훅 사용
+2. 응답에서 `debugInfo` 객체 추출
+3. 컴포넌트 렌더링 시 `ApiDebugInfo` 컴포넌트에 디버그 정보 전달
+
+### 관련 파일
+- `src/hooks/useApiRequest.ts`: API 요청 및 디버그 정보 수집 훅
+- `src/components/ApiDebugInfo.tsx`: 디버그 정보 표시 컴포넌트
+- `src/app/api/db-query/debug-info/route.ts`: 디버그 정보 API 엔드포인트
+- `docs/api-debug-info.md`: 기능 상세 문서
