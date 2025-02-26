@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreVertical, Plus, ListOrdered } from "lucide-react";
+import { Search, MoreVertical, Plus, ListOrdered, Database } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
@@ -53,6 +53,7 @@ interface DataTableProps {
   onPageChange?: (page: number) => void;
   showActions?: boolean;
   onSelectRows?: () => void;
+  dbName?: string;
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
@@ -95,7 +96,8 @@ export function DataTable({
   onSort,
   onPageChange,
   showActions = true,
-  onSelectRows
+  onSelectRows,
+  dbName
 }: DataTableProps) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -615,6 +617,43 @@ export function DataTable({
             </tr>
           </tfoot>
         </Table>
+      </div>
+      <div className="flex justify-end mt-2">
+        <div className="flex items-center gap-1 text-xs text-gray-500">
+          <Database className="h-3 w-3 text-purple-500" />
+          <span>
+            {(() => {
+              // 우선 props의 dbName 사용
+              if (dbName) {
+                return dbName === 'LocalStorage' ? 'Local Storage' : dbName;
+              }
+              
+              // props의 dbName이 없으면 employerStorage에서 db_name 가져오기
+              try {
+                const employerInfo = sessionStorage.getItem('employerStorage');
+                if (employerInfo) {
+                  const parsedEmployerInfo = JSON.parse(employerInfo);
+                  if (parsedEmployerInfo.db_name) {
+                    return parsedEmployerInfo.db_name === 'LocalStorage' 
+                      ? 'Local Storage' 
+                      : parsedEmployerInfo.db_name;
+                  }
+                }
+              } catch (error) {
+                console.error('[DataTable] employerStorage 파싱 실패:', error);
+              }
+              
+              // 모두 없으면 lastUsedDbName 사용
+              const lastUsedDbName = sessionStorage.getItem('lastUsedDbName');
+              if (lastUsedDbName) {
+                return lastUsedDbName === 'LocalStorage' ? 'Local Storage' : lastUsedDbName;
+              }
+              
+              // 기본값
+              return 'Database';
+            })()}
+          </span>
+        </div>
       </div>
     </div>
   );

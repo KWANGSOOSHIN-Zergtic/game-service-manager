@@ -49,6 +49,13 @@ export default function UsersPage() {
             description: dbUnit.description
           }))
           setData(formattedData)
+          
+          // localStorage에서 저장된 DB 이름 가져오기
+          const savedDBName = localStorage.getItem('userSearchDBName')
+          if (savedDBName) {
+            console.log('[Users] 저장된 DB 이름 불러옴 (localStorage):', savedDBName)
+            setSelectedDB(savedDBName)
+          }
         }
       } catch (error) {
         console.error('DB 리스트 초기화 실패:', error)
@@ -84,6 +91,7 @@ export default function UsersPage() {
           dbName: selectedDB
         }));
       
+      // 최종 업데이트된 사용자 목록 반환
       return [...filteredUsers, ...newUsers];
     });
   }, [selectedRowsTemp, selectedDB]);
@@ -100,11 +108,53 @@ export default function UsersPage() {
 
   // DataTable의 선택 변경 이벤트를 처리하는 함수
   const handleSelectionUpdate = useCallback((rows: TableData[]) => {
+    // 이전 선택 상태를 기억하기 위한 변수
+    const prevSelectedRows = selectedRowsTemp;
+    
+    // 이전에 선택된 행의 UID
+    const prevSelectedUids = new Set(prevSelectedRows.map(row => row.uid));
+    
+    // 새로 추가된 행 (이전에 없었지만 현재 선택된 행)
+    const newlyAddedRows = rows.filter(row => !prevSelectedUids.has(row.uid));
+    
+    // 새로 추가된 행이 있으면 마지막 행의 정보를 employerStorage에 저장
+    if (newlyAddedRows.length > 0) {
+      const lastAddedRow = newlyAddedRows[newlyAddedRows.length - 1];
+      
+      // employerStorage에 사용자 정보와 db_name 저장
+      const employerData = {
+        ...lastAddedRow,
+        db_name: selectedDB // 현재 검색에 사용된 DB 이름
+      };
+      
+      sessionStorage.setItem('employerStorage', JSON.stringify(employerData));
+      console.log('[UsersPage] 신규 선택된 사용자 정보 저장 (employerStorage):', employerData);
+    } 
+    // 선택이 해제된 경우 (이전보다 선택된 행이 줄어든 경우)
+    else if (rows.length < prevSelectedRows.length && rows.length > 0) {
+      // 마지막으로 남아있는 선택된 행 정보 저장
+      const lastRemainingRow = rows[rows.length - 1];
+      
+      const employerData = {
+        ...lastRemainingRow,
+        db_name: selectedDB
+      };
+      
+      sessionStorage.setItem('employerStorage', JSON.stringify(employerData));
+      console.log('[UsersPage] 남아있는 마지막 사용자 정보 저장 (employerStorage):', employerData);
+    }
+    // 모든 선택이 해제된 경우
+    else if (rows.length === 0 && prevSelectedRows.length > 0) {
+      // employerStorage 초기화 (선택 취소)
+      sessionStorage.removeItem('employerStorage');
+      console.log('[UsersPage] 모든 선택 해제, employerStorage 초기화');
+    }
+    
     // setTimeout을 사용하여 상태 업데이트를 다음 이벤트 루프로 지연
     setTimeout(() => {
       setSelectedRowsTemp(rows);
     }, 0);
-  }, []);
+  }, [selectedRowsTemp, selectedDB]);
 
   // 사용자 제거 처리
   const handleRemoveUser = useCallback((uid: string) => {
@@ -158,6 +208,10 @@ export default function UsersPage() {
   const handleDBChange = useCallback((value: string) => {
     setSelectedDB(value)
     setTableData([])
+    
+    // DB 이름을 localStorage에 저장
+    localStorage.setItem('userSearchDBName', value)
+    console.log('[Users] DB 이름 저장됨 (localStorage):', value)
   }, [])
 
   return (
@@ -179,6 +233,7 @@ export default function UsersPage() {
               onSelectionChange={handleDBListSelectionChange}
               onSort={handleSort}
               onPageChange={handlePageChange}
+              dbName="DB List"
             />
           </CardContent>
         </Card>
@@ -266,6 +321,7 @@ export default function UsersPage() {
                 onSelectionChange={handleSelectionUpdate}
                 onSort={handleSort}
                 onPageChange={handlePageChange}
+                dbName={selectedDB}
               />
             </CardContent>
           </Card>

@@ -485,18 +485,24 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         // 아코디언 테이블에서 선택된 UID 가져오기
         const employerUid = parsedEmployerInfo.uid;
         
-        // 기존 popupUserInfo에서 DB 이름 가져오기
-        const storedInfo = sessionStorage.getItem('popupUserInfo');
+        // db_name 필드가 있으면 사용
         let dbName = '';
-        
-        if (storedInfo) {
-          const parsedInfo = JSON.parse(storedInfo);
-          dbName = parsedInfo.dbName;
-          console.log('[TabContentRenderer] popupUserInfo에서 DB 이름 가져옴:', dbName);
+        if (parsedEmployerInfo.db_name) {
+          dbName = parsedEmployerInfo.db_name;
+          console.log('[TabContentRenderer] employerStorage에서 DB 이름 가져옴:', dbName);
         } else {
-          // 저장된 DB 이름 가져오기 (없으면 기본값 사용)
-          dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
-          console.log('[TabContentRenderer] 저장된 DB 이름 사용:', dbName);
+          // 기존 popupUserInfo에서 DB 이름 가져오기 (이전 버전 호환성 유지)
+          const storedInfo = sessionStorage.getItem('popupUserInfo');
+          
+          if (storedInfo) {
+            const parsedInfo = JSON.parse(storedInfo);
+            dbName = parsedInfo.dbName;
+            console.log('[TabContentRenderer] popupUserInfo에서 DB 이름 가져옴:', dbName);
+          } else {
+            // 저장된 DB 이름 가져오기 (없으면 기본값 사용)
+            dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+            console.log('[TabContentRenderer] 저장된 DB 이름 사용:', dbName);
+          }
         }
         
         // DB 이름 저장 (다른 컴포넌트에서 재사용할 수 있도록)
@@ -576,32 +582,119 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const response = await fetch(finalUrl);
         
         // 응답 상태 확인 및 로깅
-        console.log('[TabContentRenderer] API 응답 상태:', response.status, '응답 URL:', response.url);
+        try {
+          console.log('[TabContentRenderer] API 응답 상태:', response.status, '응답 URL:', response.url);
+        } catch (e) {
+          console.error('[TabContentRenderer] API 응답 상태 로깅 중 오류:', e);
+        }
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('[TabContentRenderer] API 오류 응답:', {
-            status: response.status,
-            url: finalUrl,
-            error: errorText
-          });
-          setError(`API 오류: ${response.status} - ${errorText || '알 수 없는 오류'} (URL: ${finalUrl})`);
+          
+          try {
+            console.error('[TabContentRenderer] API 오류 응답:', {
+              status: response.status,
+              url: finalUrl,
+              error: errorText || '내용 없음'
+            });
+          } catch (e) {
+            console.error('[TabContentRenderer] API 오류 응답 로깅 중 오류:', e);
+          }
+          
+          // HTTP 상태 코드별 특별 메시지
+          let statusMessage = '';
+          switch (response.status) {
+            case 404:
+              statusMessage = '요청한 API 경로를 찾을 수 없습니다.';
+              break;
+            case 400:
+              statusMessage = '잘못된 요청 형식입니다.';
+              break;
+            case 401:
+              statusMessage = '인증이 필요합니다.';
+              break;
+            case 403:
+              statusMessage = '접근 권한이 없습니다.';
+              break;
+            case 500:
+              statusMessage = '서버 내부 오류가 발생했습니다.';
+              break;
+            default:
+              statusMessage = '오류가 발생했습니다.';
+          }
+          
+          // 오류 메시지 표시를 위한 준비
+          const displayErrorText = errorText && errorText.length > 200 
+            ? errorText.substring(0, 200) + '...' 
+            : errorText || '알 수 없는 오류';
+          
+          // HTML 응답 감지
+          const isHtmlResponse = displayErrorText.trim().toLowerCase().startsWith('<!doctype html>') || 
+                                displayErrorText.trim().toLowerCase().startsWith('<html');
+          
+          const finalErrorText = isHtmlResponse 
+            ? '(HTML 응답이 반환되었습니다. 서버 구성을 확인하세요.)' 
+            : `(${displayErrorText})`;
+          
+          setError(`API 오류: ${response.status} - ${statusMessage} ${finalErrorText} (URL: ${finalUrl})`);
           setIsLoading(false);
           return;
         }
         
-        const result = await response.json();
-        console.log('[TabContentRenderer] API 응답 데이터:', result);
+        // 응답이 비어있는지 확인
+        const responseText = await response.text();
+        if (!responseText || responseText.trim() === '') {
+          try {
+            console.error('[TabContentRenderer] API 오류 응답: 응답이 비어있습니다.', {
+              url: finalUrl
+            });
+          } catch (e) {
+            console.error('[TabContentRenderer] 빈 응답 로깅 중 오류:', e);
+          }
+          setError(`API 오류: 응답이 비어있습니다. (URL: ${finalUrl})`);
+          setIsLoading(false);
+          return;
+        }
+        
+        // JSON으로 파싱 시도
+        let result;
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          try {
+            console.error('[TabContentRenderer] API 오류 응답: JSON 파싱 실패', {
+              url: finalUrl,
+              responseText: responseText ? (responseText.substring(0, 100) + (responseText.length > 100 ? '...' : '')) : '내용 없음',
+              error: parseError
+            });
+          } catch (e) {
+            console.error('[TabContentRenderer] JSON 파싱 실패 로깅 중 오류:', e);
+          }
+          setError(`API 오류: 응답 데이터가 올바른 JSON 형식이 아닙니다. (URL: ${finalUrl})`);
+          setIsLoading(false);
+          return;
+        }
+        
+        try {
+          console.log('[TabContentRenderer] API 응답 데이터:', result);
+        } catch (e) {
+          console.error('[TabContentRenderer] API 응답 데이터 로깅 중 오류:', e);
+        }
         
         // 그 다음 API 디버그 정보 처리
-        if (result.debugInfo) {
-          console.log('[TabContentRenderer] API 디버그 정보 발견:', result.debugInfo);
+        if (result && result.debugInfo) {
+          try {
+            console.log('[TabContentRenderer] API 디버그 정보 발견:', result.debugInfo);
+          } catch (e) {
+            console.error('[TabContentRenderer] API 디버그 정보 로깅 중 오류:', e);
+          }
+          
           setApiDebugInfo({
-            requestUrl: result.debugInfo.requestUrl || finalUrl,
-            requestMethod: result.debugInfo.requestMethod || 'GET',
-            requestHeaders: result.debugInfo.requestHeaders || {},
-            requestBody: result.debugInfo.requestBody,
-            timestamp: result.debugInfo.timestamp || new Date().toISOString()
+            requestUrl: result.debugInfo?.requestUrl || finalUrl,
+            requestMethod: result.debugInfo?.requestMethod || 'GET',
+            requestHeaders: result.debugInfo?.requestHeaders || {},
+            requestBody: result.debugInfo?.requestBody,
+            timestamp: result.debugInfo?.timestamp || new Date().toISOString()
           });
         } else {
           // 디버그 정보가 없는 경우 요청 정보로부터 만들기
@@ -626,7 +719,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             
             // 데이터에 ID 필드가 없는 경우 추가
             const processedData = result.currencies.map((item: Record<string, unknown>, index: number) => ({
-              id: (item.id as number) || index + 1, // ID가 없으면 index 기반으로 생성
+              id: (item.id as number) || index + 1,
               ...item
             }));
             
@@ -653,10 +746,42 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             setData([]);
           }
         } else {
-          console.error('[TabContentRenderer] API 응답 실패:', {
-            error: result.error
-          });
-          setError(result.error || '데이터를 불러오는데 실패했습니다.');
+          // 전체 결과 객체를 로깅하여 디버깅 용이하게 함
+          try {
+            console.error('[TabContentRenderer] API 응답 실패:', result);
+          } catch (e) {
+            console.error('[TabContentRenderer] API 응답 실패 로깅 중 오류:', e);
+          }
+          
+          // 오류 메시지 생성 로직 개선
+          let errorMessage = '데이터를 불러오는데 실패했습니다.';
+          
+          if (result.error && typeof result.error === 'string' && result.error.trim() !== '') {
+            errorMessage = result.error;
+          } else if (result.message && typeof result.message === 'string' && result.message.trim() !== '') {
+            errorMessage = result.message;
+          } else if (result.error && typeof result.error === 'object') {
+            // 오류 객체가 비어있는지 확인
+            const errorKeys = Object.keys(result.error || {});
+            if (errorKeys.length > 0) {
+              try {
+                errorMessage = `오류: ${JSON.stringify(result.error)}`;
+              } catch (e) {
+                errorMessage = '알 수 없는 오류 형식';
+                console.error('[TabContentRenderer] 오류 객체 직렬화 실패:', e);
+              }
+            } else {
+              // 빈 오류 객체({}) 처리
+              errorMessage = '서버에서 자세한 오류 정보가 제공되지 않았습니다.';
+              console.warn('[TabContentRenderer] 빈 오류 객체 발견:', { url: finalUrl });
+            }
+          } else {
+            // 오류 객체가 없는 경우 URL 정보 포함
+            errorMessage = `데이터를 불러오는데 실패했습니다. (URL: ${finalUrl})`;
+            console.warn('[TabContentRenderer] 오류 객체 없음:', { url: finalUrl });
+          }
+          
+          setError(errorMessage);
         }
       } catch (err) {
         console.error('[TabContentRenderer] API 호출 오류:', err);
@@ -803,7 +928,18 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           <div className="mt-2 border border-gray-200 rounded-md overflow-hidden">
             {/* API 요청 정보 섹션 - 개선된 로직 */}
             {/* 디버그 정보 출력 */}
-            {(() => { console.log('디버그 정보 현황:', { requestInfo, apiDebugInfo, debugInfo }); return null; })()}
+            {(() => { 
+              try {
+                console.log('디버그 정보 현황:', { 
+                  requestInfo: requestInfo || null, 
+                  apiDebugInfo: apiDebugInfo || null, 
+                  debugInfo: debugInfo || null
+                }); 
+              } catch (e) {
+                console.error('[TabContentRenderer] 디버그 정보 로깅 중 오류:', e);
+              }
+              return null; 
+            })()}
             
             {/* 디버그 정보 표시 여부 */}
             <div className="bg-gray-100 p-2 text-xs">
@@ -929,7 +1065,18 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                   
                   <div className="border-b border-gray-200">
                     {/* 디버그 정보 출력 */}
-                    {(() => { console.log('디버그 정보 현황:', { requestInfo, apiDebugInfo, debugInfo }); return null; })()}
+                    {(() => { 
+                      try {
+                        console.log('디버그 정보 현황:', { 
+                          requestInfo: requestInfo || null, 
+                          apiDebugInfo: apiDebugInfo || null, 
+                          debugInfo: debugInfo || null
+                        }); 
+                      } catch (e) {
+                        console.error('[TabContentRenderer] 디버그 정보 로깅 중 오류:', e);
+                      }
+                      return null; 
+                    })()}
                     
                     {/* 디버그 정보 표시 여부 */}
                     <div className="bg-gray-100 p-2 text-xs">

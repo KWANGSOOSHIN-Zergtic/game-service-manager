@@ -34,6 +34,15 @@ export function UserAccordion({ selectedUsers, onRemoveUser }: UserAccordionProp
     // 사용자 정보를 sessionStorage에 저장
     sessionStorage.setItem('popupUserInfo', JSON.stringify(userInfo));
     
+    // employerStorage에도 사용자 정보 저장 (db_name 포함)
+    const employerData = {
+      ...userInfo.user,
+      db_name: userInfo.dbName // db_name 필드 추가
+    };
+    
+    sessionStorage.setItem('employerStorage', JSON.stringify(employerData));
+    console.log('[UserAccordion] 사용자 정보 저장 완료 (employerStorage):', employerData);
+    
     // 새 창 열기
     // 크기 및 위치 옵션 설정
     const width = 1000;
