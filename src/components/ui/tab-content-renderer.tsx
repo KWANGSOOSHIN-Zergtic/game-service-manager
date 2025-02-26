@@ -438,6 +438,42 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   
   const [showDebugSection, setShowDebugSection] = useState<boolean>(getDebugSectionState());
 
+  // API 응답 상태를 세션 스토리지에 저장하는 함수
+  const updateApiResponseStatus = (status: 'success' | 'error' | 'failure' | null) => {
+    try {
+      if (status) {
+        sessionStorage.setItem('apiResponseStatus', status);
+      } else {
+        sessionStorage.removeItem('apiResponseStatus');
+      }
+    } catch (e) {
+      console.error('[TabContentRenderer] API 응답 상태 저장 중 오류:', e);
+    }
+  };
+
+  // debugInfo 상태가 변경될 때마다 API 응답 상태 업데이트
+  useEffect(() => {
+    if (debugInfo) {
+      // debugInfo.success가 true면 'success', false면 'failure'
+      // error 상태가 있으면 'error'로 설정
+      if (error) {
+        updateApiResponseStatus('error');
+      } else if (debugInfo.success === true) {
+        updateApiResponseStatus('success');
+      } else if (debugInfo.success === false) {
+        updateApiResponseStatus('failure');
+      } else {
+        // 상태가 명확하지 않은 경우 상태 제거
+        updateApiResponseStatus(null);
+      }
+    } else if (error) {
+      updateApiResponseStatus('error');
+    } else {
+      // debugInfo가 없는 경우 상태 제거
+      updateApiResponseStatus(null);
+    }
+  }, [debugInfo, error]);
+
   // 페이지 리로드 함수
   const reloadPage = () => {
     window.location.reload();
@@ -477,6 +513,22 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       return newState;
     });
   };
+  
+  // toggle-debug-section 이벤트 리스너 설정
+  useEffect(() => {
+    const handleToggleDebugSection = () => {
+      console.log('[TabContentRenderer] toggle-debug-section 이벤트 수신됨');
+      toggleDebugSection();
+    };
+    
+    // 커스텀 이벤트 리스너 등록
+    window.addEventListener('toggle-debug-section', handleToggleDebugSection);
+    
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('toggle-debug-section', handleToggleDebugSection);
+    };
+  }, []);
 
   // 데이터 테이블 타입일 경우 API 호출
   useEffect(() => {
@@ -1126,19 +1178,6 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                 </div>
               )}
               
-              {/* 항상 디버그 버튼 표시 (개발 환경에서만) */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="mt-4 flex justify-start">
-                  <button 
-                    onClick={toggleDebugSection}
-                    className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded"
-                  >
-                    <Bug className="w-3.5 h-3.5 mr-1" />
-                    {showDebugSection ? '디버그 정보 숨기기' : '디버그 정보 표시'}
-                  </button>
-                </div>
-              )}
-
               {/* 디버그 정보 섹션 - 항상 렌더링되지만 상태에 따라 표시/숨김 */}
               {process.env.NODE_ENV === 'development' && showDebugSection && (
                 <div className="mt-2 border rounded shadow-sm bg-gray-50">

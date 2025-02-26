@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreVertical, Plus, ListOrdered, Database } from "lucide-react";
+import { Search, MoreVertical, Plus, ListOrdered, Database, Bug } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
@@ -618,10 +618,44 @@ export function DataTable({
           </tfoot>
         </Table>
       </div>
-      <div className="flex justify-end mt-2">
-        <div className="flex items-center gap-1 text-xs text-gray-500">
+      <div className="flex justify-between items-center mt-2">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => window.dispatchEvent(new CustomEvent('toggle-debug-section'))}
+            className={`flex items-center text-xs px-2 py-1 rounded ${
+              (() => {
+                // API 응답 상태 확인하기 (성공/실패)
+                try {
+                  const apiResponseStatus = sessionStorage.getItem('apiResponseStatus');
+                  if (apiResponseStatus === 'error' || apiResponseStatus === 'failure') {
+                    return 'bg-red-100 text-red-700 hover:bg-red-200';
+                  }
+                } catch (e) {
+                  console.error('[DataTable] 세션 스토리지 접근 중 오류:', e);
+                }
+                return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+              })()
+            }`}
+          >
+            <Bug className={`w-3.5 h-3.5 mr-1 ${
+              (() => {
+                try {
+                  const apiResponseStatus = sessionStorage.getItem('apiResponseStatus');
+                  if (apiResponseStatus === 'error' || apiResponseStatus === 'failure') {
+                    return 'text-red-600';
+                  }
+                } catch (e) {
+                  console.error('[DataTable] 세션 스토리지 접근 중 오류:', e);
+                }
+                return '';
+              })()
+            }`} />
+            디버그 정보
+          </button>
+        </div>
+        <div className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-0.5 rounded">
           <Database className="h-3 w-3 text-purple-500" />
-          <span>
+          <span className="text-purple-500 font-medium">
             {(() => {
               // 우선 props의 dbName 사용
               if (dbName) {
