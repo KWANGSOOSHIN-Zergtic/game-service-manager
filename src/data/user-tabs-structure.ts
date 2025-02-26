@@ -162,7 +162,7 @@ export const userTabsStructure: TabStructure = {
         type: 'dataTable',
         props: {
           endpoint: '/api/user/currency',
-          tableName: 'Currency Infoamtion',
+          tableName: 'Currency Information',
           formatters: {
             count: (value: string | number | null) => `${Number(value || 0).toLocaleString()} 개`,
             excel_item_index: (value: string | number | null) => `#${value || '-'}`,

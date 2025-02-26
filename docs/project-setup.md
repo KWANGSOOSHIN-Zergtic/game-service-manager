@@ -345,3 +345,107 @@ npm install react-json-pretty react-json-view --force
 - `src/components/ApiDebugInfo.tsx`: 디버그 정보 표시 컴포넌트
 - `src/app/api/db-query/debug-info/route.ts`: 디버그 정보 API 엔드포인트
 - `docs/api-debug-info.md`: 기능 상세 문서
+
+# 프로젝트 설정 정보
+
+## 설치된 ShadCN 컴포넌트
+
+디버그 정보 컴포넌트 시스템을 구현하기 위해 다음 ShadCN 컴포넌트를 설치했습니다:
+
+1. **Toggle 컴포넌트**
+   - 설치 명령어: `npx shadcn@latest add toggle`
+   - 목적: 디버그 모드를 토글하는 버튼 구현에 사용
+
+2. **Button 컴포넌트**
+   - 설치 명령어: `npx shadcn@latest add button`
+   - 목적: 디버그 정보 패널의 버튼 및 복사 기능에 사용
+
+3. **Card 컴포넌트**
+   - 설치 명령어: `npx shadcn@latest add card`
+   - 목적: 디버그 정보 패널의 섹션 구분에 사용
+
+## 디버그 정보 컴포넌트 시스템
+
+디버그 정보 표시를 위한 컴포넌트 시스템이 `/src/components/debug` 디렉토리에 구현되었습니다.
+
+### 주요 컴포넌트:
+
+1. **DebugProvider**: 
+   - 디버그 상태를 관리하는 컨텍스트 프로바이더
+
+2. **DebugToggleButton**: 
+   - 디버그 모드를 켜고 끄는 토글 버튼 컴포넌트
+
+3. **DebugPanel**: 
+   - 디버그 정보를 표시하는 패널 컴포넌트
+
+4. **RequestSection**: 
+   - API 요청 정보를 표시하는 컴포넌트
+
+5. **ResponseSection**: 
+   - API 응답 정보를 표시하는 컴포넌트
+
+6. **StatusIndicator**: 
+   - 성공/실패 상태를 시각적으로 표시하는 컴포넌트
+
+### 테스트 코드:
+
+디버그 정보 컴포넌트 시스템에 대한 테스트 코드가 `/src/test` 디렉토리에 구현되었습니다:
+
+1. **컴포넌트 테스트**:
+   - `StatusIndicator.test.tsx`: 상태 표시 컴포넌트 테스트
+   - `DebugContext.test.tsx`: 디버그 컨텍스트 프로바이더 테스트
+
+2. **훅 테스트**:
+   - `useStorageState.test.tsx`: 로컬 스토리지 상태 관리 훅 테스트
+
+3. **테스트 데이터**:
+   - `debug-test-data.ts`: 테스트에 사용되는 예제 데이터
+
+### 사용 방법:
+
+1. 앱 최상위 레벨에 `DebugProvider`를 포함시킵니다:
+   ```tsx
+   <DebugProvider>
+     <App />
+   </DebugProvider>
+   ```
+
+2. 디버그 토글 버튼을 원하는 위치에 추가합니다:
+   ```tsx
+   <DebugToggleButton />
+   ```
+
+3. 디버그 패널을 추가합니다:
+   ```tsx
+   <DebugPanel />
+   ```
+
+4. API 호출 시 `useApiDebug` 훅을 사용합니다:
+   ```tsx
+   const { fetchWithDebug } = useApiDebug();
+   
+   // API 호출
+   const response = await fetchWithDebug('/api/endpoint', {
+     method: 'POST',
+     headers: {
+       'Content-Type': 'application/json'
+     },
+     body: JSON.stringify({ key: 'value' })
+   });
+   ```
+
+### 테스트 실행 방법:
+
+테스트를 실행하려면 다음 명령어를 사용합니다:
+
+```bash
+# 모든 테스트 실행
+npm test
+
+# 특정 테스트 파일 실행
+npm test -- src/test/components/debug/StatusIndicator.test.tsx
+
+# 테스트 감시 모드로 실행
+npm test -- --watch
+```

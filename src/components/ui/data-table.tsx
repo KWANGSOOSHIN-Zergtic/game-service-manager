@@ -17,6 +17,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
 import { Skeleton } from '@/components/ui/skeleton';
+import { CurrencyControlPanel } from "@/components/control-panels/currency-control-panel";
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -54,6 +55,10 @@ interface DataTableProps {
   showActions?: boolean;
   onSelectRows?: () => void;
   dbName?: string;
+  showCurrencyControls?: boolean; // Currency Controls 표시 여부
+  onCreateCurrency?: () => void;
+  onUpdateCurrency?: () => void;
+  onDeleteCurrency?: () => void;
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
@@ -97,7 +102,11 @@ export function DataTable({
   onPageChange,
   showActions = true,
   onSelectRows,
-  dbName
+  dbName,
+  showCurrencyControls = false,
+  onCreateCurrency,
+  onUpdateCurrency,
+  onDeleteCurrency
 }: DataTableProps) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -357,6 +366,34 @@ export function DataTable({
     return count;
   };
 
+  // 기본 핸들러 함수 (버튼 이벤트 처리용)
+  const handleCreateCurrency = () => {
+    console.log('[DataTable] CREATE 버튼 클릭됨');
+    if (onCreateCurrency) {
+      onCreateCurrency();
+    } else {
+      console.warn('[DataTable] onCreateCurrency handler가 정의되지 않았습니다.');
+    }
+  };
+
+  const handleUpdateCurrency = () => {
+    console.log('[DataTable] UPDATE 버튼 클릭됨');
+    if (onUpdateCurrency) {
+      onUpdateCurrency();
+    } else {
+      console.warn('[DataTable] onUpdateCurrency handler가 정의되지 않았습니다.');
+    }
+  };
+
+  const handleDeleteCurrency = () => {
+    console.log('[DataTable] DELETE 버튼 클릭됨');
+    if (onDeleteCurrency) {
+      onDeleteCurrency();
+    } else {
+      console.warn('[DataTable] onDeleteCurrency handler가 정의되지 않았습니다.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -412,6 +449,15 @@ export function DataTable({
         <div className="border rounded-md p-4 text-center text-gray-500">
           No data available
         </div>
+        {/* Currency Control Panel - 데이터가 없을 때도 테이블 다음에 표시 */}
+        {showCurrencyControls && (
+          <CurrencyControlPanel
+            onCreateClick={handleCreateCurrency}
+            onUpdateClick={handleUpdateCurrency}
+            onDeleteClick={handleDeleteCurrency}
+            className="mt-4" // 테이블과의 간격을 위한 margin-top 추가
+          />
+        )}
       </div>
     );
   }
@@ -449,7 +495,7 @@ export function DataTable({
           )}
         </div>
       )}
-
+      
       <div className="rounded-md border border-gray-200 overflow-hidden">
         <Table>
           <TableHeader>
@@ -618,6 +664,17 @@ export function DataTable({
           </tfoot>
         </Table>
       </div>
+
+      {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 테이블 다음에 위치 */}
+      {showCurrencyControls && (
+        <CurrencyControlPanel
+          onCreateClick={handleCreateCurrency}
+          onUpdateClick={handleUpdateCurrency}
+          onDeleteClick={handleDeleteCurrency}
+          className="mt-4" // 테이블과의 간격을 위한 margin-top 추가
+        />
+      )}
+
       <div className="flex justify-between items-center mt-2">
         <div className="flex items-center gap-2">
           <button 
