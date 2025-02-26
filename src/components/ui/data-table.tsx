@@ -17,7 +17,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
 import { Skeleton } from '@/components/ui/skeleton';
-import { CurrencyControlPanel } from "@/components/control-panels/currency-control-panel";
+import { CurrencyControlPanel, AdvancedCurrencyControlPanel } from "@/components/control-panels/currency-control-panel";
 
 // 동적 컬럼 정의
 export interface TableColumn {
@@ -59,6 +59,11 @@ interface DataTableProps {
   onCreateCurrency?: () => void;
   onUpdateCurrency?: () => void;
   onDeleteCurrency?: () => void;
+  // Advanced Currency Controls 추가
+  showAdvancedCurrencyControls?: boolean;
+  onUseItem?: () => void;
+  onGetItem?: () => void;
+  onSendItem?: () => void;
 }
 
 // 값 포맷팅을 위한 유틸리티 함수
@@ -106,7 +111,11 @@ export function DataTable({
   showCurrencyControls = false,
   onCreateCurrency,
   onUpdateCurrency,
-  onDeleteCurrency
+  onDeleteCurrency,
+  showAdvancedCurrencyControls = false,
+  onUseItem,
+  onGetItem,
+  onSendItem
 }: DataTableProps) {
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -394,6 +403,34 @@ export function DataTable({
     }
   };
 
+  // Advanced Currency 패널 핸들러 함수 추가
+  const handleUseItem = () => {
+    console.log('[DataTable] USE ITEM 버튼 클릭됨');
+    if (onUseItem) {
+      onUseItem();
+    } else {
+      console.warn('[DataTable] onUseItem handler가 정의되지 않았습니다.');
+    }
+  };
+
+  const handleGetItem = () => {
+    console.log('[DataTable] GET ITEM 버튼 클릭됨');
+    if (onGetItem) {
+      onGetItem();
+    } else {
+      console.warn('[DataTable] onGetItem handler가 정의되지 않았습니다.');
+    }
+  };
+
+  const handleSendItem = () => {
+    console.log('[DataTable] SEND ITEM 버튼 클릭됨');
+    if (onSendItem) {
+      onSendItem();
+    } else {
+      console.warn('[DataTable] onSendItem handler가 정의되지 않았습니다.');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -449,13 +486,42 @@ export function DataTable({
         <div className="border rounded-md p-4 text-center text-gray-500">
           No data available
         </div>
-        {/* Currency Control Panel - 데이터가 없을 때도 테이블 다음에 표시 */}
+        {/* 디버그 정보 */}
+        <div className="flex justify-between items-center mt-2">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => window.dispatchEvent(new CustomEvent('toggle-debug-section'))}
+              className="flex items-center text-xs px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
+            >
+              <Bug className="w-3.5 h-3.5 mr-1" />
+              디버그 정보
+            </button>
+          </div>
+          <div className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-0.5 rounded">
+            <Database className="h-3 w-3 text-purple-500" />
+            <span className="text-purple-500 font-medium">
+              {dbName || 'Database'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
         {showCurrencyControls && (
           <CurrencyControlPanel
             onCreateClick={handleCreateCurrency}
             onUpdateClick={handleUpdateCurrency}
             onDeleteClick={handleDeleteCurrency}
-            className="mt-4" // 테이블과의 간격을 위한 margin-top 추가
+            className="mt-4" // 디버그 정보와의 간격을 위한 margin-top 추가
+          />
+        )}
+
+        {/* Advanced Currency Control Panel - showAdvancedCurrencyControls가 true일 때만 표시 */}
+        {showAdvancedCurrencyControls && (
+          <AdvancedCurrencyControlPanel
+            onUseItemClick={handleUseItem}
+            onGetItemClick={handleGetItem}
+            onSendItemClick={handleSendItem}
+            className="mt-4" // Currency Control Panel과의 간격을 위한 margin-top 추가
           />
         )}
       </div>
@@ -665,16 +731,7 @@ export function DataTable({
         </Table>
       </div>
 
-      {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 테이블 다음에 위치 */}
-      {showCurrencyControls && (
-        <CurrencyControlPanel
-          onCreateClick={handleCreateCurrency}
-          onUpdateClick={handleUpdateCurrency}
-          onDeleteClick={handleDeleteCurrency}
-          className="mt-4" // 테이블과의 간격을 위한 margin-top 추가
-        />
-      )}
-
+      {/* 디버그 정보 */}
       <div className="flex justify-between items-center mt-2">
         <div className="flex items-center gap-2">
           <button 
@@ -746,6 +803,26 @@ export function DataTable({
           </span>
         </div>
       </div>
+      
+      {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
+      {showCurrencyControls && (
+        <CurrencyControlPanel
+          onCreateClick={handleCreateCurrency}
+          onUpdateClick={handleUpdateCurrency}
+          onDeleteClick={handleDeleteCurrency}
+          className="mt-4" // 디버그 정보와의 간격을 위한 margin-top 추가
+        />
+      )}
+
+      {/* Advanced Currency Control Panel - showAdvancedCurrencyControls가 true일 때만 표시 */}
+      {showAdvancedCurrencyControls && (
+        <AdvancedCurrencyControlPanel
+          onUseItemClick={handleUseItem}
+          onGetItemClick={handleGetItem}
+          onSendItemClick={handleSendItem}
+          className="mt-4" // Currency Control Panel과의 간격을 위한 margin-top 추가
+        />
+      )}
     </div>
   );
 } 

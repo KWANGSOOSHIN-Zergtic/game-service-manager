@@ -1072,6 +1072,75 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     }
   };
 
+  // Advanced Currency 관련 핸들러 함수 추가
+  const handleUseItem = () => {
+    // 선택된 화폐가 있는지 확인
+    const selectedCurrency = sessionStorage.getItem('selectedCurrency');
+    
+    if (selectedCurrency) {
+      try {
+        const parsedInfo = JSON.parse(selectedCurrency);
+        console.log('[TabContentRenderer] 아이템 사용 시도:', parsedInfo);
+        
+        // TODO: 아이템 사용 모달 또는 다이얼로그 표시
+        alert('아이템 사용 기능을 시작합니다.\n아이템 ID: ' + parsedInfo.id);
+      } catch (error) {
+        console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+      }
+    } else {
+      console.warn('[TabContentRenderer] 사용할 아이템이 선택되지 않았습니다.');
+      alert('사용할 아이템을 먼저 선택해주세요.');
+    }
+  };
+  
+  const handleGetItem = () => {
+    // 사용자 ID와 DB 이름 가져오기
+    const employerInfo = sessionStorage.getItem('employerStorage');
+    let employerUid = null;
+    let dbName = null;
+    
+    if (employerInfo) {
+      try {
+        const parsedInfo = JSON.parse(employerInfo);
+        employerUid = parsedInfo.uid;
+        dbName = parsedInfo.db_name;
+        
+        console.log('[TabContentRenderer] 아이템 획득 시도:', {
+          employerUid,
+          dbName
+        });
+        
+        // TODO: 아이템 획득 모달 또는 다이얼로그 표시
+        alert('아이템 획득 기능을 시작합니다.\n사용자 ID: ' + employerUid + '\nDB: ' + dbName);
+      } catch (error) {
+        console.error('[TabContentRenderer] employerStorage 파싱 오류:', error);
+      }
+    } else {
+      console.warn('[TabContentRenderer] 사용자 정보가 없습니다. 아이템을 획득할 수 없습니다.');
+      alert('사용자 정보를 찾을 수 없습니다. 먼저 사용자를 선택해주세요.');
+    }
+  };
+  
+  const handleSendItem = () => {
+    // 선택된 화폐가 있는지 확인
+    const selectedCurrency = sessionStorage.getItem('selectedCurrency');
+    
+    if (selectedCurrency) {
+      try {
+        const parsedInfo = JSON.parse(selectedCurrency);
+        console.log('[TabContentRenderer] 아이템 전송 시도:', parsedInfo);
+        
+        // TODO: 아이템 전송 모달 또는 다이얼로그 표시
+        alert('아이템 전송 기능을 시작합니다.\n아이템 ID: ' + parsedInfo.id);
+      } catch (error) {
+        console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+      }
+    } else {
+      console.warn('[TabContentRenderer] 전송할 아이템이 선택되지 않았습니다.');
+      alert('전송할 아이템을 먼저 선택해주세요.');
+    }
+  };
+
   const handleCurrencyRowSelect = (selectedItems: TableData[]) => {
     // 선택된 행이 있으면 첫 번째 항목을 저장
     if (selectedItems.length > 0) {
@@ -1302,6 +1371,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                 onCreateCurrency={isCurrencyTab ? handleCreateCurrency : undefined}
                 onUpdateCurrency={isCurrencyTab ? handleUpdateCurrency : undefined}
                 onDeleteCurrency={isCurrencyTab ? handleDeleteCurrency : undefined}
+                // Advanced Currency Controls
+                showAdvancedCurrencyControls={isCurrencyTab}
+                onUseItem={isCurrencyTab ? handleUseItem : undefined}
+                onGetItem={isCurrencyTab ? handleGetItem : undefined}
+                onSendItem={isCurrencyTab ? handleSendItem : undefined}
               />
               {showDebugSection && (
                 <div className="mt-4 border rounded-md overflow-hidden">
