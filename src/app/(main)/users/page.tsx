@@ -292,6 +292,8 @@ export default function UsersPage() {
             requestHeaders={debugInfo.requestHeaders}
             requestBody={debugInfo.requestBody}
             timestamp={debugInfo.timestamp}
+            title="사용자 검색 API 요청 정보"
+            className="mt-4"
           />
         )}
 

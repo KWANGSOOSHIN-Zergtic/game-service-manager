@@ -343,13 +343,26 @@ const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({
 
 export function TabContentRenderer({ content, className = '' }: TabContentRendererProps) {
   const [data, setData] = useState<TableData[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<ApiResponse | null>(null);
   const [requestInfo, setRequestInfo] = useState<ApiRequestInfo | null>(null);
-  const [apiDebugInfo, setApiDebugInfo] = useState<ApiDebugInfo | null>(null); // API 디버그 정보 상태 추가
+  const [apiDebugInfo, setApiDebugInfo] = useState<ApiDebugInfo | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
-  const [showDebugSection, setShowDebugSection] = useState<boolean>(true); // 디버그 섹션 표시 상태
+  
+  // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
+  const getDebugSectionState = (): boolean => {
+    try {
+      const savedState = localStorage.getItem('debugSectionVisible');
+      // 저장된 값이 없으면 기본값으로 false 반환 (접힌 상태로 시작)
+      return savedState !== null ? savedState === 'true' : false;
+    } catch (e) {
+      console.error('[TabContentRenderer] 로컬 스토리지 접근 중 오류:', e);
+      return false; // 오류 발생 시 기본값으로 false 반환
+    }
+  };
+  
+  const [showDebugSection, setShowDebugSection] = useState<boolean>(getDebugSectionState());
 
   // 페이지 리로드 함수
   const reloadPage = () => {
@@ -377,9 +390,18 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       });
   };
 
-  // 디버그 섹션 토글 함수
+  // 디버그 섹션 토글 함수 - 로컬 스토리지에 상태 저장 기능 추가
   const toggleDebugSection = () => {
-    setShowDebugSection(prev => !prev);
+    setShowDebugSection(prev => {
+      const newState = !prev;
+      try {
+        // 로컬 스토리지에 상태 저장
+        localStorage.setItem('debugSectionVisible', newState.toString());
+      } catch (e) {
+        console.error('[TabContentRenderer] 로컬 스토리지 저장 중 오류:', e);
+      }
+      return newState;
+    });
   };
 
   // 데이터 테이블 타입일 경우 API 호출
@@ -1010,7 +1032,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               
               {/* 항상 디버그 버튼 표시 (개발 환경에서만) */}
               {process.env.NODE_ENV === 'development' && (
-                <div className="mt-4 flex justify-end">
+                <div className="mt-4 flex justify-start">
                   <button 
                     onClick={toggleDebugSection}
                     className="flex items-center text-xs px-2 py-1 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded"

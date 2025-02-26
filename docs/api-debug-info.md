@@ -7,10 +7,11 @@ API 디버그 정보 기능은 REST API 요청 시 사용된 원문 정보를 �
 ## 주요 기능
 
 - API 요청 URL 표시
-- 요청 메소드 (GET, POST, PUT, DELETE 등) 표시
-- 요청 헤더 정보 표시
+- 요청 메소드 (GET, POST, PUT, DELETE 등) 표시 (메소드별 색상 구분)
+- 요청 헤더 정보 표시 (민감한 정보 마스킹 처리 포함)
 - 요청 본문(Body) 데이터 표시 (POST, PUT 요청의 경우)
 - 요청 시간 표시
+- 접기/펼치기 기능
 
 ## 구성 요소
 
@@ -50,23 +51,42 @@ export const useApiRequest = <T>() => {
 
 `src/components/ApiDebugInfo.tsx` 파일은 API 디버그 정보를 표시하는 React 컴포넌트입니다.
 
+#### 업데이트된 기능:
+
+- 토글 버튼 컴포넌트 분리 (`DebugInfoToggleButton`)
+- 민감한 정보 마스킹 처리 기능 (표시/숨김 토글 가능)
+- 요청 메소드별 색상 구분
+- ShadCN의 Collapsible 컴포넌트 활용
+
 ```typescript
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Eye, EyeOff, Clock } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
-interface ApiDebugInfoProps {
+// 민감한 헤더 키 목록 (마스킹 처리 대상)
+const SENSITIVE_HEADERS = [
+  'authorization',
+  'x-api-key',
+  'token',
+  'api-key',
+  'password',
+  'secret',
+  'x-auth-token'
+];
+
+export interface ApiDebugInfoProps {
   requestUrl: string;
   requestMethod: string;
   requestHeaders: Record<string, string>;
   requestBody?: string;
   timestamp: string;
+  className?: string;
+  title?: string;
 }
 
-export const ApiDebugInfo: React.FC<ApiDebugInfoProps> = ({
-  // props...
-}) => {
-  // 구현 내용...
-};
+// ... 구현 내용
 ```
 
 ## 사용 방법
@@ -101,6 +121,8 @@ import { ApiDebugInfo } from '@/components/ApiDebugInfo';
     requestHeaders={debugInfo.requestHeaders}
     requestBody={debugInfo.requestBody}
     timestamp={debugInfo.timestamp}
+    title="API 요청 정보" // 선택적 제목 지정
+    className="mt-4" // 선택적 추가 클래스
   />
 )}
 ```
@@ -114,8 +136,13 @@ import { ApiDebugInfo } from '@/components/ApiDebugInfo';
 1. 새로운 API 호출을 작성할 때 `useApiRequest` 훅을 사용합니다.
 2. API 호출 결과를 처리하는 컴포넌트에서 `debugInfo` 상태를 관리합니다.
 3. 디버그 정보를 표시할 위치에 `ApiDebugInfo` 컴포넌트를 추가합니다.
+4. 필요에 따라 `SENSITIVE_HEADERS` 목록을 조정하여 마스킹할 민감한 헤더를 관리할 수 있습니다.
 
-## 주의사항
+## 보안 기능
 
-- 디버그 정보는 민감한 정보를 포함할 수 있으므로 프로덕션 환경에서는 주의해서 사용해야 합니다.
-- Authorization 토큰과 같은 민감한 정보는 디버그 정보에서 마스킹 처리하는 것이 좋습니다. 
+- 민감한 정보(인증 토큰, API 키 등)는 자동으로 마스킹 처리됩니다.
+- 마스킹된 정보는 사용자가 눈 아이콘을 클릭하여 확인할 수 있습니다.
+- 기본적으로 마스킹 처리되는 헤더 키 목록:
+  ```
+  'authorization', 'x-api-key', 'token', 'api-key', 'password', 'secret', 'x-auth-token'
+  ``` 
