@@ -279,23 +279,11 @@ export default function UsersPage() {
                 disabled={!selectedDB || !searchQuery || isSearching}
                 onClick={handleSearch}
               >
-                {isSearching ? '검색 중...' : 'Search User'}
+                {isSearching ? 'Now Searching...' : 'Search User'}
               </Button>
             </div>
           </CardContent>
         </Card>
-
-        {debugInfo && (
-          <ApiDebugInfo
-            requestUrl={debugInfo.requestUrl}
-            requestMethod={debugInfo.requestMethod}
-            requestHeaders={debugInfo.requestHeaders}
-            requestBody={debugInfo.requestBody}
-            timestamp={debugInfo.timestamp}
-            title="사용자 검색 API 요청 정보"
-            className="mt-4"
-          />
-        )}
 
         {userSearchResult.status && (
           <ResultAlert 

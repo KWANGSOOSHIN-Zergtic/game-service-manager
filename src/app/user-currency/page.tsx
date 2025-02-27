@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/select";
 import { motion } from "framer-motion";
 import { logger } from "@/lib/logger";
+import { ApiDebugInfo } from "@/components/ApiDebugInfo";
+import { useCurrencyData } from "@/hooks/useCurrencyData";
+import { ResultAlert } from "@/components/ui/result-alert";
 
 // 삭제 확인 다이얼로그 컴포넌트
 interface DeleteConfirmDialogProps {
@@ -166,14 +169,25 @@ interface SelectedUserInfo {
 export default function UserCurrencyPage() {
   // 상태 관리
   const [userInfo, setUserInfo] = useState<SelectedUserInfo | null>(null);
-  const [currencies, setCurrencies] = useState<UserCurrency[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({});
   const [selectAll, setSelectAll] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [availableDBs, setAvailableDBs] = useState<string[]>([]);
   const [selectedDB, setSelectedDB] = useState<string>("");
+  const [queryResult, setQueryResult] = useState<{ status: 'success' | 'error' | null; message: string; error?: string; }>({
+    status: null,
+    message: ''
+  });
+
+  // 새로운 useCurrencyData 훅 사용
+  const { 
+    currencies, 
+    isLoading, 
+    debugInfo, 
+    fetchCurrencies, 
+    deleteCurrency 
+  } = useCurrencyData();
 
   // 선택된 아이템 개수
   const selectedCount = Object.values(checkedItems).filter(Boolean).length;
@@ -182,7 +196,6 @@ export default function UserCurrencyPage() {
   useEffect(() => {
     const loadUserInfo = () => {
       try {
-        setIsLoading(true);
         // sessionStorage에서 사용자 정보 가져오기
         const storedInfo = sessionStorage.getItem('popupUserInfo');
         if (storedInfo) {
@@ -195,13 +208,14 @@ export default function UserCurrencyPage() {
           document.title = `사용자 재화 관리: ${nickname} (${parsedInfo.user.uid})`;
           
           // 사용자 재화 데이터 로드
-          loadUserCurrencies(parsedInfo.user.uid, parsedInfo.dbName);
-        } else {
-          setIsLoading(false);
+          fetchUserCurrencies(parsedInfo.user.uid, parsedInfo.dbName);
         }
       } catch (error) {
         console.error("사용자 정보 로드 중 오류 발생:", error);
-        setIsLoading(false);
+        setQueryResult({
+          status: 'error',
+          message: '사용자 정보 로드 중 오류가 발생했습니다.'
+        });
       }
     };
 
@@ -209,56 +223,48 @@ export default function UserCurrencyPage() {
   }, []);
 
   // 사용자 재화 데이터 로드 함수
-  const loadUserCurrencies = async (employerUid: number, dbName: string) => {
+  const fetchUserCurrencies = async (employerUid: number, dbName: string) => {
     try {
-      setIsLoading(true);
-      const response = await fetch(`/api/user/currency?employerUid=${employerUid}&dbName=${dbName}`);
-      const data = await response.json();
+      const result = await fetchCurrencies(employerUid, dbName);
       
-      if (data.success) {
-        setCurrencies(data.currencies || []);
-        
+      if (result.success) {
         // 체크박스 상태 초기화
         const newCheckedItems: Record<number, boolean> = {};
-        data.currencies?.forEach((item: UserCurrency) => {
+        result.currencies?.forEach((item: UserCurrency) => {
           newCheckedItems[item.excel_item_index] = false;
         });
         setCheckedItems(newCheckedItems);
         setSelectAll(false);
         
-        toast({
-          title: "재화 정보 조회 완료",
-          description: `${data.currencies.length}개의 재화 정보를 로드했습니다.`,
-          variant: "purple",
+        setQueryResult({
+          status: 'success',
+          message: `${result.currencies?.length || 0}개의 재화 정보를 로드했습니다.`
         });
       } else {
-        console.error("재화 데이터 로드 실패:", data.error || data.message);
-        if (data.availableDBs) {
-          setAvailableDBs(data.availableDBs);
+        console.error("재화 데이터 로드 실패:", result.error || result.message);
+        if (result.availableDBs) {
+          setAvailableDBs(result.availableDBs);
         }
-        toast({
-          title: "재화 데이터 로드 실패",
-          description: data.message || data.error || "알 수 없는 오류가 발생했습니다.",
-          variant: "destructive",
+        
+        setQueryResult({
+          status: 'error',
+          message: result.message || result.error || "알 수 없는 오류가 발생했습니다."
         });
       }
-    } catch (error) {
-      console.error("재화 데이터 로드 중 오류:", error);
-      toast({
-        title: "재화 데이터 로드 실패",
-        description: "서버 연결 중 오류가 발생했습니다.",
-        variant: "destructive",
+    } catch (err) {
+      console.error("재화 데이터 로드 중 오류:", err);
+      
+      setQueryResult({
+        status: 'error',
+        message: "서버 연결 중 오류가 발생했습니다."
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // 데이터베이스 변경 핸들러
   const handleDBChange = (value: string) => {
-    if (userInfo) {
-      setSelectedDB(value);
-      loadUserCurrencies(userInfo.user.uid, value);
+    setSelectedDB(value);
+    if (userInfo && userInfo.user.uid) {
+      fetchUserCurrencies(userInfo.user.uid, value);
     }
   };
 
@@ -286,126 +292,71 @@ export default function UserCurrencyPage() {
     setSelectAll(allChecked);
   };
 
-  // 삭제 확인 다이얼로그 표시
+  // 삭제 확인 다이얼로그 관리
   const handleShowDeleteDialog = () => {
     if (selectedCount === 0) {
       toast({
         title: "선택된 항목 없음",
-        description: "삭제할 항목을 선택해주세요.",
+        description: "삭제할 항목을 먼저 선택해주세요.",
         variant: "destructive",
       });
       return;
     }
     
-    // 삭제 버튼 클릭 로깅
-    logger.info('[UserCurrencyPage] 삭제 버튼 클릭', {
+    // 삭제 확인 다이얼로그 표시
+    setShowDeleteDialog(true);
+    
+    // 로깅
+    logger.info('[UserCurrencyPage] 삭제 확인 다이얼로그 열림', {
       selectedCount,
-      userUid: userInfo?.user.uid,
+      userInfo: userInfo ? {
+        uid: userInfo.user.uid,
+        nickname: userInfo.user.nickname
+      } : null,
       timestamp: new Date().toISOString(),
     });
-    
-    setShowDeleteDialog(true);
   };
 
-  // 선택된 항목 삭제 처리
+  // 삭제 처리 함수
   const handleDeleteSelected = async () => {
-    if (!userInfo || selectedCount === 0) return;
+    if (!userInfo || !selectedCount) return;
+    
+    setIsDeleting(true);
     
     try {
-      setIsDeleting(true);
+      // 'isChecked' 대신 사용하지 않는 변수를 언더스코어(_)가 아닌 의미있는 이름으로 변경
+      const selectedIndices = Object.entries(checkedItems)
+        .filter(([, isChecked]) => isChecked)
+        .map(([index]) => parseInt(index));
       
-      // 삭제 시작 로깅
-      logger.info('[UserCurrencyPage] 삭제 프로세스 시작', {
-        selectedCount,
-        userUid: userInfo.user.uid,
-        timestamp: new Date().toISOString(),
-      });
-      
-      // 선택된 아이템 ID 배열 생성
-      const selectedIndexes = Object.entries(checkedItems)
-        .filter(([, checked]) => checked)
-        .map(([excelItemIndex]) => parseInt(excelItemIndex));
-      
-      // 삭제할 아이템 로깅
-      logger.info('[UserCurrencyPage] 삭제할 아이템', {
-        selectedIndexes,
-        userUid: userInfo.user.uid,
-        timestamp: new Date().toISOString(),
-      });
-      
-      // 선택된 모든 항목에 대해 삭제 요청 보내기
-      const deletePromises = selectedIndexes.map(excelItemIndex => 
-        fetch(`/api/user/currency?employerUid=${userInfo.user.uid}&excelItemIndex=${excelItemIndex}&dbName=${selectedDB}`, {
-          method: 'DELETE',
-        })
+      // 삭제 API 호출
+      const result = await deleteCurrency(
+        userInfo.user.uid,
+        selectedIndices,
+        selectedDB || userInfo.dbName
       );
       
-      const results = await Promise.all(deletePromises);
+      setShowDeleteDialog(false);
       
-      // 모든 응답 확인
-      const responses = await Promise.all(results.map(res => res.json()));
-      
-      // 삭제 결과 로깅
-      logger.info('[UserCurrencyPage] 삭제 응답 결과', {
-        responses,
-        userUid: userInfo.user.uid,
-        timestamp: new Date().toISOString(),
-      });
-      
-      // 실패한 삭제 요청이 있는지 확인
-      const failedResponses = responses.filter(resp => !resp.success);
-      
-      if (failedResponses.length > 0) {
-        console.error("일부 항목 삭제 실패:", failedResponses);
-        toast({
-          title: "삭제 부분 실패",
-          description: `${responses.length - failedResponses.length}개 항목 삭제 성공, ${failedResponses.length}개 항목 삭제 실패`,
-          variant: "warning",
-        });
-        
-        // 실패한 항목 로깅
-        logger.warn('[UserCurrencyPage] 일부 항목 삭제 실패', {
-          failedCount: failedResponses.length,
-          successCount: responses.length - failedResponses.length,
-          failedResponses,
-          userUid: userInfo.user.uid,
-          timestamp: new Date().toISOString(),
+      if (result.success) {
+        setQueryResult({
+          status: 'success',
+          message: `${selectedCount}개 항목이 성공적으로 삭제되었습니다.`
         });
       } else {
-        toast({
-          title: "삭제 완료",
-          description: `선택한 ${selectedCount}개 항목이 성공적으로 삭제되었습니다.`,
-          variant: "success",
-        });
-        
-        // 성공 로깅
-        logger.info('[UserCurrencyPage] 삭제 성공', {
-          deletedCount: responses.length,
-          userUid: userInfo.user.uid,
-          timestamp: new Date().toISOString(),
+        setQueryResult({
+          status: 'error',
+          message: result.message || '삭제 중 오류가 발생했습니다.'
         });
       }
-      
-      // 데이터 다시 로드
-      await loadUserCurrencies(userInfo.user.uid, selectedDB);
-      
     } catch (error) {
-      console.error("항목 삭제 중 오류:", error);
-      toast({
-        title: "삭제 실패",
-        description: "재화 삭제 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-      
-      // 오류 로깅
-      logger.error('[UserCurrencyPage] 삭제 중 오류 발생', {
-        error: error instanceof Error ? error.message : String(error),
-        userUid: userInfo.user.uid,
-        timestamp: new Date().toISOString(),
+      console.error("삭제 중 오류:", error);
+      setQueryResult({
+        status: 'error',
+        message: error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.'
       });
     } finally {
       setIsDeleting(false);
-      setShowDeleteDialog(false);
     }
   };
 
@@ -427,97 +378,134 @@ export default function UserCurrencyPage() {
   }
 
   return (
-    <div className="container p-6">
+    <div className="container mx-auto p-4 max-w-6xl">
+      <h1 className="text-2xl font-bold mb-6 text-purple-800">
+        사용자 재화 관리
+        {userInfo && (
+          <span className="ml-2 text-gray-600 text-lg">
+            {userInfo.user.nickname || userInfo.user.login_id} ({userInfo.user.uid})
+          </span>
+        )}
+      </h1>
+      
+      {/* API 디버그 정보 */}
+      {debugInfo && (
+        <ApiDebugInfo
+          requestUrl={debugInfo.requestUrl}
+          requestMethod={debugInfo.requestMethod}
+          requestHeaders={debugInfo.requestHeaders}
+          requestBody={debugInfo.requestBody}
+          timestamp={debugInfo.timestamp}
+          title="재화 관리 API 요청 정보"
+          className="mb-4"
+        />
+      )}
+      
+      {/* 결과 알림 */}
+      {queryResult.status && (
+        <ResultAlert 
+          result={queryResult}
+          successTitle="요청 성공"
+          errorTitle="요청 실패"
+          className="mb-4"
+        />
+      )}
+      
       <Card className="mb-6">
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <CardTitle>
-              사용자 재화 관리
-              {userInfo && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
-                  {userInfo.user.nickname || userInfo.user.login_id} ({userInfo.user.uid})
-                </span>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {availableDBs.length > 0 && (
-                <Select value={selectedDB} onValueChange={handleDBChange}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="데이터베이스 선택" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDBs.map((db) => (
-                      <SelectItem key={db} value={db}>
-                        {db}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleShowDeleteDialog}
-                disabled={selectedCount === 0 || isDeleting}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                선택 삭제 ({selectedCount})
-              </Button>
+          <CardTitle>사용자 재화 관리</CardTitle>
+          {availableDBs.length > 0 && (
+            <div className="mt-2">
+              <Select value={selectedDB} onValueChange={handleDBChange}>
+                <SelectTrigger className="w-[300px]">
+                  <SelectValue placeholder="DB 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDBs.map((db) => (
+                    <SelectItem key={db} value={db}>
+                      {db}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
+          )}
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>로딩 중...</span>
+            <div className="flex justify-center items-center h-40">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-500" />
+              <span className="ml-2 text-lg text-purple-500">데이터 로딩 중...</span>
             </div>
-          ) : currencies.length > 0 ? (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectAll}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead>ID</TableHead>
-                    <TableHead>아이템 인덱스</TableHead>
-                    <TableHead>수량</TableHead>
-                    <TableHead>생성일</TableHead>
-                    <TableHead>수정일</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {currencies.map((currency) => (
-                    <TableRow key={currency.excel_item_index}>
-                      <TableCell>
-                        <Checkbox
-                          checked={checkedItems[currency.excel_item_index] || false}
-                          onCheckedChange={() => handleCheckboxChange(currency.excel_item_index)}
-                        />
-                      </TableCell>
-                      <TableCell>{currency.id}</TableCell>
-                      <TableCell>{currency.excel_item_index}</TableCell>
-                      <TableCell>{currency.count.toLocaleString()}</TableCell>
-                      <TableCell>{new Date(currency.create_at).toLocaleString()}</TableCell>
-                      <TableCell>{new Date(currency.update_at).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          ) : currencies.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p>재화 데이터가 없습니다</p>
             </div>
           ) : (
-            <div className="text-center py-10">
-              <p className="text-gray-500">재화 데이터가 없습니다.</p>
-            </div>
+            <>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="selectAll"
+                    checked={selectAll}
+                    onCheckedChange={handleSelectAll}
+                  />
+                  <label htmlFor="selectAll" className="text-sm font-medium text-gray-700">
+                    전체 선택 ({currencies.length}개 항목)
+                  </label>
+                </div>
+                
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={selectedCount === 0}
+                  onClick={handleShowDeleteDialog}
+                  className="flex items-center"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  선택 삭제 ({selectedCount})
+                </Button>
+              </div>
+              
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50">
+                      <TableHead className="w-[50px]">선택</TableHead>
+                      <TableHead className="w-[180px]">생성일</TableHead>
+                      <TableHead className="w-[180px]">수정일</TableHead>
+                      <TableHead className="w-[100px]">아이템 ID</TableHead>
+                      <TableHead>수량</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currencies.map((item) => (
+                      <TableRow key={item.excel_item_index}>
+                        <TableCell className="py-2">
+                          <Checkbox
+                            checked={!!checkedItems[item.excel_item_index]}
+                            onCheckedChange={() => handleCheckboxChange(item.excel_item_index)}
+                          />
+                        </TableCell>
+                        <TableCell className="py-2 text-xs">
+                          {new Date(item.create_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="py-2 text-xs">
+                          {new Date(item.update_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="py-2 font-medium">{item.excel_item_index}</TableCell>
+                        <TableCell className="py-2">{item.count.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
-
-      {/* 삭제 확인 다이얼로그 컴포넌트 */}
+      
+      {/* 삭제 확인 다이얼로그 */}
       <DeleteConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
