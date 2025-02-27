@@ -449,3 +449,34 @@ npm test -- src/test/components/debug/StatusIndicator.test.tsx
 # 테스트 감시 모드로 실행
 npm test -- --watch
 ```
+
+## 추가 컴포넌트
+
+### ConfirmDialog
+
+범용적으로 사용할 수 있는 확인 다이얼로그 컴포넌트입니다. 다양한 확인 작업(삭제, 업데이트, 실행 등)에 일관된 UI를 제공하면서도 필요에 따라 커스터마이징이 가능합니다.
+
+- **설치 방법**: `src/components/ui/confirm-dialog.tsx` 파일을 추가하여 사용
+- **의존성**: ShadCN Alert Dialog (`@radix-ui/react-alert-dialog`)
+- **목적**: 다양한 작업에 대한 확인 대화상자를 일관되고 재사용 가능한 방식으로 제공
+- **문서**: [ConfirmDialog 컴포넌트 사용 방법](./components/confirm-dialog.md)
+
+**사용 예시**:
+```tsx
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { AlertCircle } from 'lucide-react';
+
+<ConfirmDialog
+  open={showDialog}
+  onOpenChange={setShowDialog}
+  title="항목 삭제"
+  description="이 항목을 삭제하시겠습니까?"
+  secondaryDescription="이 작업은 되돌릴 수 없습니다."
+  icon={AlertCircle}
+  cancelText="취소"
+  confirmText="삭제"
+  onCancel={handleCancel}
+  onConfirm={handleConfirm}
+  isLoading={isLoading}
+/>
+```

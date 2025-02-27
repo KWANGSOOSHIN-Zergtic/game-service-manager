@@ -26,18 +26,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -438,6 +429,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
   const [deletingCurrency, setDeletingCurrency] = useState<{ id: number; info: Record<string, unknown> } | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [showUseItemDialog, setShowUseItemDialog] = useState<boolean>(false);
+  const [usingItem, setUsingItem] = useState<{ id: number; info: Record<string, unknown> } | null>(null);
+  const [isUsingItem, setIsUsingItem] = useState<boolean>(false);
   
   // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
   const getDebugSectionState = (): boolean => {
@@ -1071,10 +1065,22 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const parsedInfo = JSON.parse(selectedCurrency);
         console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedInfo);
         
+        // excel_item_index가 없는 경우 확인
+        if (!parsedInfo.excel_item_index) {
+          console.error('[TabContentRenderer] 화폐에 excel_item_index가 없습니다:', parsedInfo);
+          toast({
+            title: "삭제 불가",
+            description: "선택한 화폐에 필요한 정보(excel_item_index)가 없습니다.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         // 로깅
         try {
           logger.info('[TabContentRenderer] 화폐 삭제 버튼 클릭', {
             currencyId: parsedInfo.id,
+            excelItemIndex: parsedInfo.excel_item_index,
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
@@ -1096,7 +1102,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
       toast({
         title: "선택된 화폐 없음",
-        description: "삭제할 화폐를 먼저 선택해주세요.",
+        description: "삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
         variant: "destructive",
       });
     }
@@ -1112,14 +1118,24 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const parsedInfo = JSON.parse(selectedCurrency);
         console.log('[TabContentRenderer] 아이템 사용 시도:', parsedInfo);
         
-        // TODO: 아이템 사용 모달 또는 다이얼로그 표시
-        alert('아이템 사용 기능을 시작합니다.\n아이템 ID: ' + parsedInfo.id);
+        // 아이템 사용 다이얼로그 표시
+        setUsingItem({ id: parsedInfo.id, info: parsedInfo });
+        setShowUseItemDialog(true);
       } catch (error) {
         console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+        toast({
+          title: "오류",
+          description: "아이템 정보를 읽는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
       }
     } else {
       console.warn('[TabContentRenderer] 사용할 아이템이 선택되지 않았습니다.');
-      alert('사용할 아이템을 먼저 선택해주세요.');
+      toast({
+        title: "선택된 아이템 없음",
+        description: "사용할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -1384,23 +1400,74 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           console.warn('[TabContentRenderer] 로깅 실패:', error);
         }
         
-        // TODO: 실제 삭제 API 호출 로직 구현
-        // API 호출 코드가 구현되면 아래 코드를 수정하세요
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 임시 지연 효과
+        // 사용자 정보 가져오기
+        const employerInfo = sessionStorage.getItem('employerStorage');
+        if (!employerInfo) {
+          throw new Error('사용자 정보를 찾을 수 없습니다. 사용자 목록 페이지에서 사용자를 선택해주세요.');
+        }
+        
+        // 사용자 정보 파싱
+        const parsedEmployerInfo = JSON.parse(employerInfo);
+        const employerUid = parsedEmployerInfo.uid;
+        
+        // DB 이름 가져오기
+        let dbName = '';
+        if (parsedEmployerInfo.db_name) {
+          dbName = parsedEmployerInfo.db_name;
+        } else {
+          // 이전 방식으로 DB 이름 가져오기
+          const storedInfo = sessionStorage.getItem('popupUserInfo');
+          if (storedInfo) {
+            const parsedInfo = JSON.parse(storedInfo);
+            dbName = parsedInfo.dbName;
+          } else {
+            dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+          }
+        }
+        
+        // excelItemIndex 가져오기 (API에서 사용하는 파라미터)
+        const excelItemIndex = deletingCurrency.info.excel_item_index;
+        
+        if (!employerUid || !dbName || !excelItemIndex) {
+          throw new Error('삭제에 필요한 정보가 누락되었습니다.');
+        }
+        
+        console.log('[TabContentRenderer] 화폐 삭제 API 호출:', {
+          employerUid,
+          dbName,
+          excelItemIndex
+        });
+        
+        // API 호출
+        const response = await fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndex}&dbName=${dbName}`, {
+          method: 'DELETE',
+        });
+        
+        // 응답 처리
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.message || '삭제 처리 중 오류가 발생했습니다.');
+        }
+        
+        // 삭제된 항목의 이름이나 타입 정보 추출
+        const itemName = deletingCurrency.info.name || deletingCurrency.info.item_name || '재화';
+        const itemType = deletingCurrency.info.type || deletingCurrency.info.item_type || '';
         
         toast({
           title: "삭제 성공",
-          description: `화폐 ID: ${deletingCurrency.id} 삭제가 완료되었습니다.`,
+          description: `${itemName}${itemType ? ` (${itemType})` : ''} 삭제가 완료되었습니다.`,
+          variant: "default",
         });
         
         // 데이터 다시 로드
-        // TODO: 데이터 리로딩 로직 구현
+        fetchData();
         
       } catch (error) {
         console.error('[TabContentRenderer] 화폐 삭제 중 오류:', error);
         toast({
           title: "삭제 실패",
-          description: "화폐 삭제 중 오류가 발생했습니다.",
+          description: error instanceof Error ? error.message : "화폐 삭제 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       } finally {
@@ -1425,53 +1492,108 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     };
     
     return (
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-white rounded-2xl shadow-xl max-w-md mx-auto p-6 border-0">
-          <div className="flex flex-col items-center justify-center">
-            {/* 중앙 아이콘 */}
-            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-              <AlertCircle className="h-8 w-8 text-purple-600" />
-            </div>
+      <ConfirmDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="재화 삭제"
+        description="정말로 이 재화를 삭제하시겠습니까?"
+        secondaryDescription="이 작업은 되돌릴 수 없습니다."
+        icon={AlertCircle}
+        iconBgColor="bg-purple-100"
+        iconColor="text-purple-600"
+        cancelText="취소"
+        confirmText="삭제"
+        confirmBgColor="bg-purple-600 hover:bg-purple-700 focus:ring-purple-300"
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        loadingText="삭제 중"
+      />
+    );
+  };
 
-            <AlertDialogHeader className="space-y-2">
-              <AlertDialogTitle className="text-xl font-bold text-gray-900 text-center">
-                재화 삭제
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-gray-600 text-center">
-                정말로 이 재화를 삭제하시겠습니까?
-                <div className="mt-1 text-sm">이 작업은 되돌릴 수 없습니다.</div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            
-            <AlertDialogFooter className="flex justify-center space-x-4 w-full mt-6">
-              <AlertDialogCancel 
-                className="flex-1 bg-gray-100 text-gray-700 border-0 rounded-lg font-medium py-3 hover:bg-gray-200 transition-colors" 
-                onClick={handleCancelDelete}
-                disabled={isDeleting}
-              >
-                취소
-              </AlertDialogCancel>
-              <AlertDialogAction
-                className="flex-1 bg-purple-600 text-white rounded-lg font-medium py-3 hover:bg-purple-700 transition-all focus:ring-2 focus:ring-purple-300 focus:outline-none"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <div className="flex items-center justify-center">
-                    <svg className="animate-spin mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    삭제 중
-                  </div>
-                ) : (
-                  "삭제"
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+  // 아이템 사용 확인 다이얼로그 컴포넌트
+  const UseItemConfirmDialog = () => {
+    // 사용 확인 처리
+    const handleConfirmUse = async () => {
+      if (!usingItem) return;
+      
+      setIsUsingItem(true);
+      
+      try {
+        // 로깅
+        try {
+          logger.info('[TabContentRenderer] 아이템 사용 확인됨:', {
+            itemId: usingItem.id,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.warn('[TabContentRenderer] 로깅 실패:', error);
+        }
+        
+        // TODO: 여기에 실제 아이템 사용 API 호출 코드를 추가
+
+        // 샘플 성공 메시지
+        const itemName = usingItem.info.name || usingItem.info.item_name || '아이템';
+        
+        toast({
+          title: "사용 성공",
+          description: `${itemName} 아이템을 성공적으로 사용했습니다.`,
+          variant: "default",
+        });
+        
+        // 데이터 다시 로드
+        fetchData();
+        
+      } catch (error) {
+        console.error('[TabContentRenderer] 아이템 사용 중 오류:', error);
+        toast({
+          title: "사용 실패",
+          description: error instanceof Error ? error.message : "아이템 사용 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsUsingItem(false);
+        setShowUseItemDialog(false);
+        setUsingItem(null);
+      }
+    };
+    
+    // 취소 처리
+    const handleCancelUse = () => {
+      try {
+        logger.info('[TabContentRenderer] 아이템 사용 취소됨:', {
+          itemId: usingItem?.id,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.warn('[TabContentRenderer] 로깅 실패:', error);
+      }
+      setShowUseItemDialog(false);
+      setUsingItem(null);
+    };
+    
+    // 아이템 이름 가져오기
+    const itemName = usingItem?.info.name || usingItem?.info.item_name || '아이템';
+    
+    return (
+      <ConfirmDialog
+        open={showUseItemDialog}
+        onOpenChange={setShowUseItemDialog}
+        title="아이템 사용"
+        description={`${itemName} 아이템을 사용하시겠습니까?`}
+        secondaryDescription="이 작업은 되돌릴 수 없습니다."
+        icon={CheckCircle2}
+        iconBgColor="bg-blue-100"
+        iconColor="text-blue-600"
+        cancelText="취소"
+        confirmText="사용"
+        confirmBgColor="bg-blue-600 hover:bg-blue-700 focus:ring-blue-300"
+        onCancel={handleCancelUse}
+        onConfirm={handleConfirmUse}
+        isLoading={isUsingItem}
+        loadingText="사용 중"
+      />
     );
   };
 
@@ -1526,6 +1648,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           
           {/* 삭제 확인 다이얼로그 */}
           <DeleteConfirmDialog />
+          
+          {/* 아이템 사용 확인 다이얼로그 */}
+          <UseItemConfirmDialog />
         </div>
       );
       
