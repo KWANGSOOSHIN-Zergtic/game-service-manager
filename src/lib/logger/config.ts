@@ -1,8 +1,21 @@
 import winston from 'winston';
 import 'winston-daily-rotate-file';
 import path from 'path';
+import fs from 'fs';
 
 const logDir = 'logs';
+
+// 로그 디렉토리가 없으면 생성
+try {
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir, { recursive: true });
+  }
+} catch (error) {
+  console.error('로그 디렉토리 생성 중 오류:', error);
+}
+
+// 현재 날짜 포맷 생성 (YYYY-MM-DD)
+const currentDate = new Date().toISOString().split('T')[0];
 
 export const loggerConfig = {
   levels: {
@@ -21,6 +34,34 @@ export const loggerConfig = {
   },
 };
 
+// DailyRotateFile 트랜스포트 타입 정의
+interface DailyRotateFileTransportOptions {
+  filename: string;
+  datePattern: string;
+  zippedArchive?: boolean;
+  maxSize?: string;
+  maxFiles?: string;
+  level?: string;
+  format?: winston.Logform.Format;
+  createSymlink?: boolean;
+  symlinkName?: string;
+  utc?: boolean;
+  frequency?: string;
+  dirname?: string;
+  date?: string;
+}
+
+// 안전한 트랜스포트 생성 함수
+const createSafeTransport = (config: DailyRotateFileTransportOptions) => {
+  try {
+    return new winston.transports.DailyRotateFile(config);
+  } catch (error) {
+    console.error('로그 트랜스포트 생성 오류:', error);
+    // 오류 발생 시 콘솔만 사용하도록 null 반환
+    return null;
+  }
+};
+
 export const transports = {
   console: new winston.transports.Console({
     format: winston.format.combine(
@@ -31,7 +72,7 @@ export const transports = {
       )
     ),
   }),
-  dailyRotateFile: new winston.transports.DailyRotateFile({
+  dailyRotateFile: createSafeTransport({
     filename: path.join(logDir, '%DATE%-combined.log'),
     datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
@@ -41,8 +82,17 @@ export const transports = {
       winston.format.timestamp(),
       winston.format.json()
     ),
+    // 현재 날짜로만 로그 파일 생성하도록 설정
+    createSymlink: true,
+    symlinkName: 'current-combined.log',
+    utc: true,
+    // 백업 상태 확인
+    frequency: '24h',
+    // 파일 이름 변경 (현재 날짜 사용)
+    dirname: logDir,
+    date: currentDate  
   }),
-  errorFile: new winston.transports.DailyRotateFile({
+  errorFile: createSafeTransport({
     filename: path.join(logDir, '%DATE%-error.log'),
     datePattern: 'YYYY-MM-DD',
     zippedArchive: true,
@@ -53,6 +103,15 @@ export const transports = {
       winston.format.timestamp(),
       winston.format.json()
     ),
+    // 현재 날짜로만 로그 파일 생성하도록 설정
+    createSymlink: true,
+    symlinkName: 'current-error.log',
+    utc: true,
+    // 백업 상태 확인
+    frequency: '24h',
+    // 파일 이름 변경 (현재 날짜 사용)
+    dirname: logDir,
+    date: currentDate
   }),
 };
 
