@@ -16,20 +16,30 @@ export default function LoginPage() {
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
+    autoLogin: false
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     
-    const success = await login(loginData)
-    if (success) {
-      setTimeout(() => {
+    try {
+      console.log('로그인 시도 중...', { email: loginData.email, autoLogin: loginData.autoLogin })
+      const success = await login({
+        email: loginData.email,
+        password: loginData.password,
+        autoLogin: loginData.autoLogin
+      })
+      
+      console.log('로그인 결과:', success)
+      if (success) {
         router.push("/dashboard")
-      }, 1000)
+      }
+    } catch (error) {
+      console.error("로그인 처리 중 오류:", error)
+    } finally {
+      setIsLoading(false)
     }
-    
-    setIsLoading(false)
   }
 
   return (
@@ -99,8 +109,14 @@ export default function LoginPage() {
               </div>
               
               <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center">
-                  <input type="checkbox" className="mr-2" />
+                <label className="flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="mr-2"
+                    checked={loginData.autoLogin}
+                    onChange={(e) => setLoginData({ ...loginData, autoLogin: e.target.checked })}
+                    disabled={isLoading}
+                  />
                   Auto sign in
                 </label>
                 <Link href="/forgot-password" className="text-purple-600 hover:underline">

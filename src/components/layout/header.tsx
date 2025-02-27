@@ -3,6 +3,8 @@
 import { Search, Bell, HelpCircle, Settings, LogOut, UserCircle } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import Link from "next/link"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +21,47 @@ import {
 } from "@/components/ui/tooltip"
 
 export function Header() {
+  const { logout } = useAuth()
+  const [adminInfo, setAdminInfo] = useState<{ name: string; type: string } | null>(null)
+
+  useEffect(() => {
+    // 관리자 정보 로드
+    const loadAdminInfo = () => {
+      try {
+        const adminData = localStorage.getItem('admin')
+        if (adminData) {
+          const admin = JSON.parse(adminData)
+          setAdminInfo({
+            name: admin.name || 'Unknown',
+            type: admin.type || 'User'
+          })
+        }
+      } catch (error) {
+        console.error('관리자 정보 로드 실패:', error)
+        setAdminInfo({ name: 'Unknown', type: 'User' })
+      }
+    }
+
+    loadAdminInfo()
+  }, [])
+
+  const handleLogout = () => {
+    console.log('로그아웃 처리 중...')
+    logout()
+  }
+
+  // 관리자 이름에서 이니셜 추출
+  const getInitials = () => {
+    if (!adminInfo?.name) return 'UN'
+    
+    const nameParts = adminInfo.name.split(' ')
+    if (nameParts.length > 1) {
+      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+    }
+    
+    return adminInfo.name.substring(0, 2).toUpperCase()
+  }
+
   return (
     <header className="h-16 border-b bg-white px-6 flex items-center justify-between">
       {/* Search */}
@@ -83,11 +126,11 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger className="flex items-center gap-3 hover:cursor-pointer">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>KS</AvatarFallback>
+                    <AvatarFallback>{getInitials()}</AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-purple-600">KwangSoo Shin</span>
-                    <span className="text-xs text-gray-500">Developer</span>
+                    <span className="text-sm font-bold text-purple-600">{adminInfo?.name || 'Loading...'}</span>
+                    <span className="text-xs text-gray-500">{adminInfo?.type || 'User'}</span>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -99,7 +142,7 @@ export function Header() {
                       <span>Account Setting</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-red-600 font-bold">
+                  <DropdownMenuItem className="text-red-600 font-bold" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log Out</span>
                   </DropdownMenuItem>

@@ -1,0 +1,1 @@
+v8.setFlagsFromString('--max-semi-space-size=512');
