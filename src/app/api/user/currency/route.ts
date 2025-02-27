@@ -78,10 +78,10 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const employerUid = searchParams.get('employerUid');
-  const excelItemIndex = searchParams.get('excelItemIndex');
+  const excelItemIndexParam = searchParams.get('excelItemIndex');
   const dbName = searchParams.get('dbName');
   
-  if (!employerUid || !excelItemIndex) {
+  if (!employerUid || !excelItemIndexParam) {
     return NextResponse.json({
       success: false,
       message: '필수 파라미터가 누락되었습니다.',
@@ -89,12 +89,55 @@ export async function DELETE(request: NextRequest) {
     }, { status: 400 });
   }
   
-  const result = await deleteUserCurrency({ 
-    employerUid, 
-    excelItemIndex: parseInt(excelItemIndex), 
-    dbName 
-  });
+  // 쉼표로 구분된 excelItemIndex 처리
+  const excelItemIndices = excelItemIndexParam.split(',').map(index => parseInt(index.trim()));
   
-  const { status, ...responseData } = result;
-  return NextResponse.json(responseData, { status: status || 500 });
+  if (excelItemIndices.some(index => isNaN(index))) {
+    return NextResponse.json({
+      success: false,
+      message: '잘못된 파라미터 형식입니다.',
+      error: 'excelItemIndex는 쉼표로 구분된 숫자 목록이어야 합니다.',
+    }, { status: 400 });
+  }
+  
+  // 모든 삭제 작업 결과를 저장할 배열
+  const results = [];
+  let hasError = false;
+  
+  // 각 아이템 삭제 실행
+  for (const excelItemIndex of excelItemIndices) {
+    try {
+      const result = await deleteUserCurrency({ 
+        employerUid, 
+        excelItemIndex, 
+        dbName 
+      });
+      
+      results.push({
+        excelItemIndex,
+        success: result.success,
+        message: result.message,
+      });
+      
+      if (!result.success) {
+        hasError = true;
+      }
+    } catch (error) {
+      console.error(`Error deleting currency with excelItemIndex ${excelItemIndex}:`, error);
+      results.push({
+        excelItemIndex,
+        success: false,
+        message: error instanceof Error ? error.message : '알 수 없는 오류',
+      });
+      hasError = true;
+    }
+  }
+  
+  return NextResponse.json({
+    success: !hasError,
+    message: hasError 
+      ? '일부 항목 삭제 중 오류가 발생했습니다.' 
+      : `${excelItemIndices.length}개 항목이 성공적으로 삭제되었습니다.`,
+    results,
+  }, { status: hasError ? 500 : 200 });
 } 

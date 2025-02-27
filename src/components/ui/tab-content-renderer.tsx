@@ -427,7 +427,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [apiDebugInfo, setApiDebugInfo] = useState<ApiDebugInfo | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
-  const [deletingCurrency, setDeletingCurrency] = useState<{ id: number; info: Record<string, unknown> } | null>(null);
+  const [deletingCurrencies, setDeletingCurrencies] = useState<TableData[] | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [showUseItemDialog, setShowUseItemDialog] = useState<boolean>(false);
   const [usingItem, setUsingItem] = useState<{ id: number; info: Record<string, unknown> } | null>(null);
@@ -1057,20 +1057,31 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   };
   
   const handleDeleteCurrency = () => {
-    // 선택된 화폐가 있는지 확인
-    const selectedCurrency = sessionStorage.getItem('selectedCurrency');
+    // 선택된 화폐들이 있는지 확인
+    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
     
-    if (selectedCurrency) {
+    if (selectedCurrencies) {
       try {
-        const parsedInfo = JSON.parse(selectedCurrency);
-        console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedInfo);
+        const parsedItems = JSON.parse(selectedCurrencies) as TableData[];
+        console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedItems);
         
-        // excel_item_index가 없는 경우 확인
-        if (!parsedInfo.excel_item_index) {
-          console.error('[TabContentRenderer] 화폐에 excel_item_index가 없습니다:', parsedInfo);
+        if (parsedItems.length === 0) {
+          console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
+          toast({
+            title: "선택된 화폐 없음",
+            description: "삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // 모든 항목에 excel_item_index가 있는지 확인
+        const invalidItems = parsedItems.filter(item => !item.excel_item_index);
+        if (invalidItems.length > 0) {
+          console.error('[TabContentRenderer] 일부 화폐에 excel_item_index가 없습니다:', invalidItems);
           toast({
             title: "삭제 불가",
-            description: "선택한 화폐에 필요한 정보(excel_item_index)가 없습니다.",
+            description: `${invalidItems.length}개 항목에 필요한 정보(excel_item_index)가 없습니다.`,
             variant: "destructive",
           });
           return;
@@ -1079,8 +1090,8 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         // 로깅
         try {
           logger.info('[TabContentRenderer] 화폐 삭제 버튼 클릭', {
-            currencyId: parsedInfo.id,
-            excelItemIndex: parsedInfo.excel_item_index,
+            currencyCount: parsedItems.length,
+            currencyIds: parsedItems.map(item => item.id),
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
@@ -1088,10 +1099,10 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         }
         
         // 삭제할 화폐 정보 설정 및 다이얼로그 표시
-        setDeletingCurrency({ id: parsedInfo.id, info: parsedInfo });
+        setDeletingCurrencies(parsedItems);
         setShowDeleteDialog(true);
       } catch (error) {
-        console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+        console.error('[TabContentRenderer] selectedCurrencies 파싱 오류:', error);
         toast({
           title: "오류",
           description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
@@ -1188,13 +1199,15 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   };
 
   const handleCurrencyRowSelect = (selectedItems: TableData[]) => {
-    // 선택된 행이 있으면 첫 번째 항목을 저장
+    // 선택된 행이 있으면 모든 항목을 저장
     if (selectedItems.length > 0) {
-      const selectedCurrency = selectedItems[0];
-      sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedCurrency));
-      console.log('[TabContentRenderer] 화폐 선택됨:', selectedCurrency);
+      sessionStorage.setItem('selectedCurrencies', JSON.stringify(selectedItems));
+      // 이전 코드와의 호환성을 위해 첫 번째 항목도 별도로 저장
+      sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItems[0]));
+      console.log('[TabContentRenderer] 화폐 선택됨:', selectedItems);
     } else {
       // 선택 취소된 경우 저장된 정보 삭제
+      sessionStorage.removeItem('selectedCurrencies');
       sessionStorage.removeItem('selectedCurrency');
       console.log('[TabContentRenderer] 화폐 선택 취소됨');
     }
@@ -1386,14 +1399,14 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const DeleteConfirmDialog = () => {
     // 삭제 확인 처리
     const handleConfirmDelete = async () => {
-      if (!deletingCurrency) return;
+      if (!deletingCurrencies) return;
       
       setIsDeleting(true);
       
       try {
         try {
           logger.info('[TabContentRenderer] 화폐 삭제 확인됨:', {
-            currencyId: deletingCurrency.id,
+            currencyIds: deletingCurrencies.map(item => item.id),
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
@@ -1426,39 +1439,63 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         }
         
         // excelItemIndex 가져오기 (API에서 사용하는 파라미터)
-        const excelItemIndex = deletingCurrency.info.excel_item_index;
+        const excelItemIndices = deletingCurrencies.map(item => item.excel_item_index);
         
-        if (!employerUid || !dbName || !excelItemIndex) {
+        if (!employerUid || !dbName || excelItemIndices.some(index => !index)) {
           throw new Error('삭제에 필요한 정보가 누락되었습니다.');
         }
         
         console.log('[TabContentRenderer] 화폐 삭제 API 호출:', {
           employerUid,
           dbName,
-          excelItemIndex
+          excelItemIndices
         });
         
         // API 호출
-        const response = await fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndex}&dbName=${dbName}`, {
+        const response = await fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndices.join(',')}&dbName=${dbName}`, {
           method: 'DELETE',
         });
         
         // 응답 처리
-        const result = await response.json();
+        const result = await response.json() as {
+          success: boolean;
+          message: string;
+          results?: Array<{
+            excelItemIndex: number;
+            success: boolean;
+            message: string;
+          }>;
+        };
         
         if (!response.ok || !result.success) {
           throw new Error(result.message || '삭제 처리 중 오류가 발생했습니다.');
         }
         
-        // 삭제된 항목의 이름이나 타입 정보 추출
-        const itemName = deletingCurrency.info.name || deletingCurrency.info.item_name || '재화';
-        const itemType = deletingCurrency.info.type || deletingCurrency.info.item_type || '';
+        // 삭제 결과 요약
+        const totalCount = deletingCurrencies.length;
+        const successCount = result.results?.filter(r => r.success).length || 0;
+        const failCount = totalCount - successCount;
         
-        toast({
-          title: "삭제 성공",
-          description: `${itemName}${itemType ? ` (${itemType})` : ''} 삭제가 완료되었습니다.`,
-          variant: "default",
-        });
+        // 삭제된 항목의 이름 추출
+        const itemNames = deletingCurrencies.map(item => {
+          const name = item.name || item.item_name || '재화';
+          const type = item.type || item.item_type || '';
+          return type ? `${name} (${type})` : name;
+        }).join(', ');
+        
+        if (failCount > 0) {
+          toast({
+            title: "일부 삭제 성공",
+            description: `${totalCount}개 중 ${successCount}개 항목 삭제 완료, ${failCount}개 실패`,
+            variant: "default",
+          });
+        } else {
+          toast({
+            title: "삭제 성공",
+            description: `${totalCount}개 항목 (${itemNames}) 삭제가 완료되었습니다.`,
+            variant: "default",
+          });
+        }
         
         // 데이터 다시 로드
         fetchData();
@@ -1473,7 +1510,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       } finally {
         setIsDeleting(false);
         setShowDeleteDialog(false);
-        setDeletingCurrency(null);
+        setDeletingCurrencies(null);
       }
     };
     
@@ -1481,29 +1518,30 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     const handleCancelDelete = () => {
       try {
         logger.info('[TabContentRenderer] 화폐 삭제 취소됨:', {
-          currencyId: deletingCurrency?.id,
+          currencyIds: deletingCurrencies?.map(item => item.id),
           timestamp: new Date().toISOString(),
         });
       } catch (error) {
         console.warn('[TabContentRenderer] 로깅 실패:', error);
       }
       setShowDeleteDialog(false);
-      setDeletingCurrency(null);
+      setDeletingCurrencies(null);
     };
     
     return (
       <ConfirmDialog
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
-        title="재화 삭제"
-        description="정말로 이 재화를 삭제하시겠습니까?"
+        title={`🚨 ${deletingCurrencies?.length || 0}개 항목 삭제`}
+        titleClassName="text-red-600 font-extrabold"
+        description="선택한 항목을 삭제하시겠습니까?"
         secondaryDescription="이 작업은 되돌릴 수 없습니다."
         icon={AlertCircle}
-        iconBgColor="bg-purple-100"
-        iconColor="text-purple-600"
+        iconBgColor="bg-red-100"
+        iconColor="text-red-600"
         cancelText="취소"
         confirmText="삭제"
-        confirmBgColor="bg-purple-600 hover:bg-purple-700 focus:ring-purple-300"
+        confirmBgColor="bg-red-600 hover:bg-red-700 focus:ring-red-300"
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
         isLoading={isDeleting}
@@ -1580,8 +1618,8 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       <ConfirmDialog
         open={showUseItemDialog}
         onOpenChange={setShowUseItemDialog}
-        title="아이템 사용"
-        description={`${itemName} 아이템을 사용하시겠습니까?`}
+        title={`아이템 사용: ${itemName}`}
+        description="선택한 아이템을 사용하시겠습니까?"
         secondaryDescription="이 작업은 되돌릴 수 없습니다."
         icon={CheckCircle2}
         iconBgColor="bg-blue-100"

@@ -28,6 +28,10 @@ export interface ConfirmDialogProps {
    */
   title: string
   /**
+   * 제목 스타일 클래스
+   */
+  titleClassName?: string
+  /**
    * 다이얼로그 설명
    */
   description: React.ReactNode
@@ -90,6 +94,7 @@ export function ConfirmDialog({
   open,
   onOpenChange,
   title,
+  titleClassName,
   description,
   secondaryDescription,
   icon: Icon,
@@ -134,7 +139,7 @@ export function ConfirmDialog({
           )}
 
           <AlertDialogHeader className="space-y-2">
-            <AlertDialogTitle className="text-xl font-bold text-gray-900 text-center">
+            <AlertDialogTitle className={cn("text-xl font-bold text-gray-900 text-center", titleClassName)}>
               {title}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 text-center">
