@@ -3,15 +3,19 @@ import 'winston-daily-rotate-file';
 import path from 'path';
 import fs from 'fs';
 
+// 환경 확인
+const isServer = typeof window === 'undefined';
 const logDir = 'logs';
 
-// 로그 디렉토리가 없으면 생성
-try {
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir, { recursive: true });
+// 서버 사이드에서만 로그 디렉토리 생성 시도
+if (isServer) {
+  try {
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+  } catch (error) {
+    console.error('로그 디렉토리 생성 중 오류:', error);
   }
-} catch (error) {
-  console.error('로그 디렉토리 생성 중 오류:', error);
 }
 
 // 현재 날짜 포맷 생성 (YYYY-MM-DD)
@@ -51,8 +55,12 @@ interface DailyRotateFileTransportOptions {
   date?: string;
 }
 
-// 안전한 트랜스포트 생성 함수
+// 안전한 트랜스포트 생성 함수 - 서버 사이드에서만 실제 트랜스포트 생성
 const createSafeTransport = (config: DailyRotateFileTransportOptions) => {
+  if (!isServer) {
+    return null;
+  }
+  
   try {
     return new winston.transports.DailyRotateFile(config);
   } catch (error) {
@@ -62,57 +70,59 @@ const createSafeTransport = (config: DailyRotateFileTransportOptions) => {
   }
 };
 
+// 콘솔 트랜스포트는 브라우저/서버 모두에서 동작
+const consoleTransport = new winston.transports.Console({
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.colorize(),
+    winston.format.printf(
+      (info) => `${info.timestamp} ${info.level}: ${info.message}`
+    )
+  ),
+});
+
+// 파일 관련 트랜스포트는 서버 사이드에서만 생성
+const dailyRotateFileTransport = isServer ? createSafeTransport({
+  filename: path.join(logDir, '%DATE%-combined.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  createSymlink: true,
+  symlinkName: 'current-combined.log',
+  utc: true,
+  frequency: '24h',
+  dirname: logDir,
+  date: currentDate  
+}) : null;
+
+const errorFileTransport = isServer ? createSafeTransport({
+  filename: path.join(logDir, '%DATE%-error.log'),
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxSize: '20m',
+  maxFiles: '14d',
+  level: 'error',
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  createSymlink: true,
+  symlinkName: 'current-error.log',
+  utc: true,
+  frequency: '24h',
+  dirname: logDir,
+  date: currentDate
+}) : null;
+
 export const transports = {
-  console: new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.colorize(),
-      winston.format.printf(
-        (info) => `${info.timestamp} ${info.level}: ${info.message}`
-      )
-    ),
-  }),
-  dailyRotateFile: createSafeTransport({
-    filename: path.join(logDir, '%DATE%-combined.log'),
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '20m',
-    maxFiles: '14d',
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.json()
-    ),
-    // 현재 날짜로만 로그 파일 생성하도록 설정
-    createSymlink: true,
-    symlinkName: 'current-combined.log',
-    utc: true,
-    // 백업 상태 확인
-    frequency: '24h',
-    // 파일 이름 변경 (현재 날짜 사용)
-    dirname: logDir,
-    date: currentDate  
-  }),
-  errorFile: createSafeTransport({
-    filename: path.join(logDir, '%DATE%-error.log'),
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxSize: '20m',
-    maxFiles: '14d',
-    level: 'error',
-    format: winston.format.combine(
-      winston.format.timestamp(),
-      winston.format.json()
-    ),
-    // 현재 날짜로만 로그 파일 생성하도록 설정
-    createSymlink: true,
-    symlinkName: 'current-error.log',
-    utc: true,
-    // 백업 상태 확인
-    frequency: '24h',
-    // 파일 이름 변경 (현재 날짜 사용)
-    dirname: logDir,
-    date: currentDate
-  }),
+  console: consoleTransport,
+  dailyRotateFile: dailyRotateFileTransport,
+  errorFile: errorFileTransport,
 };
 
 // 로그 레벨 정의

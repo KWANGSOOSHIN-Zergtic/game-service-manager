@@ -15,6 +15,7 @@ import { DynamicTabs } from '@/components/ui/dynamic-tabs';
 import { userTabsStructure } from '@/data/user-tabs-structure';
 import { TableData } from '@/components/ui/data-table';
 import { getTabState, saveTabState } from '@/lib/tab-state';
+import { Button } from "@/components/ui/button";
 
 interface SelectedUserInfo {
   user: TableData;
@@ -108,11 +109,24 @@ export default function UserDetailsPage() {
       </div>
       
       <div className="space-y-6">
-        <Card className="shadow-sm">
+        <Card className="shadow-sm mb-6">
           <CardHeader className="py-3 bg-gray-50">
-            <CardTitle className="text-base font-semibold text-gray-900">
-              사용자 기본 정보
-            </CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-base font-semibold text-gray-900">
+                기본 정보
+              </CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // 현재 사용자 정보를 세션에 저장하고(이미 저장되어 있음)
+                  // 화폐 관리 페이지로 이동
+                  window.open('/user-currency', '_blank');
+                }}
+              >
+                재화 관리
+              </Button>
+            </div>
           </CardHeader>
           <Separator className="bg-gray-200" />
           <CardContent className="py-4">

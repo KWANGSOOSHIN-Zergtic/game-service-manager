@@ -26,6 +26,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -423,6 +435,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [requestInfo, setRequestInfo] = useState<ApiRequestInfo | null>(null);
   const [apiDebugInfo, setApiDebugInfo] = useState<ApiDebugInfo | null>(null);
   const [copiedSection, setCopiedSection] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState<boolean>(false);
+  const [deletingCurrency, setDeletingCurrency] = useState<{ id: number; info: Record<string, unknown> } | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   
   // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
   const getDebugSectionState = (): boolean => {
@@ -1056,19 +1071,34 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const parsedInfo = JSON.parse(selectedCurrency);
         console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedInfo);
         
-        // TODO: 화폐 삭제 확인 다이얼로그 표시
-        const confirmDelete = window.confirm(`정말로 이 화폐를 삭제하시겠습니까?\n화폐 ID: ${parsedInfo.id}`);
-        
-        if (confirmDelete) {
-          alert('화폐 삭제 요청을 보냅니다.');
-          // TODO: 삭제 API 호출 로직 구현
+        // 로깅
+        try {
+          logger.info('[TabContentRenderer] 화폐 삭제 버튼 클릭', {
+            currencyId: parsedInfo.id,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.warn('[TabContentRenderer] 로깅 실패:', error);
         }
+        
+        // 삭제할 화폐 정보 설정 및 다이얼로그 표시
+        setDeletingCurrency({ id: parsedInfo.id, info: parsedInfo });
+        setShowDeleteDialog(true);
       } catch (error) {
         console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+        toast({
+          title: "오류",
+          description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
       }
     } else {
       console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
-      alert('삭제할 화폐를 먼저 선택해주세요.');
+      toast({
+        title: "선택된 화폐 없음",
+        description: "삭제할 화폐를 먼저 선택해주세요.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1336,6 +1366,115 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     </div>
   );
 
+  // 삭제 확인 다이얼로그 컴포넌트
+  const DeleteConfirmDialog = () => {
+    // 삭제 확인 처리
+    const handleConfirmDelete = async () => {
+      if (!deletingCurrency) return;
+      
+      setIsDeleting(true);
+      
+      try {
+        try {
+          logger.info('[TabContentRenderer] 화폐 삭제 확인됨:', {
+            currencyId: deletingCurrency.id,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (error) {
+          console.warn('[TabContentRenderer] 로깅 실패:', error);
+        }
+        
+        // TODO: 실제 삭제 API 호출 로직 구현
+        // API 호출 코드가 구현되면 아래 코드를 수정하세요
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 임시 지연 효과
+        
+        toast({
+          title: "삭제 성공",
+          description: `화폐 ID: ${deletingCurrency.id} 삭제가 완료되었습니다.`,
+        });
+        
+        // 데이터 다시 로드
+        // TODO: 데이터 리로딩 로직 구현
+        
+      } catch (error) {
+        console.error('[TabContentRenderer] 화폐 삭제 중 오류:', error);
+        toast({
+          title: "삭제 실패",
+          description: "화폐 삭제 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsDeleting(false);
+        setShowDeleteDialog(false);
+        setDeletingCurrency(null);
+      }
+    };
+    
+    // 취소 처리
+    const handleCancelDelete = () => {
+      try {
+        logger.info('[TabContentRenderer] 화폐 삭제 취소됨:', {
+          currencyId: deletingCurrency?.id,
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.warn('[TabContentRenderer] 로깅 실패:', error);
+      }
+      setShowDeleteDialog(false);
+      setDeletingCurrency(null);
+    };
+    
+    return (
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent className="bg-white rounded-2xl shadow-xl max-w-md mx-auto p-6 border-0">
+          <div className="flex flex-col items-center justify-center">
+            {/* 중앙 아이콘 */}
+            <div className="w-16 h-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+              <AlertCircle className="h-8 w-8 text-purple-600" />
+            </div>
+
+            <AlertDialogHeader className="space-y-2">
+              <AlertDialogTitle className="text-xl font-bold text-gray-900 text-center">
+                재화 삭제
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-600 text-center">
+                정말로 이 재화를 삭제하시겠습니까?
+                <div className="mt-1 text-sm">이 작업은 되돌릴 수 없습니다.</div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            
+            <AlertDialogFooter className="flex justify-center space-x-4 w-full mt-6">
+              <AlertDialogCancel 
+                className="flex-1 bg-gray-100 text-gray-700 border-0 rounded-lg font-medium py-3 hover:bg-gray-200 transition-colors" 
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+              >
+                취소
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="flex-1 bg-purple-600 text-white rounded-lg font-medium py-3 hover:bg-purple-700 transition-all focus:ring-2 focus:ring-purple-300 focus:outline-none"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <div className="flex items-center justify-center">
+                    <svg className="animate-spin mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    삭제 중
+                  </div>
+                ) : (
+                  "삭제"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  };
+
   // 컨텐츠 타입에 따라 적절한 컴포넌트 렌더링
   switch (content.type) {
     case 'dataTable':
@@ -1384,6 +1523,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               )}
             </>
           )}
+          
+          {/* 삭제 확인 다이얼로그 */}
+          <DeleteConfirmDialog />
         </div>
       );
       

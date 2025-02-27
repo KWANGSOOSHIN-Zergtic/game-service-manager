@@ -1,6 +1,8 @@
 import winston from 'winston';
 import { LogLevel, LogConfig, defaultLogConfig, LogColors, transports } from './config';
 
+// 환경 확인
+const isServer = typeof window === 'undefined';
 type LogArgs = (string | number | boolean | object)[];
 
 class Logger {
@@ -30,15 +32,22 @@ class Logger {
                 ]
             });
             
-            // 프로덕션 환경이 아닌 경우에만 파일 로깅 활성화
-            if (process.env.NODE_ENV !== 'test') {
+            // 서버 사이드에서만 파일 로깅 시도
+            if (isServer && process.env.NODE_ENV !== 'test') {
                 try {
-                    this.winstonLogger.add(transports.dailyRotateFile);
-                    this.winstonLogger.add(transports.errorFile);
+                    if (transports.dailyRotateFile) {
+                        this.winstonLogger.add(transports.dailyRotateFile);
+                    }
+                    if (transports.errorFile) {
+                        this.winstonLogger.add(transports.errorFile);
+                    }
                 } catch (err) {
                     console.error('로그 파일 트랜스포트 추가 중 오류:', err);
                     // 파일 로깅에 실패해도 콘솔 로깅은 계속 진행
                 }
+            } else if (!isServer) {
+                // 클라이언트 측 로그 레벨 조정
+                console.log('[Logger] 클라이언트 측 로거가 초기화되었습니다.');
             }
         } catch (err) {
             console.error('Winston 로거 초기화 중 오류:', err);
@@ -71,7 +80,11 @@ class Logger {
         // 로그 레벨 추가
         parts.push(`${LogColors[level]}[${level.toUpperCase()}]${LogColors.reset}`);
 
-        // 프리픽스 추가
+        // 프리픽스 추가 - 클라이언트/서버 구분
+        const envPrefix = isServer ? '[Server]' : '[Client]';
+        parts.push(envPrefix);
+
+        // 사용자 정의 프리픽스 추가
         if (this.config.prefix) {
             parts.push(this.config.prefix);
         }
@@ -87,42 +100,42 @@ class Logger {
         return parts.join(' ');
     }
 
-    public debug(message: string, ...args: LogArgs): void {
-        try {
-            this.winstonLogger.debug(message, ...args);
-            if (process.env.NODE_ENV !== 'production') {
-                console.debug(this.formatMessage('debug', message, ...args));
+    // 클라이언트 측에서는 console만 사용하도록 안전하게 구현
+    private safeLog(winstonLevel: string, consoleMethod: 'debug' | 'info' | 'warn' | 'error', 
+                  level: LogLevel, message: string, ...args: LogArgs): void {
+        // 서버 사이드에서는 winston 로깅 시도
+        if (isServer) {
+            try {
+                // @ts-expect-error - winston 타입은 동적 문자열 키를 지원하지 않음
+                this.winstonLogger[winstonLevel](message, ...args);
+            } catch (error) {
+                console.error('Winston 로깅 실패:', error);
             }
-        } catch {
-            console.debug(this.formatMessage('debug', message, ...args));
         }
+        
+        // 콘솔 로깅은 항상 실행
+        try {
+            console[consoleMethod](this.formatMessage(level, message, ...args));
+        } catch {
+            // 최후의 수단으로 기본 콘솔 로깅
+            console[consoleMethod](`[${level.toUpperCase()}] ${message}`);
+        }
+    }
+
+    public debug(message: string, ...args: LogArgs): void {
+        this.safeLog('debug', 'debug', 'debug', message, ...args);
     }
 
     public info(message: string, ...args: LogArgs): void {
-        try {
-            this.winstonLogger.info(message, ...args);
-            console.info(this.formatMessage('info', message, ...args));
-        } catch {
-            console.info(this.formatMessage('info', message, ...args));
-        }
+        this.safeLog('info', 'info', 'info', message, ...args);
     }
 
     public warn(message: string, ...args: LogArgs): void {
-        try {
-            this.winstonLogger.warn(message, ...args);
-            console.warn(this.formatMessage('warn', message, ...args));
-        } catch {
-            console.warn(this.formatMessage('warn', message, ...args));
-        }
+        this.safeLog('warn', 'warn', 'warn', message, ...args);
     }
 
     public error(message: string, ...args: LogArgs): void {
-        try {
-            this.winstonLogger.error(message, ...args);
-            console.error(this.formatMessage('error', message, ...args));
-        } catch {
-            console.error(this.formatMessage('error', message, ...args));
-        }
+        this.safeLog('error', 'error', 'error', message, ...args);
     }
 
     public setConfig(config: Partial<LogConfig>): void {

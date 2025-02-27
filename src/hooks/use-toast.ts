@@ -16,6 +16,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  variant?: "default" | "destructive" | "success" | "warning" | "info" | "purple"
 }
 
 const actionTypes = {
@@ -142,6 +143,18 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
+type ToastActionElement = React.ReactElement<typeof ToastActionProps>
+
+export type ToastProps = {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: ToastActionElement
+  variant?: "default" | "destructive" | "success" | "warning" | "info" | "purple"
+}
+
+type ToastVariant = NonNullable<ToastProps["variant"]>
+
 function toast({ ...props }: Toast) {
   const id = genId()
 
@@ -188,6 +201,11 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
+    success: (props: Toast) => toast({ ...props, variant: "success" }),
+    error: (props: Toast) => toast({ ...props, variant: "destructive" }),
+    warning: (props: Toast) => toast({ ...props, variant: "warning" }),
+    info: (props: Toast) => toast({ ...props, variant: "info" }),
+    purple: (props: Toast) => toast({ ...props, variant: "purple" }),
   }
 }
 

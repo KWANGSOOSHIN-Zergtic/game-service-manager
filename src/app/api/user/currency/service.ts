@@ -46,6 +46,19 @@ export interface UserCurrencyParams {
   dbName: string | null;
 }
 
+export interface UserCurrencyItemParams extends UserCurrencyParams {
+  excelItemIndex: number | null;
+}
+
+export interface CreateUpdateCurrencyParams extends UserCurrencyParams {
+  excelItemIndex: number;
+  count: number;
+}
+
+export interface DeleteCurrencyParams extends UserCurrencyParams {
+  excelItemIndex: number;
+}
+
 // 사용자 화폐 정보 타입 정의
 export interface UserCurrency {
   id: number;
@@ -58,17 +71,19 @@ export interface UserCurrency {
   user_display_id?: string;
 }
 
+// API 결과 타입 정의
 export interface UserCurrencyResult {
   success: boolean;
   message?: string;
   error?: string;
   details?: string;
   currencies?: UserCurrency[];
+  currency?: UserCurrency;
   availableDBs?: string[];
   status: number;
 }
 
-// 사용자 화폐 정보 조회 서비스
+// 사용자 재화 정보 전체 조회
 export async function getUserCurrency(params: UserCurrencyParams): Promise<UserCurrencyResult> {
   const { employerUid, dbName } = params;
 
@@ -195,5 +210,353 @@ export async function getUserCurrency(params: UserCurrencyParams): Promise<UserC
           details: errorMessage,
           status: 500
       };
+  }
+}
+
+// 특정 재화 아이템 조회
+export async function getUserCurrencyItem(params: UserCurrencyItemParams): Promise<UserCurrencyResult> {
+  const { employerUid, dbName, excelItemIndex } = params;
+  
+  // 파라미터 검증
+  if (!employerUid) {
+    return {
+      success: false,
+      message: '사용자 UID가 누락되었습니다.',
+      status: 400,
+    };
+  }
+
+  if (excelItemIndex === null) {
+    return {
+      success: false,
+      message: '아이템 인덱스가 누락되었습니다.',
+      status: 400,
+    };
+  }
+
+  try {
+    // DB Collection 정보 업데이트
+    logger.info('[User Currency Item] DB Collection 정보 업데이트 시작');
+    const dbCollectionResult = await saveDBCollection();
+    if (!dbCollectionResult.success) {
+      logger.error('[User Currency Item] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      return {
+        success: false,
+        error: 'DB 정보를 불러오는데 실패했습니다.',
+        status: 500
+      };
+    }
+
+    // DB 존재 여부 확인
+    if (!dbName || !DB_COLLECTION[dbName]) {
+      logger.error('[User Currency Item] 존재하지 않는 DB:', { 
+        requestedDB: dbName || '지정되지 않음',
+        availableDBs: Object.keys(DB_COLLECTION)
+      });
+      return {
+        success: false,
+        message: '요청한 데이터베이스를 찾을 수 없습니다.',
+        availableDBs: Object.keys(DB_COLLECTION),
+        status: 404,
+      };
+    }
+
+    // DB 연결
+    const dbManager = DBConnectionManager.getInstance();
+    
+    // 쿼리 실행
+    const queryName = 'SELECT_USER_CURRENCY_ITEM';
+    const query = USER_CURRENCY_QUERIES[queryName].query;
+    const queryParams = [employerUid, excelItemIndex];
+
+    // 디버깅을 위한 실제 쿼리 문자열 출력
+    const formattedQuery = formatQueryWithParams(query, queryParams);
+    logger.info(`Executing query: ${queryName}`);
+    logger.debug(formattedQuery);
+
+    const result = await dbManager.withClient(dbName as string, async (client) => {
+      return await client.query(query, queryParams);
+    });
+    
+    // 결과 반환
+    if (result.rows.length === 0) {
+      return {
+        success: false,
+        message: '해당 아이템을 찾을 수 없습니다.',
+        status: 404,
+      };
+    }
+
+    return {
+      success: true,
+      message: '재화 아이템 정보를 성공적으로 조회했습니다.',
+      currency: result.rows[0],
+      status: 200,
+    };
+  } catch (error) {
+    logger.error('재화 아이템 정보 조회 중 오류 발생:', error);
+    return {
+      success: false,
+      message: '재화 아이템 정보 조회 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : String(error),
+      status: 500,
+    };
+  }
+}
+
+// 사용자 재화 추가/생성
+export async function createUserCurrency(params: CreateUpdateCurrencyParams): Promise<UserCurrencyResult> {
+  const { employerUid, dbName, excelItemIndex, count } = params;
+  
+  // 파라미터 검증
+  if (!employerUid) {
+    return {
+      success: false,
+      message: '사용자 UID가 누락되었습니다.',
+      status: 400,
+    };
+  }
+
+  if (count < 0) {
+    return {
+      success: false,
+      message: '재화 수량은 0 이상이어야 합니다.',
+      status: 400,
+    };
+  }
+
+  try {
+    // DB Collection 정보 업데이트
+    logger.info('[Create User Currency] DB Collection 정보 업데이트 시작');
+    const dbCollectionResult = await saveDBCollection();
+    if (!dbCollectionResult.success) {
+      logger.error('[Create User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      return {
+        success: false,
+        error: 'DB 정보를 불러오는데 실패했습니다.',
+        status: 500
+      };
+    }
+
+    // DB 존재 여부 확인
+    if (!dbName || !DB_COLLECTION[dbName]) {
+      logger.error('[Create User Currency] 존재하지 않는 DB:', { 
+        requestedDB: dbName || '지정되지 않음',
+        availableDBs: Object.keys(DB_COLLECTION)
+      });
+      return {
+        success: false,
+        message: '요청한 데이터베이스를 찾을 수 없습니다.',
+        availableDBs: Object.keys(DB_COLLECTION),
+        status: 404,
+      };
+    }
+
+    // DB 연결
+    const dbManager = DBConnectionManager.getInstance();
+    
+    // 쿼리 실행
+    const queryName = 'INSERT_USER_CURRENCY';
+    const query = USER_CURRENCY_QUERIES[queryName].query;
+    const queryParams = [employerUid, excelItemIndex, count];
+
+    // 디버깅을 위한 실제 쿼리 문자열 출력
+    const formattedQuery = formatQueryWithParams(query, queryParams);
+    logger.info(`Executing query: ${queryName}`);
+    logger.debug(formattedQuery);
+
+    const result = await dbManager.withClient(dbName as string, async (client) => {
+      return await client.query(query, queryParams);
+    });
+    
+    // 결과 반환
+    return {
+      success: true,
+      message: '사용자 재화를 성공적으로 추가했습니다.',
+      currency: result.rows[0],
+      status: 201,
+    };
+  } catch (error) {
+    logger.error('사용자 재화 추가 중 오류 발생:', error);
+    return {
+      success: false,
+      message: '사용자 재화 추가 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : String(error),
+      status: 500,
+    };
+  }
+}
+
+// 사용자 재화 업데이트
+export async function updateUserCurrency(params: CreateUpdateCurrencyParams): Promise<UserCurrencyResult> {
+  const { employerUid, dbName, excelItemIndex, count } = params;
+  
+  // 파라미터 검증
+  if (!employerUid) {
+    return {
+      success: false,
+      message: '사용자 UID가 누락되었습니다.',
+      status: 400,
+    };
+  }
+
+  if (count < 0) {
+    return {
+      success: false,
+      message: '재화 수량은 0 이상이어야 합니다.',
+      status: 400,
+    };
+  }
+
+  try {
+    // DB Collection 정보 업데이트
+    logger.info('[Update User Currency] DB Collection 정보 업데이트 시작');
+    const dbCollectionResult = await saveDBCollection();
+    if (!dbCollectionResult.success) {
+      logger.error('[Update User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      return {
+        success: false,
+        error: 'DB 정보를 불러오는데 실패했습니다.',
+        status: 500
+      };
+    }
+
+    // DB 존재 여부 확인
+    if (!dbName || !DB_COLLECTION[dbName]) {
+      logger.error('[Update User Currency] 존재하지 않는 DB:', { 
+        requestedDB: dbName || '지정되지 않음',
+        availableDBs: Object.keys(DB_COLLECTION)
+      });
+      return {
+        success: false,
+        message: '요청한 데이터베이스를 찾을 수 없습니다.',
+        availableDBs: Object.keys(DB_COLLECTION),
+        status: 404,
+      };
+    }
+
+    // DB 연결
+    const dbManager = DBConnectionManager.getInstance();
+    
+    // 쿼리 실행
+    const queryName = 'UPDATE_USER_CURRENCY';
+    const query = USER_CURRENCY_QUERIES[queryName].query;
+    const queryParams = [employerUid, excelItemIndex, count];
+
+    // 디버깅을 위한 실제 쿼리 문자열 출력
+    const formattedQuery = formatQueryWithParams(query, queryParams);
+    logger.info(`Executing query: ${queryName}`);
+    logger.debug(formattedQuery);
+
+    const result = await dbManager.withClient(dbName as string, async (client) => {
+      return await client.query(query, queryParams);
+    });
+    
+    // 결과 반환
+    if (result.rows.length === 0) {
+      return {
+        success: false,
+        message: '업데이트할 재화를 찾을 수 없습니다.',
+        status: 404,
+      };
+    }
+
+    return {
+      success: true,
+      message: '사용자 재화를 성공적으로 업데이트했습니다.',
+      currency: result.rows[0],
+      status: 200,
+    };
+  } catch (error) {
+    logger.error('사용자 재화 업데이트 중 오류 발생:', error);
+    return {
+      success: false,
+      message: '사용자 재화 업데이트 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : String(error),
+      status: 500,
+    };
+  }
+}
+
+// 사용자 재화 삭제
+export async function deleteUserCurrency(params: DeleteCurrencyParams): Promise<UserCurrencyResult> {
+  const { employerUid, dbName, excelItemIndex } = params;
+  
+  // 파라미터 검증
+  if (!employerUid) {
+    return {
+      success: false,
+      message: '사용자 UID가 누락되었습니다.',
+      status: 400,
+    };
+  }
+
+  try {
+    // DB Collection 정보 업데이트
+    logger.info('[Delete User Currency] DB Collection 정보 업데이트 시작');
+    const dbCollectionResult = await saveDBCollection();
+    if (!dbCollectionResult.success) {
+      logger.error('[Delete User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      return {
+        success: false,
+        error: 'DB 정보를 불러오는데 실패했습니다.',
+        status: 500
+      };
+    }
+
+    // DB 존재 여부 확인
+    if (!dbName || !DB_COLLECTION[dbName]) {
+      logger.error('[Delete User Currency] 존재하지 않는 DB:', { 
+        requestedDB: dbName || '지정되지 않음',
+        availableDBs: Object.keys(DB_COLLECTION)
+      });
+      return {
+        success: false,
+        message: '요청한 데이터베이스를 찾을 수 없습니다.',
+        availableDBs: Object.keys(DB_COLLECTION),
+        status: 404,
+      };
+    }
+
+    // DB 연결
+    const dbManager = DBConnectionManager.getInstance();
+    
+    // 쿼리 실행
+    const queryName = 'DELETE_USER_CURRENCY';
+    const query = USER_CURRENCY_QUERIES[queryName].query;
+    const queryParams = [employerUid, excelItemIndex];
+
+    // 디버깅을 위한 실제 쿼리 문자열 출력
+    const formattedQuery = formatQueryWithParams(query, queryParams);
+    logger.info(`Executing query: ${queryName}`);
+    logger.debug(formattedQuery);
+
+    const result = await dbManager.withClient(dbName as string, async (client) => {
+      return await client.query(query, queryParams);
+    });
+    
+    // 결과 반환
+    if (result.rows.length === 0) {
+      return {
+        success: false,
+        message: '삭제할 재화를 찾을 수 없습니다.',
+        status: 404,
+      };
+    }
+
+    return {
+      success: true,
+      message: '사용자 재화를 성공적으로 삭제했습니다.',
+      currency: result.rows[0],
+      status: 200,
+    };
+  } catch (error) {
+    logger.error('사용자 재화 삭제 중 오류 발생:', error);
+    return {
+      success: false,
+      message: '사용자 재화 삭제 중 오류가 발생했습니다.',
+      error: error instanceof Error ? error.message : String(error),
+      status: 500,
+    };
   }
 } 
