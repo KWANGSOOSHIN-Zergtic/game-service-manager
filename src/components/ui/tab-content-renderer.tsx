@@ -41,28 +41,25 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-// 스크롤 영역을 직접 구현
-const ScrollArea = ({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
-  return (
-    <div
-      className={`overflow-auto ${className || ''}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-};
 import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Progress } from "@/components/ui/progress";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -470,74 +467,59 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
   isUpdating
 }) => {
   const [editableItems, setEditableItems] = useState<TableData[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("individual"); // "individual" 또는 "batch"
-  const [batchValues, setBatchValues] = useState<Record<string, string | number>>({});
-  const [fieldsToUpdate, setFieldsToUpdate] = useState<Record<string, boolean>>({});
-  const [selectedItem, setSelectedItem] = useState<number>(0); // 선택된 아이템 인덱스
+  const [selectedRows, setSelectedRows] = useState<Record<number, boolean>>({});
+  const [isAllSelected, setIsAllSelected] = useState(false);
 
   useEffect(() => {
     if (selectedItems.length > 0) {
       setEditableItems([...selectedItems]);
       
-      // 필드 업데이트 체크박스 초기화
-      const fields: Record<string, boolean> = {};
-      
-      // 첫 번째 아이템의 모든 필드를 가져옴 (id 필드 제외)
-      if (selectedItems[0]) {
-        Object.keys(selectedItems[0]).forEach(key => {
-          if (key !== 'id' && key !== 'excel_item_index') {
-            fields[key] = false;
-          }
-        });
-      }
-      
-      setFieldsToUpdate(fields);
+      // 초기에 모든 행 선택
+      const initialSelectedRows: Record<number, boolean> = {};
+      selectedItems.forEach((_, index) => {
+        initialSelectedRows[index] = true;
+      });
+      setSelectedRows(initialSelectedRows);
+      setIsAllSelected(true);
     }
   }, [selectedItems]);
 
   // 개별 아이템 수정 핸들러
-  const handleIndividualItemChange = (index: number, field: string, value: string | number) => {
+  const handleItemChange = (index: number, field: string, value: string | number) => {
     const updatedItems = [...editableItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setEditableItems(updatedItems);
   };
 
-  // 일괄 수정 값 변경 핸들러
-  const handleBatchValueChange = (field: string, value: string | number) => {
-    setBatchValues({ ...batchValues, [field]: value });
+  // 체크박스 선택 핸들러
+  const handleRowSelect = (index: number, checked: boolean) => {
+    setSelectedRows(prev => ({
+      ...prev,
+      [index]: checked
+    }));
+    
+    // 모든 행이 선택되었는지 확인
+    const updatedSelectedRows = {...selectedRows, [index]: checked};
+    const allSelected = Object.values(updatedSelectedRows).every(value => value === true);
+    setIsAllSelected(allSelected && Object.keys(updatedSelectedRows).length === editableItems.length);
   };
 
-  // 필드 업데이트 체크박스 변경 핸들러
-  const handleFieldToggle = (field: string, checked: boolean | "indeterminate") => {
-    setFieldsToUpdate({ ...fieldsToUpdate, [field]: checked === true });
-  };
-
-  // 일괄 수정 적용 핸들러
-  const applyBatchUpdate = () => {
-    const updatedItems = [...editableItems];
-    
-    // 선택된 필드만 일괄 업데이트
-    Object.keys(fieldsToUpdate).forEach(field => {
-      if (fieldsToUpdate[field] && batchValues[field] !== undefined) {
-        updatedItems.forEach((item, index) => {
-          updatedItems[index] = { ...updatedItems[index], [field]: batchValues[field] };
-        });
-      }
+  // 전체 선택/해제 핸들러
+  const handleSelectAll = (checked: boolean) => {
+    const updatedSelectedRows: Record<number, boolean> = {};
+    editableItems.forEach((_, index) => {
+      updatedSelectedRows[index] = checked;
     });
-    
-    setEditableItems(updatedItems);
-    // 일괄 수정 후 개별 탭으로 전환
-    setActiveTab("individual");
-    toast({
-      title: "일괄 수정 적용됨",
-      description: "선택한 필드에 대한 일괄 수정이 적용되었습니다.",
-    });
+    setSelectedRows(updatedSelectedRows);
+    setIsAllSelected(checked);
   };
 
   // 수정 내용 저장 핸들러
   const handleSave = async () => {
     try {
-      await onUpdate(editableItems);
+      // 선택된 행만 업데이트
+      const itemsToUpdate = editableItems.filter((_, index) => selectedRows[index]);
+      await onUpdate(itemsToUpdate);
     } catch (error) {
       console.error('항목 업데이트 중 오류:', error);
     }
@@ -559,126 +541,90 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center text-xl">
             <Edit className="mr-2 h-5 w-5 text-blue-500" />
             {selectedItems.length}개 항목 일괄 수정
           </DialogTitle>
           <DialogDescription>
-            선택한 항목들을 개별적으로 또는 일괄적으로 수정할 수 있습니다.
-            변경 후 저장 버튼을 클릭하면 모든 변경사항이 적용됩니다.
+            아래 테이블에서 수정할 항목들을 체크하고 값을 변경한 후 저장 버튼을 클릭하세요.
+            체크된 항목만 저장됩니다.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="individual" className="flex-1">개별 수정</TabsTrigger>
-            <TabsTrigger value="batch" className="flex-1">일괄 수정</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="individual" className="border rounded-md p-4 mt-4">
-            <div className="flex mb-3">
-              <div className="flex space-x-2 items-center">
-                <span className="text-sm font-medium">항목 선택:</span>
-                <select 
-                  className="border rounded px-2 py-1 text-sm"
-                  value={selectedItem}
-                  onChange={(e) => setSelectedItem(Number(e.target.value))}
-                >
-                  {editableItems.map((item, index) => (
-                    <option key={index} value={index}>
-                      {(item.name || item.item_name || `항목 ${index + 1}`) as string} {item.excel_item_index ? `(${item.excel_item_index})` : ''}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-xs text-gray-500">
-                  {selectedItem + 1} / {editableItems.length}
-                </span>
-              </div>
+        <div className="flex-1 overflow-hidden">
+          <div className="flex justify-start mb-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="select-all" 
+                checked={isAllSelected}
+                onCheckedChange={(checked) => handleSelectAll(checked === true)}
+              />
+              <Label htmlFor="select-all">전체 선택/해제</Label>
             </div>
-            
-            <ScrollArea className="h-[350px] pr-4">
-              <div className="space-y-4">
-                {commonFields.map((field) => {
-                  const currentItem = editableItems[selectedItem];
-                  const currentValue = currentItem[field];
-                  return (
-                    <div key={field} className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor={`item-${selectedItem}-${field}`} className="text-right col-span-1">
-                        {getFieldLabel(field)}
-                      </Label>
-                      <Input
-                        id={`item-${selectedItem}-${field}`}
-                        value={currentValue !== null && currentValue !== undefined ? String(currentValue) : ''}
-                        onChange={(e) => handleIndividualItemChange(
-                          selectedItem,
-                          field,
-                          e.target.value
-                        )}
-                        className="col-span-3"
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="batch" className="border rounded-md p-4 mt-4">
-            <p className="text-sm text-blue-600 mb-4 bg-blue-50 p-2 rounded-md flex items-start">
-              <Info className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" />
-              여러 항목에 대해 동일한 값을 설정할 필드를 선택하고 값을 입력하세요.
-              선택한 필드만 모든 항목에 일괄 적용됩니다.
-            </p>
-            
-            <ScrollArea className="h-[350px] pr-4">
-              <div className="space-y-4">
-                {commonFields.map((field) => (
-                  <div key={field} className="grid grid-cols-[auto_1fr_3fr] items-center gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id={`check-${field}`}
-                        checked={fieldsToUpdate[field] || false}
-                        onCheckedChange={(checked) => handleFieldToggle(field, checked)}
-                      />
-                    </div>
-                    <Label htmlFor={`check-${field}`} className="text-right font-medium">
-                      {getFieldLabel(field)}
-                    </Label>
-                    <Input
-                      value={batchValues[field] || ''}
-                      onChange={(e) => handleBatchValueChange(field, e.target.value)}
-                      placeholder={`모든 항목의 ${getFieldLabel(field)} 값`}
-                      disabled={!fieldsToUpdate[field]}
-                    />
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-            
-            <div className="mt-4 flex justify-end">
-              <Button 
-                onClick={applyBatchUpdate} 
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <Check className="w-4 h-4 mr-2" />
-                일괄 수정 적용
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
 
-        <DialogFooter className="mt-6">
+          <div className="border rounded-md overflow-hidden">
+            <div className="overflow-auto max-h-[50vh]">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead className="w-12 text-center">선택</TableHead>
+                    <TableHead className="w-16 text-right">순번</TableHead>
+                    <TableHead className="w-32 text-right">아이템 인덱스</TableHead>
+                    {commonFields.map((field) => (
+                      <TableHead key={field} className="min-w-[120px] text-right">
+                        {getFieldLabel(field)}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {editableItems.map((item, index) => (
+                    <TableRow key={index} className={selectedRows[index] ? "bg-blue-50" : ""}>
+                      <TableCell className="text-center">
+                        <Checkbox 
+                          checked={selectedRows[index] || false}
+                          onCheckedChange={(checked) => handleRowSelect(index, checked === true)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{index + 1}</TableCell>
+                      <TableCell className="text-right">
+                        {item.excel_item_index !== undefined ? String(item.excel_item_index) : '-'}
+                      </TableCell>
+                      {commonFields.map((field) => (
+                        <TableCell key={field} className="p-0">
+                          <Input
+                            value={item[field] !== null && item[field] !== undefined ? String(item[field]) : ''}
+                            onChange={(e) => handleItemChange(index, field, e.target.value)}
+                            className={`border-0 h-10 rounded-none focus:ring-1 focus:ring-inset text-right ${selectedRows[index] ? "bg-blue-50" : ""}`}
+                            disabled={!selectedRows[index]}
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter className="mt-4">
           <div className="flex justify-between w-full">
             <div className="text-sm text-gray-500">
-              총 {editableItems.length}개 항목 수정 중
+              총 {editableItems.length}개 항목 중 {Object.values(selectedRows).filter(value => value).length}개 선택됨
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={onClose} disabled={isUpdating}>
                 취소
               </Button>
-              <Button onClick={handleSave} disabled={isUpdating} className="bg-green-600 hover:bg-green-700">
+              <Button 
+                onClick={handleSave} 
+                disabled={isUpdating || Object.values(selectedRows).filter(value => value).length === 0} 
+                className="bg-green-600 hover:bg-green-700"
+              >
                 {isUpdating ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
