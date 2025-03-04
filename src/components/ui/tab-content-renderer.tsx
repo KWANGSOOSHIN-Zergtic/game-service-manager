@@ -2073,12 +2073,17 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const { id, ...updateData } = item;
         
         try {
-          const response = await fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndex}&dbName=${dbName}`, {
+          const response = await fetch(`/api/user/currency`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updateData)
+            body: JSON.stringify({
+              employerUid: employerUid, 
+              excelItemIndex: excelItemIndex, 
+              count: item.count || 0, 
+              dbName: dbName
+            })
           });
           
           const result = await response.json();
