@@ -459,13 +459,13 @@ interface BulkUpdateModalProps {
 }
 
 // 복수 행 수정을 위한 모달 컴포넌트
-const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
+const BulkUpdateModal = ({
   isOpen,
   onClose,
   selectedItems,
   onUpdate,
   isUpdating
-}) => {
+}: BulkUpdateModalProps): React.ReactElement => {
   const [editableItems, setEditableItems] = useState<TableData[]>([]);
   const [selectedRows, setSelectedRows] = useState<Record<number, boolean>>({});
   const [isAllSelected, setIsAllSelected] = useState(false);
@@ -517,8 +517,19 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
   // 수정 내용 저장 핸들러
   const handleSave = async () => {
     try {
-      // 선택된 행만 업데이트
-      const itemsToUpdate = editableItems.filter((_, index) => selectedRows[index]);
+      // 선택된 행만 업데이트하고, 필요한 필드(id, employer_uid, excel_item_index, count)만 포함
+      const itemsToUpdate = editableItems
+        .filter((_, index) => selectedRows[index])
+        .map(item => {
+          // 쿼리에 필요한 필드만 포함 (UPDATE_USER_CURRENCY 쿼리 파라미터에 맞춤)
+          return {
+            id: item.id,
+            employer_uid: item.employer_uid,
+            excel_item_index: item.excel_item_index,
+            count: item.count
+          };
+        });
+      
       await onUpdate(itemsToUpdate);
     } catch (error) {
       console.error('항목 업데이트 중 오류:', error);
@@ -541,40 +552,49 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center text-xl">
-            <Edit className="mr-2 h-5 w-5 text-blue-500" />
-            {selectedItems.length}개 항목 일괄 수정
+      <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none rounded-lg shadow-2xl">
+        {/* 모달 헤더 - 현대적인 디자인 */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+          <DialogTitle className="flex items-center text-2xl font-light tracking-wide mb-2">
+            <Edit className="mr-3 h-6 w-6 text-indigo-200" />
+            항목 일괄 수정
           </DialogTitle>
-          <DialogDescription>
-            아래 테이블에서 수정할 항목들을 체크하고 값을 변경한 후 저장 버튼을 클릭하세요.
-            체크된 항목만 저장됩니다.
+          <DialogDescription className="text-indigo-100 opacity-90 text-sm">
+            데이터베이스 쿼리(UPDATE_USER_CURRENCY)에 따라 <span className="bg-indigo-500 px-2 py-0.5 rounded text-white font-medium">Count 필드만</span> 수정 가능합니다.
+            선택된 항목만 저장됩니다.
           </DialogDescription>
-        </DialogHeader>
+        </div>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="flex justify-start mb-2">
-            <div className="flex items-center space-x-2">
+        {/* 모달 내용 */}
+        <div className="flex-1 overflow-hidden p-6 bg-gray-50">
+          {/* 전체 선택/해제 영역 */}
+          <div className="flex justify-between mb-4 items-center">
+            <div className="flex items-center">
               <Checkbox 
                 id="select-all" 
                 checked={isAllSelected}
                 onCheckedChange={(checked) => handleSelectAll(checked === true)}
+                className="h-4 w-4 rounded-sm border-indigo-300 data-[state=checked]:bg-indigo-600"
               />
-              <Label htmlFor="select-all">전체 선택/해제</Label>
+              <Label htmlFor="select-all" className="ml-2 text-sm font-medium text-gray-700">전체 선택/해제</Label>
+            </div>
+            
+            <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100">
+              총 {editableItems.length}개 중 {Object.values(selectedRows).filter(value => value).length}개 선택됨
             </div>
           </div>
 
-          <div className="border rounded-md overflow-hidden">
+          {/* 테이블 영역 */}
+          <div className="border rounded-lg overflow-hidden shadow-sm bg-white">
             <div className="overflow-auto max-h-[50vh]">
               <Table>
-                <TableHeader className="sticky top-0 bg-white z-10">
-                  <TableRow>
-                    <TableHead className="w-12 text-center">선택</TableHead>
-                    <TableHead className="w-16 text-right">순번</TableHead>
-                    <TableHead className="w-32 text-right">아이템 인덱스</TableHead>
+                <TableHeader className="sticky top-0 bg-gray-50 z-10">
+                  <TableRow className="border-b border-gray-200">
+                    <TableHead className="w-12 p-3 text-center">선택</TableHead>
+                    <TableHead className="w-16 p-3 text-right text-xs uppercase tracking-wider text-gray-600 font-semibold">순번</TableHead>
+                    <TableHead className="w-32 p-3 text-right text-xs uppercase tracking-wider text-gray-600 font-semibold">아이템 인덱스</TableHead>
                     {commonFields.map((field) => (
-                      <TableHead key={field} className="min-w-[120px] text-right">
+                      <TableHead key={field} className="min-w-[120px] p-3 text-right text-xs uppercase tracking-wider text-gray-600 font-semibold">
                         {getFieldLabel(field)}
                       </TableHead>
                     ))}
@@ -582,25 +602,51 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
                 </TableHeader>
                 <TableBody>
                   {editableItems.map((item, index) => (
-                    <TableRow key={index} className={selectedRows[index] ? "bg-blue-50" : ""}>
-                      <TableCell className="text-center">
+                    <TableRow 
+                      key={index} 
+                      className={`
+                        border-b border-gray-100 hover:bg-gray-50 transition-colors
+                        ${selectedRows[index] ? "bg-indigo-50/40" : ""}
+                      `}
+                    >
+                      <TableCell className="text-center p-3">
                         <Checkbox 
                           checked={selectedRows[index] || false}
                           onCheckedChange={(checked) => handleRowSelect(index, checked === true)}
+                          className="h-4 w-4 rounded-sm border-indigo-300 data-[state=checked]:bg-indigo-600"
                         />
                       </TableCell>
-                      <TableCell className="text-right font-medium">{index + 1}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right p-3 font-medium text-gray-700">{index + 1}</TableCell>
+                      <TableCell className="text-right p-3 text-gray-700">
                         {item.excel_item_index !== undefined ? String(item.excel_item_index) : '-'}
                       </TableCell>
                       {commonFields.map((field) => (
-                        <TableCell key={field} className="p-0">
-                          <Input
-                            value={item[field] !== null && item[field] !== undefined ? String(item[field]) : ''}
-                            onChange={(e) => handleItemChange(index, field, e.target.value)}
-                            className={`border-0 h-10 rounded-none focus:ring-1 focus:ring-inset text-right ${selectedRows[index] ? "bg-blue-50" : ""}`}
-                            disabled={!selectedRows[index]}
-                          />
+                        <TableCell key={field} className="p-2">
+                          {field === 'count' ? (
+                            <div className={`relative ${selectedRows[index] ? 'animate-pulse-once' : ''}`}>
+                              {selectedRows[index] && field === 'count' && (
+                                <div className="absolute inset-y-0 -left-1 w-1 bg-indigo-500 rounded-full"></div>
+                              )}
+                              <Input
+                                value={item[field] !== null && item[field] !== undefined ? String(item[field]) : ''}
+                                onChange={field === 'count' ? (e) => handleItemChange(index, field, e.target.value) : undefined}
+                                className={`
+                                  border text-right py-1.5 rounded 
+                                  ${field === 'count' 
+                                    ? selectedRows[index] 
+                                      ? "bg-white border-indigo-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-sm"
+                                      : "bg-white border-gray-200" 
+                                    : "bg-gray-50 border-gray-100 text-gray-600"
+                                  }
+                                `}
+                                disabled={field !== 'count' || !selectedRows[index]}
+                              />
+                            </div>
+                          ) : (
+                            <div className="bg-gray-50 border border-gray-100 rounded py-1.5 px-3 text-right text-gray-600">
+                              {item[field] !== null && item[field] !== undefined ? String(item[field]) : '-'}
+                            </div>
+                          )}
                         </TableCell>
                       ))}
                     </TableRow>
@@ -611,35 +657,40 @@ const BulkUpdateModal: React.FC<BulkUpdateModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="mt-4">
-          <div className="flex justify-between w-full">
-            <div className="text-sm text-gray-500">
-              총 {editableItems.length}개 항목 중 {Object.values(selectedRows).filter(value => value).length}개 선택됨
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose} disabled={isUpdating}>
-                취소
-              </Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={isUpdating || Object.values(selectedRows).filter(value => value).length === 0} 
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isUpdating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    저장 중...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    저장
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogFooter>
+        {/* 모달 푸터 */}
+        <div className="p-4 bg-white border-t border-gray-100 flex justify-end gap-2 items-center">
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={isUpdating}
+            className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          >
+            취소
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={isUpdating || Object.values(selectedRows).filter(value => value).length === 0} 
+            className={`
+              py-2 px-4 flex items-center gap-2 transition-all rounded-md
+              ${isUpdating 
+                ? "bg-indigo-400" 
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-md hover:shadow"
+              }
+            `}
+          >
+            {isUpdating ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>저장 중...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>저장</span>
+              </>
+            )}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
