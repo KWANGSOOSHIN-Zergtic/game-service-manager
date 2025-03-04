@@ -119,9 +119,8 @@ export default function UserDetailsPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  // 현재 사용자 정보를 세션에 저장하고(이미 저장되어 있음)
-                  // 화폐 관리 페이지로 이동
-                  window.open('/user-currency', '_blank');
+                  // 재화 관리 페이지로 이동하는 대신 알림 표시
+                  alert('재화 관리 기능은 Users 페이지의 Select Users 아코디언 내 CURRENCY 탭을 이용해주세요.');
                 }}
               >
                 재화 관리

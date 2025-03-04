@@ -716,6 +716,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
   const [updatingItems, setUpdatingItems] = useState<TableData[] | null>(null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
+  const [warningTitle, setWarningTitle] = useState('');
   
   // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
   const getDebugSectionState = (): boolean => {
@@ -1264,30 +1267,79 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
 
   // Currency 관련 핸들러 함수
   const handleCreateCurrency = () => {
-    // 사용자 ID와 DB 이름 가져오기
+    // 선택된 화폐들이 있는지 확인
+    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
+    // 사용자 정보 확인
     const employerInfo = sessionStorage.getItem('employerStorage');
-    let employerUid = null;
-    let dbName = null;
     
-    if (employerInfo) {
-      try {
-        const parsedInfo = JSON.parse(employerInfo);
-        employerUid = parsedInfo.uid;
-        dbName = parsedInfo.db_name;
-        
-        console.log('[TabContentRenderer] 화폐 생성 시도:', {
-          employerUid,
-          dbName
-        });
-        
-        // TODO: 화폐 생성 모달 또는 다이얼로그 표시
-        alert('화폐 생성 기능을 시작합니다.\n사용자 ID: ' + employerUid + '\nDB: ' + dbName);
-      } catch (error) {
-        console.error('[TabContentRenderer] employerStorage 파싱 오류:', error);
-      }
-    } else {
+    if (!employerInfo) {
       console.warn('[TabContentRenderer] 사용자 정보가 없습니다. 화폐를 생성할 수 없습니다.');
-      alert('사용자 정보를 찾을 수 없습니다. 먼저 사용자를 선택해주세요.');
+      
+      // 경고 모달 표시
+      setWarningTitle('사용자 정보 없음');
+      setWarningMessage('화폐를 생성할 사용자 정보를 찾을 수 없습니다. 먼저 사용자를 선택해주세요.');
+      setShowWarningDialog(true);
+      return;
+    }
+    
+    // 선택된 행이 있는지 확인
+    if (!selectedCurrencies) {
+      console.warn('[TabContentRenderer] 생성할 화폐 템플릿이 선택되지 않았습니다.');
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 화폐 없음');
+      setWarningMessage('생성할 화폐 템플릿을 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+      setShowWarningDialog(true);
+      return;
+    }
+    
+    try {
+      const parsedCurrencies = JSON.parse(selectedCurrencies) as TableData[];
+      
+      if (parsedCurrencies.length === 0) {
+        console.warn('[TabContentRenderer] 생성할 화폐 템플릿이 선택되지 않았습니다.');
+        
+        // 경고 모달 표시
+        setWarningTitle('선택된 화폐 없음');
+        setWarningMessage('생성할 화폐 템플릿을 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+        setShowWarningDialog(true);
+        return;
+      }
+      
+      const parsedInfo = JSON.parse(employerInfo);
+      const employerUid = parsedInfo.uid;
+      const dbName = parsedInfo.db_name;
+      
+      console.log('[TabContentRenderer] 화폐 생성 시도:', {
+        employerUid,
+        dbName,
+        selectedCurrencies: parsedCurrencies
+      });
+      
+      // 로깅
+      try {
+        logger.info('[TabContentRenderer] 화폐 생성 버튼 클릭', {
+          employerUid,
+          dbName,
+          currencyCount: parsedCurrencies.length,
+          currencyIds: parsedCurrencies.map(item => item.id),
+          timestamp: new Date().toISOString(),
+        });
+      } catch (error) {
+        console.warn('[TabContentRenderer] 로깅 실패:', error);
+      }
+      
+      // TODO: 화폐 생성 모달 또는 다이얼로그 표시 (alert 대신 모달 사용)
+      setWarningTitle('화폐 생성 안내');
+      setWarningMessage(`화폐 생성 기능을 시작합니다.\n사용자 ID: ${employerUid}\nDB: ${dbName}`);
+      setShowWarningDialog(true);
+    } catch (error) {
+      console.error('[TabContentRenderer] 데이터 파싱 오류:', error);
+      
+      // 경고 모달 표시
+      setWarningTitle('오류 발생');
+      setWarningMessage('데이터를 처리하는 중 오류가 발생했습니다.');
+      setShowWarningDialog(true);
     }
   };
   
@@ -1302,11 +1354,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         
         if (parsedItems.length === 0) {
           console.warn('[TabContentRenderer] 수정할 화폐가 선택되지 않았습니다.');
-          toast({
-            title: "선택된 화폐 없음",
-            description: "수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
-            variant: "destructive",
-          });
+          
+          // 경고 모달 표시
+          setWarningTitle('선택된 화폐 없음');
+          setWarningMessage('수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+          setShowWarningDialog(true);
           return;
         }
         
@@ -1334,11 +1386,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       }
     } else {
       console.warn('[TabContentRenderer] 수정할 화폐가 선택되지 않았습니다.');
-      toast({
-        title: "선택된 화폐 없음",
-        description: "수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
-        variant: "destructive",
-      });
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 화폐 없음');
+      setWarningMessage('수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+      setShowWarningDialog(true);
     }
   };
   
@@ -1353,11 +1405,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         
         if (parsedItems.length === 0) {
           console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
-          toast({
-            title: "선택된 화폐 없음",
-            description: "삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
-            variant: "destructive",
-          });
+          
+          // 경고 모달 표시
+          setWarningTitle('선택된 화폐 없음');
+          setWarningMessage('삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+          setShowWarningDialog(true);
           return;
         }
         
@@ -1397,11 +1449,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       }
     } else {
       console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
-      toast({
-        title: "선택된 화폐 없음",
-        description: "삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.",
-        variant: "destructive",
-      });
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 화폐 없음');
+      setWarningMessage('삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+      setShowWarningDialog(true);
     }
   };
 
@@ -1428,59 +1480,95 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       }
     } else {
       console.warn('[TabContentRenderer] 사용할 아이템이 선택되지 않았습니다.');
-      toast({
-        title: "선택된 아이템 없음",
-        description: "사용할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.",
-        variant: "destructive",
-      });
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 아이템 없음');
+      setWarningMessage('사용할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.');
+      setShowWarningDialog(true);
     }
   };
   
   const handleGetItem = () => {
-    // 사용자 ID와 DB 이름 가져오기
-    const employerInfo = sessionStorage.getItem('employerStorage');
-    let employerUid = null;
-    let dbName = null;
+    // 선택된 화폐가 있는지 확인
+    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
     
-    if (employerInfo) {
+    if (selectedCurrencies) {
       try {
-        const parsedInfo = JSON.parse(employerInfo);
-        employerUid = parsedInfo.uid;
-        dbName = parsedInfo.db_name;
+        const parsedItems = JSON.parse(selectedCurrencies) as TableData[];
+        console.log('[TabContentRenderer] 아이템 획득 시도:', parsedItems);
         
-        console.log('[TabContentRenderer] 아이템 획득 시도:', {
-          employerUid,
-          dbName
-        });
+        if (parsedItems.length === 0) {
+          console.warn('[TabContentRenderer] 획득할 아이템이 선택되지 않았습니다.');
+          
+          // 경고 모달 표시
+          setWarningTitle('선택된 아이템 없음');
+          setWarningMessage('획득할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.');
+          setShowWarningDialog(true);
+          return;
+        }
         
-        // TODO: 아이템 획득 모달 또는 다이얼로그 표시
-        alert('아이템 획득 기능을 시작합니다.\n사용자 ID: ' + employerUid + '\nDB: ' + dbName);
+        // 아이템 획득 로직 구현...
+        // 모달로 변경
+        setWarningTitle('안내');
+        setWarningMessage('아이템 획득 기능이 곧 추가될 예정입니다.');
+        setShowWarningDialog(true);
       } catch (error) {
-        console.error('[TabContentRenderer] employerStorage 파싱 오류:', error);
+        console.error('[TabContentRenderer] selectedCurrencies 파싱 오류:', error);
+        toast({
+          title: "오류",
+          description: "아이템 정보를 읽는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
       }
     } else {
-      console.warn('[TabContentRenderer] 사용자 정보가 없습니다. 아이템을 획득할 수 없습니다.');
-      alert('사용자 정보를 찾을 수 없습니다. 먼저 사용자를 선택해주세요.');
+      console.warn('[TabContentRenderer] 획득할 아이템이 선택되지 않았습니다.');
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 아이템 없음');
+      setWarningMessage('획득할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.');
+      setShowWarningDialog(true);
     }
   };
   
   const handleSendItem = () => {
     // 선택된 화폐가 있는지 확인
-    const selectedCurrency = sessionStorage.getItem('selectedCurrency');
+    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
     
-    if (selectedCurrency) {
+    if (selectedCurrencies) {
       try {
-        const parsedInfo = JSON.parse(selectedCurrency);
-        console.log('[TabContentRenderer] 아이템 전송 시도:', parsedInfo);
+        const parsedItems = JSON.parse(selectedCurrencies) as TableData[];
+        console.log('[TabContentRenderer] 아이템 전송 시도:', parsedItems);
         
-        // TODO: 아이템 전송 모달 또는 다이얼로그 표시
-        alert('아이템 전송 기능을 시작합니다.\n아이템 ID: ' + parsedInfo.id);
+        if (parsedItems.length === 0) {
+          console.warn('[TabContentRenderer] 전송할 아이템이 선택되지 않았습니다.');
+          
+          // 경고 모달 표시
+          setWarningTitle('선택된 아이템 없음');
+          setWarningMessage('전송할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.');
+          setShowWarningDialog(true);
+          return;
+        }
+        
+        // 아이템 전송 로직 구현...
+        // 모달로 변경
+        setWarningTitle('안내');
+        setWarningMessage('아이템 전송 기능이 곧 추가될 예정입니다.');
+        setShowWarningDialog(true);
       } catch (error) {
-        console.error('[TabContentRenderer] selectedCurrency 파싱 오류:', error);
+        console.error('[TabContentRenderer] selectedCurrencies 파싱 오류:', error);
+        toast({
+          title: "오류",
+          description: "아이템 정보를 읽는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
       }
     } else {
       console.warn('[TabContentRenderer] 전송할 아이템이 선택되지 않았습니다.');
-      alert('전송할 아이템을 먼저 선택해주세요.');
+      
+      // 경고 모달 표시
+      setWarningTitle('선택된 아이템 없음');
+      setWarningMessage('전송할 아이템을 먼저 선택해주세요. 테이블에서 행을 클릭하여 아이템을 선택하세요.');
+      setShowWarningDialog(true);
     }
   };
 
@@ -2125,6 +2213,21 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               isUpdating={isUpdating}
             />
           )}
+          
+          {/* 경고 모달 */}
+          <ConfirmDialog
+            open={showWarningDialog}
+            onOpenChange={setShowWarningDialog}
+            title={warningTitle}
+            description={warningMessage}
+            icon={AlertCircle}
+            iconBgColor="bg-yellow-100"
+            iconColor="text-yellow-600"
+            confirmText="확인"
+            cancelText="닫기"
+            confirmBgColor="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-300"
+            onConfirm={() => setShowWarningDialog(false)}
+          />
         </div>
       );
       
