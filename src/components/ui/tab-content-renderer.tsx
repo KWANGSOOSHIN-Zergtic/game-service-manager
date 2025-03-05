@@ -60,6 +60,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
+import { CreateCurrencyModal } from "../control-panels/create-currency-modal";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -716,6 +717,8 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
   const [warningTitle, setWarningTitle] = useState('');
+  const [showCreateCurrencyModal, setShowCreateCurrencyModal] = useState<boolean>(false);
+  const [isCreatingCurrency, setIsCreatingCurrency] = useState<boolean>(false);
   
   // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
   const getDebugSectionState = (): boolean => {
@@ -1264,79 +1267,98 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
 
   // Currency 관련 핸들러 함수
   const handleCreateCurrency = () => {
-    // 선택된 화폐들이 있는지 확인
-    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
-    // 사용자 정보 확인
+    console.log("handleCreateCurrency");
+    
+    // 사용자 정보 확인 - employerStorage에서 정보 가져오기
     const employerInfo = sessionStorage.getItem('employerStorage');
-    
     if (!employerInfo) {
-      console.warn('[TabContentRenderer] 사용자 정보가 없습니다. 화폐를 생성할 수 없습니다.');
-      
-      // 경고 모달 표시
+      console.warn("사용자 정보가 없습니다.");
       setWarningTitle('사용자 정보 없음');
-      setWarningMessage('화폐를 생성할 사용자 정보를 찾을 수 없습니다. 먼저 사용자를 선택해주세요.');
+      setWarningMessage('사용자 정보가 없습니다. 로그인 후 다시 시도해주세요.');
       setShowWarningDialog(true);
       return;
     }
-    
-    // 선택된 행이 있는지 확인
-    if (!selectedCurrencies) {
-      console.warn('[TabContentRenderer] 생성할 화폐 템플릿이 선택되지 않았습니다.');
-      
-      // 경고 모달 표시
-      setWarningTitle('선택된 화폐 없음');
-      setWarningMessage('생성할 화폐 템플릿을 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-      setShowWarningDialog(true);
-      return;
-    }
-    
+
     try {
-      const parsedCurrencies = JSON.parse(selectedCurrencies) as TableData[];
+      const parsedEmployerInfo = JSON.parse(employerInfo);
+      const employerUid = parsedEmployerInfo.uid;
+      const dbName = parsedEmployerInfo.db_name;
       
-      if (parsedCurrencies.length === 0) {
-        console.warn('[TabContentRenderer] 생성할 화폐 템플릿이 선택되지 않았습니다.');
-        
-        // 경고 모달 표시
-        setWarningTitle('선택된 화폐 없음');
-        setWarningMessage('생성할 화폐 템플릿을 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-        setShowWarningDialog(true);
-        return;
+      console.log(`화폐 생성 시도: 사용자 ID ${employerUid}, DB: ${dbName}`);
+      
+      // CreateCurrencyModal 표시
+      setShowCreateCurrencyModal(true);
+    } catch (error) {
+      console.error("데이터 파싱 오류:", error);
+      setWarningTitle("오류 발생");
+      setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setShowWarningDialog(true);
+    }
+  };
+
+  // 화폐 생성 확인 핸들러 수정
+  const handleConfirmCreateCurrency = (newCurrency: { excelItemIndex: number; count: number }) => {
+    try {
+      setIsCreatingCurrency(true);
+      
+      // employerStorage에서 사용자 정보 가져오기
+      const employerInfo = sessionStorage.getItem('employerStorage');
+      if (!employerInfo) {
+        throw new Error("사용자 정보가 없습니다.");
       }
       
-      const parsedInfo = JSON.parse(employerInfo);
-      const employerUid = parsedInfo.uid;
-      const dbName = parsedInfo.db_name;
+      const parsedEmployerInfo = JSON.parse(employerInfo);
+      const employerUid = parsedEmployerInfo.uid;
+      const dbName = parsedEmployerInfo.db_name;
       
-      console.log('[TabContentRenderer] 화폐 생성 시도:', {
-        employerUid,
-        dbName,
-        selectedCurrencies: parsedCurrencies
-      });
-      
-      // 로깅
-      try {
-        logger.info('[TabContentRenderer] 화폐 생성 버튼 클릭', {
+      // API 호출
+      fetch("/api/user/currency", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           employerUid,
           dbName,
-          currencyCount: parsedCurrencies.length,
-          currencyIds: parsedCurrencies.map(item => item.id),
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        console.warn('[TabContentRenderer] 로깅 실패:', error);
-      }
-      
-      // TODO: 화폐 생성 모달 또는 다이얼로그 표시 (alert 대신 모달 사용)
-      setWarningTitle('화폐 생성 안내');
-      setWarningMessage(`화폐 생성 기능을 시작합니다.\n사용자 ID: ${employerUid}\nDB: ${dbName}`);
-      setShowWarningDialog(true);
+          excelItemIndex: newCurrency.excelItemIndex,
+          count: newCurrency.count,
+        }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errorData => {
+            throw new Error(errorData.message || "화폐 생성 중 오류가 발생했습니다.");
+          });
+        }
+        return response.json();
+      })
+      .then(() => {
+        // 성공 처리
+        console.log("화폐가 성공적으로 생성되었습니다.");
+        
+        // 데이터 새로고침
+        if (typeof fetchData === 'function') {
+          fetchData();
+        }
+        
+        // 모달 닫기
+        setShowCreateCurrencyModal(false);
+      })
+      .catch(error => {
+        console.error("화폐 생성 오류:", error);
+        setWarningTitle("화폐 생성 실패");
+        setWarningMessage(error instanceof Error ? error.message : "화폐 생성 중 오류가 발생했습니다.");
+        setShowWarningDialog(true);
+      })
+      .finally(() => {
+        setIsCreatingCurrency(false);
+      });
     } catch (error) {
-      console.error('[TabContentRenderer] 데이터 파싱 오류:', error);
-      
-      // 경고 모달 표시
-      setWarningTitle('오류 발생');
-      setWarningMessage('데이터를 처리하는 중 오류가 발생했습니다.');
+      console.error("화폐 생성 오류:", error);
+      setWarningTitle("화폐 생성 실패");
+      setWarningMessage(error instanceof Error ? error.message : "화폐 생성 중 오류가 발생했습니다.");
       setShowWarningDialog(true);
+      setIsCreatingCurrency(false);
     }
   };
   
@@ -2229,6 +2251,13 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             cancelText="닫기"
             confirmBgColor="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-300"
             onConfirm={() => setShowWarningDialog(false)}
+          />
+          {/* CreateCurrencyModal 추가 */}
+          <CreateCurrencyModal
+            open={showCreateCurrencyModal}
+            onOpenChange={setShowCreateCurrencyModal}
+            onConfirm={handleConfirmCreateCurrency}
+            isCreating={isCreatingCurrency}
           />
         </div>
       );
