@@ -36,7 +36,9 @@ export function useAuth() {
         throw new Error('인증 토큰이 없습니다.')
       }
 
-      // DB Collection 정보 가져오기
+      console.log('초기화 정보 조회 시작 - 토큰:', token.substring(0, 10) + '...')
+      
+      // DB Collection 정보 가져오기 - 먼저 요청의 성공 여부 확인
       const collectionResponse = await fetch('/api/db-information', {
         method: 'GET',
         headers: {
@@ -46,18 +48,27 @@ export function useAuth() {
         cache: 'no-store'  // 캐시 비활성화
       })
 
+      // 요청 실패 시 로그 확인
+      if (!collectionResponse.ok) {
+        console.error('DB Collection 요청 실패:', {
+          status: collectionResponse.status,
+          statusText: collectionResponse.statusText
+        })
+      }
+
       let collectionData
       try {
         collectionData = await collectionResponse.json()
-      } catch {
+      } catch (error) {
+        console.error('DB Collection 응답 파싱 실패:', error)
         throw new Error('DB Collection 응답 형식이 올바르지 않습니다.')
       }
 
       if (!collectionResponse.ok || !collectionData.success) {
         if (retries > 0 && collectionResponse.status === 401) {
-          // 인증 오류면 재시도
+          // 인증 오류면 재시도 - 지연 시간 늘림
           console.log('인증 오류로 DB Collection 정보 조회 재시도...')
-          await new Promise(resolve => setTimeout(resolve, 500))  // 0.5초 대기
+          await new Promise(resolve => setTimeout(resolve, 1000))  // 1초 대기로 증가
           return getInitializationInfo(retries - 1)
         }
         throw new Error(collectionData.message || 'DB Collection 정보 조회에 실패했습니다.')
@@ -73,18 +84,27 @@ export function useAuth() {
         cache: 'no-store'  // 캐시 비활성화
       })
 
+      // 요청 실패 시 로그 확인
+      if (!listResponse.ok) {
+        console.error('DB 리스트 요청 실패:', {
+          status: listResponse.status,
+          statusText: listResponse.statusText
+        })
+      }
+
       let listData
       try {
         listData = await listResponse.json()
-      } catch {
+      } catch (error) {
+        console.error('DB 리스트 응답 파싱 실패:', error)
         throw new Error('DB 리스트 응답 형식이 올바르지 않습니다.')
       }
 
       if (!listResponse.ok || !listData.success) {
         if (retries > 0 && listResponse.status === 401) {
-          // 인증 오류면 재시도
+          // 인증 오류면 재시도 - 지연 시간 늘림
           console.log('인증 오류로 DB 리스트 정보 조회 재시도...')
-          await new Promise(resolve => setTimeout(resolve, 500))  // 0.5초 대기
+          await new Promise(resolve => setTimeout(resolve, 1000))  // 1초 대기로 증가
           return getInitializationInfo(retries - 1)
         }
         throw new Error(listData.message || 'DB 리스트 정보 조회에 실패했습니다.')
@@ -134,27 +154,27 @@ export function useAuth() {
         throw new Error(data.message || data.error || '로그인에 실패했습니다.')
       }
 
-      // 2. 토큰 저장
+      // 2. 토큰 저장 - 여기서 먼저 localStorage와 sessionStorage에 필요한 정보 설정
       localStorage.setItem('token', data.token)
+      localStorage.setItem('admin', JSON.stringify(data.admin))
+      sessionStorage.setItem('isLoggedIn', 'true')
       
-      // 3. 초기화 정보 조회 (토큰 저장 후 약간의 지연 추가)
-      await new Promise(resolve => setTimeout(resolve, 300))  // 0.3초 대기
+      if (data.admin.type) {
+        sessionStorage.setItem('adminType', data.admin.type)
+      }
+      
+      // 지연 시간을 1초로 증가 - 토큰이 제대로 저장되고 브라우저에 반영될 시간 확보
+      await new Promise(resolve => setTimeout(resolve, 1000))
       
       try {
         console.log('초기화 정보 조회 시작...')
-        const initInfo = await getInitializationInfo()
+        const initInfo = await getInitializationInfo(3) // 재시도 횟수 3회로 증가
         console.log('초기화 정보 조회 완료')
         
-        // 4. 모든 정보 저장
-        localStorage.setItem('admin', JSON.stringify(data.admin))
-        sessionStorage.setItem('isLoggedIn', 'true')
+        // 초기화 정보를 sessionStorage에 저장
         sessionStorage.setItem('dbInitInfo', JSON.stringify(initInfo))
         
-        if (data.admin.type) {
-          sessionStorage.setItem('adminType', data.admin.type)
-        }
-
-        // 5. 자동 로그인 설정
+        // 자동 로그인 설정
         if (loginData.autoLogin) {
           localStorage.setItem('autoLogin', 'true')
           localStorage.setItem('autoLoginEmail', loginData.email)
@@ -165,13 +185,13 @@ export function useAuth() {
         return true
       } catch (error) {
         console.error('초기화 정보 조회 실패:', error)
-        // 초기화 정보 조회 실패 시 모든 저장된 정보 제거
-        localStorage.removeItem('token')
-        localStorage.removeItem('admin')
-        sessionStorage.removeItem('isLoggedIn')
-        sessionStorage.removeItem('adminType')
-        sessionStorage.removeItem('dbInitInfo')
-        throw new Error('초기화 정보를 불러오는데 실패했습니다. 다시 로그인해주세요.')
+        
+        // 초기화 정보 조회 실패의 경우에도 로그인은 유지하고 차후에 다시 시도하도록 변경
+        // 실패 시에도 로그인 상태 유지, 오류 메시지만 표시
+        toast.error('초기화 정보를 불러오는데 실패했습니다. 일부 기능이 제한될 수 있습니다.')
+        
+        // 로그인은 성공으로 간주
+        return true
       }
     } catch (error) {
       console.error('로그인 에러:', error)

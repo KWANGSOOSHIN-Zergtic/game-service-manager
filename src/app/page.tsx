@@ -1,26 +1,61 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Github, Mail, Lock, LogIn } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
+import { toast } from "react-hot-toast"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, autoLogin } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [isAutoLoginAttempted, setIsAutoLoginAttempted] = useState(false)
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
     autoLogin: false
   })
 
+  // 자동 로그인 시도
+  useEffect(() => {
+    const attemptAutoLogin = async () => {
+      if (isAutoLoginAttempted) return; // 이미 시도했다면 중복 실행 방지
+      
+      setIsAutoLoginAttempted(true);
+      setIsLoading(true);
+      
+      try {
+        console.log('자동 로그인 시도 중...');
+        const success = await autoLogin();
+        
+        if (success) {
+          console.log('자동 로그인 성공, 대시보드로 이동합니다.');
+          router.push('/dashboard');
+        } else {
+          console.log('자동 로그인 실패, 수동 로그인이 필요합니다.');
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('자동 로그인 처리 중 오류:', error);
+        setIsLoading(false);
+      }
+    };
+
+    // 페이지 로드 시 자동 로그인 시도
+    attemptAutoLogin();
+  }, [autoLogin, router, isAutoLoginAttempted]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // 이미 로딩 중인 경우 중복 실행 방지
+    if (isLoading) return;
+    
     setIsLoading(true)
     
     try {
@@ -33,10 +68,12 @@ export default function LoginPage() {
       
       console.log('로그인 결과:', success)
       if (success) {
+        toast.success('로그인 성공! 대시보드로 이동합니다.');
         router.push("/dashboard")
       }
     } catch (error) {
       console.error("로그인 처리 중 오류:", error)
+      toast.error('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
     } finally {
       setIsLoading(false)
     }
