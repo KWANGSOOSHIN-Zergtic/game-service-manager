@@ -16,6 +16,15 @@ export const SERVICE_QUERIES: DatabaseQueries = {
                 table_name;
         `
     },
+    SELECT_EXCEL_TABLE_LIST: {
+        name: 'SELECT_EXCEL_TABLE_LIST',
+        description: ' public 에서 excel 테이블을 조회',
+        query: `
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name LIKE 'excel_%';
+        `
+    },  
     SELECT_SERVICE_DB_COLLECTION: {
         name: 'SELECT_SERVICE_DB_COLLECTION',
         description: 'service-db-collection 테이블의 모든 데이터를(서비스 중인 DB 리스트) 조회',

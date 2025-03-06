@@ -986,7 +986,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     } finally {
       setIsLoading(false);
     }
-  }, [content.type, content.props]);
+  }, [content.type, content.props, content.props?.endpoint]);
 
   // toggle-debug-section 이벤트 리스너 설정
   useEffect(() => {
@@ -1028,10 +1028,17 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     };
   }, [content.props, fetchData]);
 
-  // 초기 데이터 로드
+  // 초기 데이터 로드 및 content.props.endpoint 변경 감지
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    console.log('[TabContentRenderer] 데이터 로드 useEffect 실행:', {
+      contentType: content.type,
+      endpoint: content.props?.endpoint
+    });
+    
+    if (content.type === 'dataTable' && content.props?.endpoint) {
+      fetchData();
+    }
+  }, [fetchData, content.type, content.props?.endpoint]);
 
   // Currency 관련 핸들러 함수
   const handleCreateCurrency = () => {
