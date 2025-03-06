@@ -103,7 +103,7 @@ export async function getUserCurrency(params: UserCurrencyParams): Promise<UserC
       logger.info('[User Currency] DB Collection 정보 업데이트 시작');
       const dbCollectionResult = await saveDBCollection();
       if (!dbCollectionResult.success) {
-          logger.error('[User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+          logger.error('[User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
           return {
               success: false,
               error: 'DB 정보를 불러오는데 실패했습니다.',
@@ -239,7 +239,7 @@ export async function getUserCurrencyItem(params: UserCurrencyItemParams): Promi
     logger.info('[User Currency Item] DB Collection 정보 업데이트 시작');
     const dbCollectionResult = await saveDBCollection();
     if (!dbCollectionResult.success) {
-      logger.error('[User Currency Item] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      logger.error('[User Currency Item] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
       return {
         success: false,
         error: 'DB 정보를 불러오는데 실패했습니다.',
@@ -294,7 +294,7 @@ export async function getUserCurrencyItem(params: UserCurrencyItemParams): Promi
       status: 200,
     };
   } catch (error) {
-    logger.error('재화 아이템 정보 조회 중 오류 발생:', error);
+    logger.error('재화 아이템 정보 조회 중 오류 발생:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       message: '재화 아이템 정보 조회 중 오류가 발생했습니다.',
@@ -330,7 +330,7 @@ export async function createUserCurrency(params: CreateUpdateCurrencyParams): Pr
     logger.info('[Create User Currency] DB Collection 정보 업데이트 시작');
     const dbCollectionResult = await saveDBCollection();
     if (!dbCollectionResult.success) {
-      logger.error('[Create User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      logger.error('[Create User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
       return {
         success: false,
         error: 'DB 정보를 불러오는데 실패했습니다.',
@@ -377,7 +377,7 @@ export async function createUserCurrency(params: CreateUpdateCurrencyParams): Pr
       status: 201,
     };
   } catch (error) {
-    logger.error('사용자 재화 추가 중 오류 발생:', error);
+    logger.error('사용자 재화 추가 중 오류 발생:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       message: '사용자 재화 추가 중 오류가 발생했습니다.',
@@ -413,7 +413,7 @@ export async function updateUserCurrency(params: CreateUpdateCurrencyParams): Pr
     logger.info('[Update User Currency] DB Collection 정보 업데이트 시작');
     const dbCollectionResult = await saveDBCollection();
     if (!dbCollectionResult.success) {
-      logger.error('[Update User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      logger.error('[Update User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
       return {
         success: false,
         error: 'DB 정보를 불러오는데 실패했습니다.',
@@ -468,7 +468,7 @@ export async function updateUserCurrency(params: CreateUpdateCurrencyParams): Pr
       status: 200,
     };
   } catch (error) {
-    logger.error('사용자 재화 업데이트 중 오류 발생:', error);
+    logger.error('사용자 재화 업데이트 중 오류 발생:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       message: '사용자 재화 업데이트 중 오류가 발생했습니다.',
@@ -496,7 +496,7 @@ export async function deleteUserCurrency(params: DeleteCurrencyParams): Promise<
     logger.info('[Delete User Currency] DB Collection 정보 업데이트 시작');
     const dbCollectionResult = await saveDBCollection();
     if (!dbCollectionResult.success) {
-      logger.error('[Delete User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+      logger.error('[Delete User Currency] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
       return {
         success: false,
         error: 'DB 정보를 불러오는데 실패했습니다.',
@@ -551,7 +551,7 @@ export async function deleteUserCurrency(params: DeleteCurrencyParams): Promise<
       status: 200,
     };
   } catch (error) {
-    logger.error('사용자 재화 삭제 중 오류 발생:', error);
+    logger.error('사용자 재화 삭제 중 오류 발생:', error instanceof Error ? error.message : String(error));
     return {
       success: false,
       message: '사용자 재화 삭제 중 오류가 발생했습니다.',

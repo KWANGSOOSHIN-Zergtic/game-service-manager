@@ -3,8 +3,10 @@ import { logger } from '@/lib/logger';
 import { DBConfig } from './types';
 import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
 import { saveDBCollection } from '@/app/api/db-information/db-information';
+import { validateEnv, getDBEnv } from '@/lib/env';
 
 declare global {
+    // eslint-disable-next-line no-var
     var __DB_MANAGER__: DBConnectionManager;
 }
 
@@ -82,6 +84,22 @@ export class DBConnectionManager {
     private async updateDBInformation(): Promise<boolean> {
         try {
             logger.info('[DB Manager] DB 정보 업데이트 시작');
+            
+            // 환경 변수 검증
+            const isEnvValid = validateEnv();
+            if (!isEnvValid) {
+                logger.error('[DB Manager] 환경 변수가 올바르게 설정되지 않았습니다.');
+                return false;
+            }
+            
+            // 환경 변수 상태 로깅
+            const dbEnv = getDBEnv();
+            logger.info('[DB Manager] DB 연결 정보:', {
+                host: dbEnv.host,
+                port: dbEnv.port,
+                database: dbEnv.database
+            });
+            
             const result = await saveDBCollection();
             
             if (!result.success) {
@@ -110,7 +128,7 @@ export class DBConnectionManager {
                 stack: error instanceof Error ? error.stack : undefined,
                 timestamp: new Date().toISOString()
             });
-            logger.error('[DB Manager] DB 정보 업데이트 중 오류:', error);
+            logger.error('[DB Manager] DB 정보 업데이트 중 오류:', error instanceof Error ? error.message : String(error));
             return false;
         }
     }
@@ -130,7 +148,7 @@ export class DBConnectionManager {
                 try {
                     await this.DB_CONNECT_ARRAY[dbName].end();
                 } catch (error) {
-                    logger.warn(`[DB Manager] ${dbName}의 기존 연결 풀 종료 중 오류:`, error);
+                    logger.warn(`[DB Manager] ${dbName}의 기존 연결 풀 종료 중 오류:`, error instanceof Error ? error.message : String(error));
                 }
             }
 
@@ -177,14 +195,14 @@ export class DBConnectionManager {
                         poolStats: stats
                     });
                 } catch (error) {
-                    logger.warn(`[DB Pool] Failed to get pool stats for ${dbName}:`, error);
+                    logger.warn(`[DB Pool] Failed to get pool stats for ${dbName}:`, error instanceof Error ? error.message : String(error));
                 }
             });
 
             pool.on('error', (err) => {
                 try {
                     const stats = this.getPoolStats(dbName);
-                    logger.error(`[DB Pool] Error in ${dbName} pool:`, {
+                    logger.info(`[DB Pool] ${dbName} pool error:`, {
                         error: err.message,
                         stack: err.stack,
                         timestamp: new Date().toISOString(),
@@ -192,8 +210,7 @@ export class DBConnectionManager {
                     });
                 } catch (error) {
                     logger.error(`[DB Pool] Error in ${dbName} pool:`, {
-                        error: err.message,
-                        stack: err.stack,
+                        error: error instanceof Error ? error.message : String(error),
                         timestamp: new Date().toISOString()
                     });
                 }
@@ -223,7 +240,7 @@ export class DBConnectionManager {
                 try {
                     await this.DB_CONNECT_ARRAY[dbName].end();
                 } catch (endError) {
-                    logger.warn(`[DB Manager] ${dbName} 연결 풀 정리 중 오류:`, endError);
+                    logger.warn(`[DB Manager] ${dbName} 연결 풀 정리 중 오류:`, endError instanceof Error ? endError.message : String(endError));
                 }
                 delete this.DB_CONNECT_ARRAY[dbName];
             }
@@ -234,7 +251,7 @@ export class DBConnectionManager {
 
     private async handlePoolError(dbName: string, error: Error): Promise<void> {
         logger.error(`[DB Pool] Handling error for ${dbName}:`, {
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             timestamp: new Date().toISOString()
         });
 
@@ -247,7 +264,7 @@ export class DBConnectionManager {
             }
         } catch (reinitError) {
             logger.error(`[DB Pool] Failed to reinitialize pool for ${dbName}:`, {
-                error: reinitError instanceof Error ? reinitError.message : 'Unknown error',
+                error: reinitError instanceof Error ? reinitError.message : String(reinitError),
                 timestamp: new Date().toISOString()
             });
         }
@@ -288,7 +305,7 @@ export class DBConnectionManager {
                     return true;
                 } catch (error) {
                     retryCount++;
-                    logger.error(`[DB Manager] 초기화 시도 ${retryCount} 실패:`, error);
+                    logger.error(`[DB Manager] 초기화 시도 ${retryCount} 실패:`, error instanceof Error ? error.message : String(error));
                     if (retryCount === this.MAX_RETRY_ATTEMPTS) {
                         throw error;
                     }
@@ -320,7 +337,7 @@ export class DBConnectionManager {
                 delete this.DB_CONNECT_ARRAY[dbName];
                 logger.info(`[DB Manager] ${dbName} 연결 풀 종료 성공`);
             } catch (error) {
-                logger.error(`[DB Manager] ${dbName} 연결 풀 종료 중 오류:`, error);
+                logger.error(`[DB Manager] ${dbName} 연결 풀 종료 중 오류:`, error instanceof Error ? error.message : String(error));
             }
         }
 
@@ -400,7 +417,7 @@ export class DBConnectionManager {
             client.release();
             return true;
         } catch (error) {
-            logger.error(`[DB Pool] Health check failed for ${dbName}:`, error);
+            logger.error(`[DB Pool] Health check failed for ${dbName}:`, error instanceof Error ? error.message : String(error));
             return false;
         }
     }
@@ -412,4 +429,4 @@ export class DBConnectionManager {
         }
         return healthStatus;
     }
-} 
+}

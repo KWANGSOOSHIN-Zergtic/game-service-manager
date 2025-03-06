@@ -134,7 +134,7 @@ describe('DBConnectionManager', () => {
                 await client.query('SELECT invalid_column FROM non_existent_table');
                 
                 await client.query('COMMIT');
-            } catch (error) {
+            } catch {
                 await client.query('ROLLBACK');
                 
                 // 롤백 후 데이터가 없는지 확인

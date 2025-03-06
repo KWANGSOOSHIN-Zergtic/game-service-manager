@@ -151,7 +151,7 @@ describe('API Routes Tests', () => {
                 
                 await client.query('COMMIT');
                 throw new Error('트랜잭션이 실패해야 함');
-            } catch (error) {
+            } catch {
                 await client.query('ROLLBACK');
                 
                 // 원본 데이터가 그대로 있는지 확인

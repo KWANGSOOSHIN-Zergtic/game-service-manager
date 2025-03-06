@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { DataSource } from 'typeorm';
 import { DB_COLLECTION } from '../../db-information/db-collection';
 
-export async function GET(request: Request) {
+export async function GET() {
   let AppDataSource: DataSource | null = null;
   
   try {

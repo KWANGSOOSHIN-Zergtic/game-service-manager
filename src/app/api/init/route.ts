@@ -1,69 +1,33 @@
 import { NextResponse } from 'next/server';
-import { initializeServer } from '@/lib/init';
 import { logger } from '@/lib/logger';
-import { InitializationStatus } from '@/lib/init/types';
+import { initializeServer } from '@/lib/init/server-initializer';
 
-// 초기화 상태를 전역으로 관리
-let isInitialized = false;
-let initializationPromise: Promise<InitializationStatus> | null = null;
-
+/**
+ * 서버 초기화 API 엔드포인트
+ * 
+ * 서버 시작 시 필요한 초기화 작업을 수행합니다.
+ * 데이터베이스 연결, 캐시 초기화 등의 작업이 포함됩니다.
+ */
 export async function GET() {
     try {
-        // 이미 초기화가 완료된 경우
-        if (isInitialized) {
-            return NextResponse.json({ 
-                success: true, 
-                message: 'Server is already initialized'
-            });
-        }
-
-        // 초기화가 진행 중인 경우
-        if (initializationPromise) {
-            await initializationPromise;
-            return NextResponse.json({ 
-                success: true, 
-                message: 'Server initialization completed'
-            });
-        }
-
-        // 새로운 초기화 시작
-        logger.info('Starting server initialization...');
+        // 서버 초기화 실행
+        const result = await initializeServer();
         
-        initializationPromise = initializeServer().then(status => {
-            isInitialized = status.isInitialized;
-            if (status.isInitialized) {
-                logger.info('Server initialization completed successfully');
-            } else {
-                logger.error('Server initialization failed');
-            }
-            return status;
-        }).catch(error => {
-            logger.error('Error during server initialization:', error);
-            throw error;
-        }).finally(() => {
-            initializationPromise = null;
-        });
-
-        const status = await initializationPromise;
-
-        if (status.isInitialized) {
-            return NextResponse.json({ 
-                success: true, 
-                message: 'Server initialized successfully',
-                status 
-            });
-        } else {
-            return NextResponse.json({ 
-                success: false, 
-                message: 'Server initialization failed',
-                status 
+        if (!result.success) {
+            return NextResponse.json({
+                success: false,
+                message: result.message,
+                timestamp: new Date().toISOString()
             }, { status: 500 });
         }
+        
+        return NextResponse.json({
+            success: true,
+            message: 'Server initialized successfully',
+            timestamp: new Date().toISOString()
+        });
     } catch (error) {
-        return NextResponse.json({ 
-            success: false, 
-            message: 'Server initialization error',
-            error: error instanceof Error ? error.message : 'Unknown error'
-        }, { status: 500 });
+        logger.error('Error during server initialization:', error instanceof Error ? error.message : String(error));
+        throw error;
     }
 } 

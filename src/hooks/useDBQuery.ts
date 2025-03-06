@@ -16,6 +16,7 @@ interface UseDBQueryReturn {
   connectResult: DBQueryResult;
   tableData: TableData[];
   isLoading: boolean;
+  isTableLoading: boolean;
   debugInfo: ApiDebugInfo | null;
   connectDB: (dbName: string) => Promise<void>;
   executeQuery: (
@@ -79,6 +80,7 @@ export const useDBQuery = (): UseDBQueryReturn => {
     connectResult: connectionResult,
     tableData,
     isLoading: isConnecting || isTableLoading,
+    isTableLoading,
     debugInfo,
     connectDB,
     executeQuery,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Logger from './index';
+import { logger } from './index';
 
 export async function loggerMiddleware(
   request: NextRequest,
@@ -9,7 +9,7 @@ export async function loggerMiddleware(
   const requestId = crypto.randomUUID();
   
   // 요청 로깅
-  Logger.http(`Incoming ${request.method} request to ${request.url}`, {
+  logger.info(`Incoming ${request.method} request to ${request.url}`, {
     requestId,
     headers: Object.fromEntries(request.headers),
     query: Object.fromEntries(new URL(request.url).searchParams),
@@ -23,7 +23,7 @@ export async function loggerMiddleware(
     const duration = Date.now() - startTime;
     
     // 성공 응답 로깅
-    Logger.info(`Request completed`, {
+    logger.info(`Request completed`, {
       requestId,
       status: response.status,
       duration: `${duration}ms`,
@@ -35,9 +35,9 @@ export async function loggerMiddleware(
     const duration = Date.now() - startTime;
     
     // 에러 로깅
-    Logger.error(`Request failed`, {
+    logger.error(`Request failed`, {
       requestId,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
       duration: `${duration}ms`,
     });

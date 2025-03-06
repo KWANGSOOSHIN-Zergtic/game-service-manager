@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { DataSource } from 'typeorm';
 import { DB_COLLECTION } from '../../db-information/db-collection';
 
-export async function POST(request: Request) {
+export async function POST() {
   let AppDataSource: DataSource | null = null;
   
   try {

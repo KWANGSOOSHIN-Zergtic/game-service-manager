@@ -7,7 +7,6 @@ import { DBConnectionManager } from '@/lib/db/db-connection-manager';
 import { 
   MASTER_DB_CONFIG, 
   SERVICE_DB_CONFIGS, 
-  DB_LIST_INFO, 
   TEST_DB_QUERIES, 
   TRANSACTION_TEST_DATA,
   INVALID_DB_CONFIG,
@@ -15,7 +14,6 @@ import {
 } from './test-data/db-connection-test-data';
 import { DB_COLLECTION } from '@/app/api/db-information/db-collection';
 import { saveDBCollection } from '@/app/api/db-information/db-information';
-import { PoolClient } from 'pg';
 
 // DB 정보 저장 함수 모킹
 jest.mock('@/app/api/db-information/db-information', () => {
@@ -148,7 +146,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
       try {
         // 존재하지 않는 DB에 연결 시도 (실패해야 함)
         dbManager.getPool('invalid_db');
-      } catch (error) {
+      } catch {
         // 오류 발생이 예상됨
       }
       
@@ -257,16 +255,10 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
         // 트랜잭션 시작하여 의도적으로 오류 발생시키기
         try {
           await dbManager.withTransaction(dbName, async (client) => {
-            // 데이터 삽입
-            await client.query(
-              TEST_DB_QUERIES.INSERT_TEST_DATA, 
-              [testName, 'value_to_rollback']
-            );
-            
-            // 의도적으로 오류 발생
+            await client.query(TEST_DB_QUERIES.INSERT_TEST_DATA, [testName, 'transaction_test']);
             throw new Error('의도적인 트랜잭션 롤백 테스트');
           });
-        } catch (error) {
+        } catch {
           // 에러는 예상됨
         }
         

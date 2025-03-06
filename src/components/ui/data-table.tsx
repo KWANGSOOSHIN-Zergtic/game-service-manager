@@ -18,24 +18,11 @@ import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
 import { Skeleton } from '@/components/ui/skeleton';
 import { CurrencyControlPanel, AdvancedCurrencyControlPanel } from "@/components/control-panels/currency-control-panel";
+import { IUITableData, ITableColumn } from '@/types/table.types';
 
-// 동적 컬럼 정의
-export interface TableColumn {
-  key: string;
-  label: string;
-  width?: string;
-  format?: (value: string | number | boolean | object | null | undefined) => string | number | React.ReactNode;
-  type?: 'string' | 'number' | 'currency' | 'percentage' | 'object';
-  sortable?: boolean;
-  align?: 'left' | 'center' | 'right';
-}
-
-// 동적 데이터 타입
-export interface TableData {
-  id: number;
-  displayIndex?: number;
-  [key: string]: string | number | boolean | null | object | undefined;
-}
+// 이전 타입과의 호환성을 위한 타입 별칭
+export type TableData = IUITableData;
+export type TableColumn = ITableColumn;
 
 interface DataTableProps {
   tableName?: string;

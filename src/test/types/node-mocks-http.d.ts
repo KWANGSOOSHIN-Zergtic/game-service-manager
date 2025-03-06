@@ -3,7 +3,7 @@
  */
 
 declare module 'node-mocks-http' {
-  import { IncomingMessage, ServerResponse } from 'http';
+  import { ServerResponse } from 'http';
   import { NextApiRequest, NextApiResponse } from 'next';
 
   interface RequestOptions {
@@ -17,12 +17,12 @@ declare module 'node-mocks-http' {
     headers?: {
       [key: string]: string;
     };
-    body?: any;
-    session?: any;
+    body?: Record<string, unknown>;
+    session?: Record<string, unknown>;
     cookies?: {
       [key: string]: string;
     };
-    [key: string]: any;
+    [key: string]: unknown;
   }
 
   interface ResponseOptions {
@@ -33,10 +33,8 @@ declare module 'node-mocks-http' {
     cookies?: {
       [key: string]: string;
     };
-    locals?: {
-      [key: string]: any;
-    };
-    [key: string]: any;
+    locals?: Record<string, unknown>;
+    [key: string]: unknown;
   }
 
   interface MockResponse extends ServerResponse {
@@ -49,7 +47,7 @@ declare module 'node-mocks-http' {
     _isUTF8(): boolean;
     _getRedirectUrl(): string;
     _getRenderView(): string;
-    _getRenderData(): any;
+    _getRenderData(): Record<string, unknown>;
   }
 
   export function createRequest(options?: RequestOptions): NextApiRequest;

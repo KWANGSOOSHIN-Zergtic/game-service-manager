@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
         logger.info('[User Search] DB Collection 정보 업데이트 시작');
         const dbCollectionResult = await saveDBCollection();
         if (!dbCollectionResult.success) {
-            logger.error('[User Search] DB Collection 정보 업데이트 실패:', dbCollectionResult.error);
+            logger.error('[User Search] DB Collection 정보 업데이트 실패:', dbCollectionResult.error || '알 수 없는 오류');
             return NextResponse.json({
                 success: false,
                 error: 'DB 정보를 불러오는데 실패했습니다.'

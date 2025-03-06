@@ -2,6 +2,7 @@ import { InitializationStatus } from './types';
 
 // Node.js 프로세스 레벨의 전역 상태
 declare global {
+    // eslint-disable-next-line no-var
     var __SERVER_INITIALIZATION__: {
         isInitializing: boolean;
         isInitialized: boolean;

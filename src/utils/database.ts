@@ -71,7 +71,7 @@ export const DBConnection = async (options: DBConnectionOptions = {}): Promise<D
 };
 
 // DB 목록 조회 함수
-export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<any> => {
+export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<Record<string, unknown>> => {
   const { retryCount = 3, timeout = 5000 } = options;
   
   const controller = new AbortController();
@@ -122,4 +122,10 @@ export const fetchDBList = async (options: DBConnectionOptions = {}): Promise<an
   } finally {
     clearTimeout(timeoutId);
   }
+};
+
+export const executeQuery = async (dbName: string, query: string, params: unknown[] = []): Promise<Record<string, unknown>[]> => {
+  // 임시 구현: 실제 구현은 DB 연결 및 쿼리 실행 로직이 필요합니다
+  console.log(`Executing query on ${dbName}: ${query} with params:`, params);
+  return []; // 빈 배열 반환
 }; 

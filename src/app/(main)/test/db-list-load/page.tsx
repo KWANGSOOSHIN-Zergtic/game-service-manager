@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { Plus } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { useDBQuery } from '@/hooks/useDBQuery';
+import { convertDBToUITableDataArray } from '@/utils/type-converters';
 
 interface ConnectionStatus {
   success?: boolean;
@@ -53,7 +54,7 @@ export default function DbListLoadPage() {
         }));
         setData(formattedData);
       } else {
-        throw new Error(responseData.error || '데이터를 불러오는데 실패했습니다.');
+        throw new Error(responseData.error ? String(responseData.error) : '데이터를 불러오는데 실패했습니다.');
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -226,7 +227,7 @@ export default function DbListLoadPage() {
           <CardContent className="py-6">
             <DataTable
               tableName="DB Table List"
-              data={tableData}
+              data={convertDBToUITableDataArray(tableData)}
               isLoading={isTableLoading}
               onSelectRows={handleSelectRows}
               onRowClick={handleRowClick}

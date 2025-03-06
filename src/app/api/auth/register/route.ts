@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { DataSource } from 'typeorm';
 import { DB_COLLECTION } from '../../db-information/db-collection';
-import bcrypt from 'bcryptjs';
 
 // 관리자 계정 생성 요청 타입 정의
 interface RegisterRequest {

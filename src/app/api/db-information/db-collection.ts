@@ -148,17 +148,6 @@ export const updateDBCollection = (dbConfigs: DBConfig[]): void => {
         names: Object.keys(DB_COLLECTION),
         collection: DB_COLLECTION
     }, null, 2));
-};
 
-// config가 올바른 service_db 구조를 가지고 있는지 확인하는 함수
-function isValidServiceDBConfig(config: unknown): config is { service_db: ServiceDBConfig } {
-    if (!config || typeof config !== 'object') return false;
-    
-    const configRecord = config as Record<string, unknown>;
-    const service_db = configRecord.service_db;
-    if (!service_db || typeof service_db !== 'object') return false;
-    
-    const serviceDBRecord = service_db as Record<string, unknown>;
-    const { user, password } = serviceDBRecord;
-    return typeof user === 'string' && typeof password === 'string';
-} 
+    console.log('Updated DB collection:', JSON.stringify(DB_COLLECTION, null, 2));
+}; 

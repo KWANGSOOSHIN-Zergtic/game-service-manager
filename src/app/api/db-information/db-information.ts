@@ -1,6 +1,16 @@
 import { DataSource } from 'typeorm';
 import { DB_QUERIES } from '../db-query/queries';
 import { updateDBCollection, DB_COLLECTION } from './db-collection';
+import { getDBEnv, validateEnv } from '@/lib/env';
+
+// 데이터베이스 연결 설정을 위한 인터페이스
+interface DataSourceConfig {
+    host: string;
+    port: number;
+    username: string;
+    password: string;
+    database: string;
+}
 
 // Service DB 설정 인터페이스
 export interface ServiceDBConfig {
@@ -45,7 +55,7 @@ interface DBListResult {
 }
 
 // 서버 사이드에서만 실행되는 DataSource 생성 함수
-const createDataSource = (config: any) => {
+const createDataSource = (config: DataSourceConfig) => {
     if (typeof window !== 'undefined') {
         throw new Error('This function can only be called on the server side');
     }
@@ -139,20 +149,35 @@ export const saveDBCollection = async (): Promise<CollectionResult> => {
 
     console.log('\n========== DB Collection 저장 시작 ==========');
     
+    // 환경 변수 검증
+    const isEnvValid = validateEnv();
+    if (!isEnvValid) {
+        console.log('환경 변수가 올바르게 설정되지 않았습니다. .env 파일을 확인하세요.');
+        return {
+            success: false,
+            message: '환경 변수 설정 오류',
+            error: '데이터베이스 연결 정보가 올바르게 설정되지 않았습니다.'
+        };
+    }
+    
+    // 환경 변수 로드
+    const dbEnv = getDBEnv();
+    console.log(`1. DB 연결 정보: { host: ${dbEnv.host}, port: ${dbEnv.port}, database: ${dbEnv.database} }`);
+    
     let AppDataSource;
     try {
         AppDataSource = createDataSource({
-            host: process.env.DEV_DB_HOST,
-            port: parseInt(process.env.DB_PORT || '5432'),
-            username: process.env.DB_USERNAME,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
+            host: dbEnv.host,
+            port: dbEnv.port,
+            username: dbEnv.username,
+            password: dbEnv.password,
+            database: dbEnv.database,
         });
 
         console.log('1. DB 연결 정보:', {
-            host: process.env.DEV_DB_HOST,
-            port: process.env.DB_PORT,
-            database: process.env.DB_NAME
+            host: dbEnv.host,
+            port: dbEnv.port,
+            database: dbEnv.database
         });
 
         await AppDataSource.initialize();

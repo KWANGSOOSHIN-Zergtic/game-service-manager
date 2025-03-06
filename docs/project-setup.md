@@ -480,3 +480,34 @@ import { AlertCircle } from 'lucide-react';
   isLoading={isLoading}
 />
 ```
+
+## 타입 시스템 개선 (2024-06-XX 추가)
+
+### 1. 공통 타입 정의 파일 추가
+프로젝트 전반에 걸쳐 일관된 타입 시스템을 구현하기 위해 공통 타입 정의 파일을 추가했습니다.
+
+```bash
+# 공통 타입 정의 파일 생성
+src/types/table.types.ts - 테이블 관련 공통 타입 정의
+```
+
+### 2. 타입 변환 유틸리티 추가
+다양한 데이터 소스에서 가져온 데이터를 UI 컴포넌트에서 사용할 수 있는 형식으로 변환하기 위한 유틸리티 함수를 추가했습니다.
+
+```bash
+# 타입 변환 유틸리티 함수 생성
+src/utils/type-converters.ts - 타입 변환 유틸리티 함수
+```
+
+### 3. 주요 타입 정의
+- `IBaseTableData`: 모든 테이블 데이터 타입의 기본 인터페이스
+- `IUITableData`: UI 컴포넌트용 테이블 데이터 인터페이스
+- `IDBTableData`: 데이터베이스 테이블 정보 인터페이스
+- `ITableColumn`: 테이블 컬럼 속성 인터페이스
+
+### 4. 타입 변환 유틸리티 함수
+- `convertToUIValue`: 알 수 없는 타입을 UI에서 사용 가능한 형식으로 변환
+- `convertToUITableData`: 기본 테이블 데이터를 UI 테이블 데이터로 변환
+- `convertToUITableDataArray`: 기본 테이블 데이터 배열을 UI 테이블 데이터 배열로 변환
+- `convertDBToUITableData`: DB 테이블 데이터를 UI 테이블 데이터로 변환
+- `convertDBToUITableDataArray`: DB 테이블 데이터 배열을 UI 테이블 데이터 배열로 변환

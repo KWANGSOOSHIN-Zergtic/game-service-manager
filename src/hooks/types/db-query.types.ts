@@ -10,12 +10,12 @@ export interface DBQueryBase {
   isLoading: boolean;
 }
 
-export interface DBQueryFunction<T = any> {
-  (dbName: string, ...args: any[]): Promise<boolean>;
+export interface DBQueryFunction<T = unknown> {
+  (dbName: string, ...args: unknown[]): Promise<boolean>;
   data?: T;
 }
 
 export interface UseDBQueryConfig {
-  onSuccess?: (data: any) => void;
+  onSuccess?: (data: unknown) => void;
   onError?: (error: Error) => void;
 } 

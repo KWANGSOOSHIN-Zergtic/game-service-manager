@@ -24,7 +24,7 @@ async function initServer() {
       logger.error('Server initialization failed')
     }
   } catch (error) {
-    logger.error('Error during server initialization:', error)
+    logger.error('Error during server initialization:', error instanceof Error ? error.message : String(error))
   }
 }
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ApiResponse, ApiDebugInfo, ApiRequestInfo, CopiedSection, ApiResponseStatus } from './types';
 import { useStorageState } from './hooks/useStorageState';
 
@@ -82,9 +82,9 @@ export const DebugProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [debugInfo]);
   
   // 디버그 섹션 토글 함수
-  const toggleVisibility = () => {
+  const toggleVisibility = useCallback(() => {
     setIsVisible(!isVisible);
-  };
+  }, [isVisible, setIsVisible]);
   
   // 디버그 모드 토글 함수
   const toggleDebugMode = () => {
@@ -114,7 +114,6 @@ export const DebugProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // 커스텀 이벤트 리스너 등록
   useEffect(() => {
     const handleToggleDebugSection = () => {
-      console.log('[DebugProvider] toggle-debug-section 이벤트 수신됨');
       toggleVisibility();
     };
     
@@ -122,7 +121,7 @@ export const DebugProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       window.removeEventListener('toggle-debug-section', handleToggleDebugSection);
     };
-  }, []);
+  }, [toggleVisibility]);
   
   const value = {
     isVisible,

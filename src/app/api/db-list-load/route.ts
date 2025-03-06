@@ -19,7 +19,7 @@ const getDBList = async () => {
             tables: result.rows 
         };
     } catch (error) {
-        logger.error('[DB List] DB 목록 조회 실패:', error);
+        logger.error('[DB List] DB 목록 조회 실패:', error instanceof Error ? error.message : String(error));
         let errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
         
         // 에러 메시지 상세화

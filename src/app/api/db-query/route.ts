@@ -83,7 +83,7 @@ export async function GET(request: Request) {
             tables: tables.rows
         });
     } catch (error) {
-        logger.error('[DB Query] 테이블 목록 조회 실패:', error);
+        logger.error('[DB Query] 테이블 목록 조회 실패:', error instanceof Error ? error.message : String(error));
         return NextResponse.json({
             success: false,
             error: error instanceof Error ? error.message : '알 수 없는 오류',

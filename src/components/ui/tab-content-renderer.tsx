@@ -35,31 +35,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Progress } from "@/components/ui/progress";
 import { CreateCurrencyModal } from "../control-panels/create-currency-modal";
 
 interface TabContentRendererProps {
@@ -796,60 +777,22 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       });
   };
 
-  // 디버그 섹션 토글 함수 - 로컬 스토리지에 상태 저장 기능 추가
+  // 디버그 섹션 토글 함수
   const toggleDebugSection = () => {
-    setShowDebugSection(prev => {
-      const newState = !prev;
+    setShowDebugSection(prevState => {
+      const newState = !prevState;
+      
+      // 로컬 스토리지에 상태 저장
       try {
-        // 로컬 스토리지에 상태 저장
-        localStorage.setItem('debugSectionVisible', newState.toString());
+        localStorage.setItem('debugSectionVisible', String(newState));
       } catch (e) {
         console.error('[TabContentRenderer] 로컬 스토리지 저장 중 오류:', e);
       }
+      
       return newState;
     });
   };
   
-  // toggle-debug-section 이벤트 리스너 설정
-  useEffect(() => {
-    const handleToggleDebugSection = () => {
-      console.log('[TabContentRenderer] toggle-debug-section 이벤트 수신됨');
-      toggleDebugSection();
-    };
-    
-    // 커스텀 이벤트 리스너 등록
-    window.addEventListener('toggle-debug-section', handleToggleDebugSection);
-    
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
-    return () => {
-      window.removeEventListener('toggle-debug-section', handleToggleDebugSection);
-    };
-  }, []);
-
-  // 화폐 데이터 새로고침 이벤트 핸들러 등록
-  useEffect(() => {
-    // 화폐 데이터 새로고침 이벤트 리스너 등록
-    const handleRefreshCurrencyData = () => {
-      console.log('[TabContentRenderer] refresh-currency-data 이벤트 감지, 데이터 새로고침 시작');
-      
-      // 현재 탭이 화폐 탭인지 확인
-      const contentProps = content.props || {};
-      const endpoint = contentProps.endpoint as string | undefined;
-      if (endpoint && endpoint.includes('/api/user/currency')) {
-        // 새로고침 실행
-        fetchData();
-      }
-    };
-
-    // 이벤트 리스너 등록
-    window.addEventListener('refresh-currency-data', handleRefreshCurrencyData);
-
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
-    return () => {
-      window.removeEventListener('refresh-currency-data', handleRefreshCurrencyData);
-    };
-  }, [content.props]);
-
   // 데이터 테이블 타입일 경우 API 호출
   const fetchData = useCallback(async () => {
     if (content.type !== 'dataTable' || !content.props?.endpoint) return;
@@ -866,10 +809,6 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         endpoint: content.props.endpoint
       });
       
-      // API 엔드포인트 경로 가져오기 (앞에 슬래시(/)가 있는지 확인)
-      let url = content.props.endpoint as string;
-      url = url.startsWith('/') ? url : `/${url}`;
-      
       // employerStorage에서 사용자 정보 가져오기
       const employerInfo = sessionStorage.getItem('employerStorage');
       
@@ -884,7 +823,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             console.info('[TabContentRenderer] 개발 환경에서 테스트 데이터를 사용합니다.');
             
             // API 엔드포인트 경로 가져오기
-            const endpoint = content.props.endpoint.startsWith('/') 
+            const endpoint = typeof content.props.endpoint === 'string' && content.props.endpoint.startsWith('/') 
               ? content.props.endpoint 
               : `/${content.props.endpoint}`;
             
@@ -945,62 +884,37 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         return;
       }
       
-      // employerStorage에서 사용자 정보 파싱
-      const parsedEmployerInfo = JSON.parse(employerInfo);
-      console.log('[TabContentRenderer] 아코디언 사용자 정보 파싱 완료:', parsedEmployerInfo);
-      
-      // 아코디언 테이블에서 선택된 UID 가져오기
-      const employerUid = parsedEmployerInfo.uid;
-      
-      // db_name 필드가 있으면 사용
-      let dbName = '';
-      if (parsedEmployerInfo.db_name) {
-        dbName = parsedEmployerInfo.db_name;
-        console.log('[TabContentRenderer] employerStorage에서 DB 이름 가져옴:', dbName);
-      } else {
-        // 기존 popupUserInfo에서 DB 이름 가져오기 (이전 버전 호환성 유지)
-        const storedInfo = sessionStorage.getItem('popupUserInfo');
+      // ... 나머지 코드 ...
+      // employerInfo가 존재하는 경우 처리
+      try {
+        // 사용자 정보 파싱
+        const employerData = JSON.parse(employerInfo);
+        const employerUid = employerData.uid;
+        const dbName = employerData.db_name;
         
-        if (storedInfo) {
-          const parsedInfo = JSON.parse(storedInfo);
-          dbName = parsedInfo.dbName;
-          console.log('[TabContentRenderer] popupUserInfo에서 DB 이름 가져옴:', dbName);
-        } else {
-          // 저장된 DB 이름 가져오기 (없으면 기본값 사용)
-          dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
-          console.log('[TabContentRenderer] 저장된 DB 이름 사용:', dbName);
+        if (!employerUid || !dbName) {
+          setError('사용자 정보가 유효하지 않습니다.');
+          setIsLoading(false);
+          return;
         }
-      }
-      
-      // DB 이름 저장 (다른 컴포넌트에서 재사용할 수 있도록)
-      if (dbName) {
-        console.log('[TabContentRenderer] DB 이름 저장:', dbName);
-        sessionStorage.setItem('lastUsedDbName', dbName);
-      }
-      
-      if (!employerUid || !dbName) {
-        console.error('[TabContentRenderer] 필수 정보 누락:', { employerUid, dbName });
-        setError('사용자 UID 또는 데이터베이스 정보가 누락되었습니다.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // endpoint에 따라 다른 파라미터 설정
-      let finalUrl = '';
-      
-      if (url.includes('/api/user/currency')) {
-        // CURRENCY 탭을 위한 API 호출
-        finalUrl = `${url}?employerUid=${employerUid}&dbName=${dbName}`;
-        console.log('[TabContentRenderer] CURRENCY API 호출 URL:', finalUrl);
-        console.log('[TabContentRenderer] CURRENCY API 호출 파라미터:', {
+        
+        console.log('[TabContentRenderer] 사용자 정보 로드 성공:', {
           employerUid,
           dbName,
-          parsedEmployerInfo
+          endpoint: content.props.endpoint
         });
         
-        // 요청 정보 미리 설정
+        // API 엔드포인트 경로 가져오기
+        const endpoint = typeof content.props.endpoint === 'string' && content.props.endpoint.startsWith('/') 
+          ? content.props.endpoint 
+          : `/${content.props.endpoint}`;
+        
+        // 상대 경로로 API 호출 URL 생성
+        const apiUrl = `${endpoint}?employerUid=${employerUid}&dbName=${dbName}`;
+        
+        // 요청 정보 설정
         setRequestInfo({
-          url: finalUrl,
+          url: apiUrl,
           params: {
             employerUid,
             dbName
@@ -1009,256 +923,110 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           timestamp: new Date()
         });
         
-        // API 디버그 정보도 미리 설정
+        // API 디버그 정보 설정
         setApiDebugInfo({
-          requestUrl: finalUrl,
+          requestUrl: apiUrl,
           requestMethod: 'GET',
           requestHeaders: { 'Content-Type': 'application/json' },
           timestamp: new Date().toISOString()
         });
-      } else {
-        // 다른 탭들을 위한 기본 파라미터 설정
-        finalUrl = `${url}?userId=${employerUid}&dbName=${dbName}`;
-        console.log('[TabContentRenderer] 일반 API 호출 URL:', finalUrl);
-        console.log('[TabContentRenderer] 일반 API 호출 파라미터:', {
-          userId: employerUid,
-          dbName
-        });
         
-        // 요청 정보 미리 설정
-        setRequestInfo({
-          url: finalUrl,
-          params: {
-            userId: employerUid,
-            dbName
-          },
-          method: 'GET',
-          timestamp: new Date()
-        });
+        console.log('[TabContentRenderer] API 호출 시작:', apiUrl);
         
-        // API 디버그 정보도 미리 설정
-        setApiDebugInfo({
-          requestUrl: finalUrl,
-          requestMethod: 'GET',
-          requestHeaders: { 'Content-Type': 'application/json' },
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      console.log('[TabContentRenderer] API 요청 시작:', finalUrl);
-      const response = await fetch(finalUrl);
-      
-      // 응답 상태 확인 및 로깅
-      try {
-        console.log('[TabContentRenderer] API 응답 상태:', response.status, '응답 URL:', response.url);
-      } catch (e) {
-        console.error('[TabContentRenderer] API 응답 상태 로깅 중 오류:', e);
-      }
-      
-      if (!response.ok) {
-        const errorText = await response.text();
+        // API 요청
+        const response = await fetch(apiUrl);
+        console.log('[TabContentRenderer] API 응답 상태:', response.status);
         
-        try {
-          console.error('[TabContentRenderer] API 오류 응답:', {
-            status: response.status,
-            url: finalUrl,
-            error: errorText || '내용 없음'
-          });
-        } catch (e) {
-          console.error('[TabContentRenderer] API 오류 응답 로깅 중 오류:', e);
+        if (!response.ok) {
+          throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
         }
         
-        // HTTP 상태 코드별 특별 메시지
-        let statusMessage = '';
-        switch (response.status) {
-          case 404:
-            statusMessage = '요청한 API 경로를 찾을 수 없습니다.';
-            break;
-          case 400:
-            statusMessage = '잘못된 요청 형식입니다.';
-            break;
-          case 401:
-            statusMessage = '인증이 필요합니다.';
-            break;
-          case 403:
-            statusMessage = '접근 권한이 없습니다.';
-            break;
-          case 500:
-            statusMessage = '서버 내부 오류가 발생했습니다.';
-            break;
-          default:
-            statusMessage = '오류가 발생했습니다.';
-        }
+        const result = await response.json();
+        console.log('[TabContentRenderer] API 응답 데이터:', result);
         
-        // 오류 메시지 표시를 위한 준비
-        const displayErrorText = errorText && errorText.length > 200 
-          ? errorText.substring(0, 200) + '...' 
-          : errorText || '알 수 없는 오류';
+        // 디버그 정보 저장
+        setDebugInfo(result);
         
-        // HTML 응답 감지
-        const isHtmlResponse = displayErrorText.trim().toLowerCase().startsWith('<!doctype html>') || 
-                              displayErrorText.trim().toLowerCase().startsWith('<html');
+        // currenciesKey 결정 (API 응답 형식에 따라)
+        const currenciesKey = result.currencies ? 'currencies' : 'data';
         
-        const finalErrorText = isHtmlResponse 
-          ? '(HTML 응답이 반환되었습니다. 서버 구성을 확인하세요.)' 
-          : displayErrorText;
-        
-        setError(`${statusMessage} (${response.status}) - ${finalErrorText}`);
-        
-        // 디버그 정보 설정 (실패한 요청에 대해서도 디버그 정보를 업데이트)
-        if (!apiDebugInfo) {
-          setApiDebugInfo({
-            requestUrl: finalUrl,
-            requestMethod: 'GET',
-            requestHeaders: { 'Content-Type': 'application/json' },
-            timestamp: new Date().toISOString(),
-            requestBody: errorText || undefined
-          });
-        }
-        
-        setIsLoading(false);
-        return;
-      }
-      
-      const result = await response.json();
-      
-      // 응답 데이터 로깅
-      try {
-        console.log('[TabContentRenderer] API 응답 데이터:', {
-          success: result.success,
-          dataLength: result.currencies?.length || result.data?.length || 0,
-          responseType: url.includes('/currency') ? 'currency' : 'other'
-        });
-      } catch (e) {
-        console.error('[TabContentRenderer] API 응답 데이터 로깅 중 오류:', e);
-      }
-      
-      // Currency 탭인지 확인하고 디버그 정보 업데이트
-      if (url.includes('/api/user/currency')) {
-        // 디버그 정보 업데이트 (항상 최신 정보로 업데이트)
-        setApiDebugInfo({
-          requestUrl: finalUrl,
-          requestMethod: 'GET',
-          requestHeaders: { 'Content-Type': 'application/json' },
-          timestamp: new Date().toISOString(),
-          requestBody: JSON.stringify(result, null, 2)
-        });
-      }
-      
-      setDebugInfo(result);
-      
-      if (result.success) {
-        // API 응답 형식에 따라 데이터 설정
-        if (finalUrl.includes('/api/user/currency') && result.currencies) {
-          console.log('[TabContentRenderer] 화폐 데이터 처리:', {
-            count: result.currencies.length,
-            sample: result.currencies[0] || null
-          });
-          
-          // 데이터에 ID 필드가 없는 경우 추가
-          const processedData = result.currencies.map((item: Record<string, unknown>, index: number) => ({
+        // 데이터 처리
+        if (result.success && result[currenciesKey]) {
+          const processedData = result[currenciesKey].map((item: Record<string, unknown>, index: number) => ({
             id: (item.id as number) || index + 1,
             ...item
           }));
           
-          setData(processedData);
-          console.log('[TabContentRenderer] 처리된 화폐 데이터:', {
-            count: processedData.length, 
-            sample: processedData[0] || null
+          console.log('[TabContentRenderer] 처리된 데이터:', {
+            count: processedData.length,
+            firstItem: processedData[0] || null
           });
-        } else if (result.data) {
-          console.log('[TabContentRenderer] 일반 데이터 처리:', {
-            count: result.data.length,
-            sample: result.data[0] || null
-          });
-          
-          const isDataArray = Array.isArray(result.data);
-          const processedData = isDataArray ? result.data.map((item: Record<string, unknown>, index: number) => ({
-            id: (item.id as number) || index + 1,
-            ...item
-          })) : [];
           
           setData(processedData);
         } else {
-          console.warn('[TabContentRenderer] 데이터가 없음:', result);
+          console.warn('[TabContentRenderer] 데이터가 없거나 응답이 성공이 아님:', {
+            success: result.success,
+            hasData: !!result[currenciesKey],
+            message: result.message || '데이터가 없습니다.'
+          });
+          
           setData([]);
-        }
-      } else {
-        // 전체 결과 객체를 로깅하여 디버깅 용이하게 함
-        try {
-          console.error('[TabContentRenderer] API 응답 실패:', result);
-        } catch (e) {
-          console.error('[TabContentRenderer] API 응답 실패 로깅 중 오류:', e);
-        }
-        
-        // 오류 메시지 생성 로직 개선
-        let errorMessage = '데이터를 불러오는데 실패했습니다.';
-        
-        if (result.error && typeof result.error === 'string' && result.error.trim() !== '') {
-          errorMessage = result.error;
-        } else if (result.message && typeof result.message === 'string' && result.message.trim() !== '') {
-          errorMessage = result.message;
-        } else if (result.error && typeof result.error === 'object') {
-          // 오류 객체가 비어있는지 확인
-          const errorKeys = Object.keys(result.error || {});
-          if (errorKeys.length > 0) {
-            try {
-              errorMessage = `오류: ${JSON.stringify(result.error)}`;
-            } catch (e) {
-              errorMessage = '알 수 없는 오류 형식';
-              console.error('[TabContentRenderer] 오류 객체 직렬화 실패:', e);
-            }
-          } else {
-            // 빈 오류 객체({}) 처리
-            errorMessage = '서버에서 자세한 오류 정보가 제공되지 않았습니다.';
-            console.warn('[TabContentRenderer] 빈 오류 객체 발견:', { url: finalUrl });
+          
+          if (!result.success) {
+            setError(result.error || result.message || '데이터를 가져오는데 실패했습니다.');
           }
-        } else {
-          // 오류 객체가 없는 경우 URL 정보 포함
-          errorMessage = `데이터를 불러오는데 실패했습니다. (URL: ${finalUrl})`;
-          console.warn('[TabContentRenderer] 오류 객체 없음:', { url: finalUrl });
         }
-        
-        setError(errorMessage);
+      } catch (parseError) {
+        console.error('[TabContentRenderer] 사용자 정보 처리 중 오류:', parseError);
+        setError('사용자 정보를 처리하는 중 오류가 발생했습니다.');
       }
-    } catch (err) {
-      console.error('[TabContentRenderer] API 호출 오류:', err);
-      setError('데이터를 불러오는 중 오류가 발생했습니다.');
-      // 오류 발생 시에도 디버그 정보 설정
-      setDebugInfo({
-        success: false,
-        error: err instanceof Error ? err.message : '알 수 없는 오류',
-        message: '데이터를 불러오는 중 오류가 발생했습니다.'
-      });
-      
-      // API 디버그 정보도 설정
-      if (!apiDebugInfo) {
-        setApiDebugInfo({
-          requestUrl: content.props?.endpoint as string || '',
-          requestMethod: 'GET',
-          requestHeaders: { 'Content-Type': 'application/json' },
-          timestamp: new Date().toISOString()
-        });
-      }
-      
-      // 요청 정보가 없을 경우 기본 정보 설정
-      if (!requestInfo) {
-        const employerUid = sessionStorage.getItem('employerStorage') 
-          ? JSON.parse(sessionStorage.getItem('employerStorage') || '{}').uid 
-          : null;
-        const dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
-        
-        setRequestInfo({
-          url: content.props?.endpoint as string || '',
-          params: { employerUid, dbName },
-          method: 'GET',
-          timestamp: new Date()
-        });
-      }
+    } catch (error) {
+      console.error('[TabContentRenderer] 데이터 요청 중 오류 발생:', error);
+      setError('데이터를 가져오는 중 오류가 발생했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [content.props, content.type]);
+  }, [content.type, content.props]);
+
+  // toggle-debug-section 이벤트 리스너 설정
+  useEffect(() => {
+    const handleToggleDebugSection = () => {
+      console.log('[TabContentRenderer] toggle-debug-section 이벤트 수신됨');
+      toggleDebugSection();
+    };
+    
+    // 커스텀 이벤트 리스너 등록
+    window.addEventListener('toggle-debug-section', handleToggleDebugSection);
+    
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('toggle-debug-section', handleToggleDebugSection);
+    };
+  }, []);
+
+  // 화폐 데이터 새로고침 이벤트 핸들러 등록
+  useEffect(() => {
+    // 화폐 데이터 새로고침 이벤트 리스너 등록
+    const handleRefreshCurrencyData = () => {
+      console.log('[TabContentRenderer] refresh-currency-data 이벤트 감지, 데이터 새로고침 시작');
+      
+      // 현재 탭이 화폐 탭인지 확인
+      const contentProps = content.props || {};
+      const endpoint = contentProps.endpoint as string | undefined;
+      if (endpoint && endpoint.includes('/api/user/currency')) {
+        // 새로고침 실행
+        fetchData();
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('refresh-currency-data', handleRefreshCurrencyData);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('refresh-currency-data', handleRefreshCurrencyData);
+    };
+  }, [content.props, fetchData]);
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -2092,7 +1860,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         }
         
         // ID 필드를 제외한 업데이트 데이터 생성
-        const { id, ...updateData } = item;
+        const { id } = item;
         
         try {
           const response = await fetch(`/api/user/currency`, {

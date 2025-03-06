@@ -1,13 +1,8 @@
 import { useState } from 'react';
+import { IDBTableData } from '@/types/table.types';
 
-export interface TableData {
-  id: number;
-  name: string;
-  type: string;
-  size: string;
-  rows: number;
-  [key: string]: any;
-}
+// 이전 타입과의 호환성을 위한 타입 별칭
+export type TableData = IDBTableData;
 
 interface DBTablesResult {
   status: 'success' | 'error' | null;
@@ -39,7 +34,7 @@ export const useDBTables = (): UseDBTablesReturn => {
       const result = await response.json();
 
       if (result.success) {
-        const formattedTableData: TableData[] = result.tables.map((table: any, index: number) => ({
+        const formattedTableData: TableData[] = result.tables.map((table: Record<string, unknown>, index: number) => ({
           id: index + 1,
           ...table
         }));

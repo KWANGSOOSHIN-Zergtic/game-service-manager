@@ -37,7 +37,7 @@ export const databaseInitializer: InitializerFunction = {
             };
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Unknown database initialization error';
-            logger.error('[Server Startup] Database initialization error:', error);
+            logger.error('[Server Startup] Database initialization error:', error instanceof Error ? error.message : String(error));
             console.error('\n=== 서버 시작: DB 초기화 중 오류 발생 ===');
             console.error('오류 시간:', new Date().toLocaleString());
             console.error('오류 내용:', errorMsg);

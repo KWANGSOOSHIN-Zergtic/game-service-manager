@@ -3,28 +3,23 @@
 // Inspired by react-hot-toast library
 import * as React from "react"
 
-import type {
+import {
   ToastActionElement,
-  ToastProps,
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
 
-type ToasterToast = ToastProps & {
+// 내부에서 사용할 ToasterToast 타입 정의
+type ToasterToast = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
   variant?: "default" | "destructive" | "success" | "warning" | "info" | "purple"
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
 }
-
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
 
 let count = 0
 
@@ -33,24 +28,22 @@ function genId() {
   return count.toString()
 }
 
-type ActionType = typeof actionTypes
-
 type Action =
   | {
-      type: ActionType["ADD_TOAST"]
+      type: "ADD_TOAST"
       toast: ToasterToast
     }
   | {
-      type: ActionType["UPDATE_TOAST"]
+      type: "UPDATE_TOAST"
       toast: Partial<ToasterToast>
     }
   | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
+      type: "DISMISS_TOAST"
+      toastId?: string
     }
   | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
+      type: "REMOVE_TOAST"
+      toastId?: string
     }
 
 interface State {
@@ -141,47 +134,34 @@ function dispatch(action: Action) {
   })
 }
 
-type Toast = Omit<ToasterToast, "id">
+function toast({ ...props }: ToastProps) {
+  const id = genId()
 
-type ToastActionElement = React.ReactElement<typeof ToastActionProps>
+  const dismiss = (toastId: string) => dispatch({ type: "DISMISS_TOAST", toastId })
 
+  const toast: ToasterToast = {
+    id,
+    open: true,
+    onOpenChange: (open: boolean) => {
+      if (!open) dismiss(id)
+    },
+    ...props,
+  }
+
+  dispatch({
+    type: "ADD_TOAST",
+    toast,
+  })
+
+  return toast
+}
+
+// 외부에서 사용할 ToastProps 타입 정의
 export type ToastProps = {
-  id: string
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
   variant?: "default" | "destructive" | "success" | "warning" | "info" | "purple"
-}
-
-type ToastVariant = NonNullable<ToastProps["variant"]>
-
-function toast({ ...props }: Toast) {
-  const id = genId()
-
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
-    },
-  })
-
-  return {
-    id: id,
-    dismiss,
-    update,
-  }
 }
 
 function useToast() {
@@ -201,11 +181,11 @@ function useToast() {
     ...state,
     toast,
     dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-    success: (props: Toast) => toast({ ...props, variant: "success" }),
-    error: (props: Toast) => toast({ ...props, variant: "destructive" }),
-    warning: (props: Toast) => toast({ ...props, variant: "warning" }),
-    info: (props: Toast) => toast({ ...props, variant: "info" }),
-    purple: (props: Toast) => toast({ ...props, variant: "purple" }),
+    success: (props: ToastProps) => toast({ ...props, variant: "success" }),
+    error: (props: ToastProps) => toast({ ...props, variant: "destructive" }),
+    warning: (props: ToastProps) => toast({ ...props, variant: "warning" }),
+    info: (props: ToastProps) => toast({ ...props, variant: "info" }),
+    purple: (props: ToastProps) => toast({ ...props, variant: "purple" }),
   }
 }
 

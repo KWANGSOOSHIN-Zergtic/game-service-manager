@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const ReactJson = dynamic(() => import('react-json-view'), { ssr: false });
 
 interface JsonViewerProps {
-  data: any;
+  data: Record<string, unknown> | unknown[] | string | null | undefined;
   className?: string;
   collapsed?: boolean;
   displayDataTypes?: boolean;
@@ -35,11 +35,11 @@ export function JsonViewer({
   }
 
   // 문자열로 들어온 경우 파싱 시도
-  let jsonData = data;
+  let jsonData: Record<string, unknown> | unknown[] | string | null | undefined = data;
   if (typeof data === 'string') {
     try {
       jsonData = JSON.parse(data);
-    } catch (e) {
+    } catch {
       return (
         <div className={`text-sm p-2 text-red-500 ${className}`}>
           유효하지 않은 JSON 형식입니다: {data}
@@ -48,10 +48,19 @@ export function JsonViewer({
     }
   }
 
+  // 객체가 아닌 경우 처리
+  if (typeof jsonData !== 'object' || jsonData === null) {
+    return (
+      <div className={`text-sm p-2 ${className}`}>
+        객체가 아닌 데이터입니다: {String(jsonData)}
+      </div>
+    );
+  }
+
   return (
     <div className={`json-viewer p-2 text-sm ${className}`}>
       <ReactJson
-        src={jsonData}
+        src={jsonData as Record<string, unknown>}
         theme="monokai"
         collapsed={collapsed}
         displayDataTypes={displayDataTypes}
