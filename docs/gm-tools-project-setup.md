@@ -459,7 +459,7 @@ npm test -- --watch
 - **설치 방법**: `src/components/ui/confirm-dialog.tsx` 파일을 추가하여 사용
 - **의존성**: ShadCN Alert Dialog (`@radix-ui/react-alert-dialog`)
 - **목적**: 다양한 작업에 대한 확인 대화상자를 일관되고 재사용 가능한 방식으로 제공
-- **문서**: [ConfirmDialog 컴포넌트 사용 방법](./components/confirm-dialog.md)
+- **문서**: [ConfirmDialog 컴포넌트 사용 방법](./components/gm-tools-confirm-dialog.md)
 
 **사용 예시**:
 ```tsx
@@ -511,3 +511,118 @@ src/utils/type-converters.ts - 타입 변환 유틸리티 함수
 - `convertToUITableDataArray`: 기본 테이블 데이터 배열을 UI 테이블 데이터 배열로 변환
 - `convertDBToUITableData`: DB 테이블 데이터를 UI 테이블 데이터로 변환
 - `convertDBToUITableDataArray`: DB 테이블 데이터 배열을 UI 테이블 데이터 배열로 변환
+
+## 데이터 테이블 조회 기능
+
+### 개요
+게임 서비스 관리 시스템에서 데이터베이스 테이블을 조회하고 관리하기 위한 기능입니다. 특히 `excel_` 접두어를 가진 테이블을 효율적으로 관리하기 위한 기능을 제공합니다.
+
+### 주요 기능
+- 다중 DB 연결 지원
+- 테이블 목록 조회 및 필터링
+- Excel 접두어 테이블 전용 필터
+- 테이블 정보 (행 수, 크기, 마지막 업데이트 시간) 표시
+
+### 설치된 패키지
+- `@types/pg`: PostgreSQL 데이터베이스 연결을 위한 타입 정의
+- `pg`: PostgreSQL 클라이언트 라이브러리
+
+### API 엔드포인트
+- `GET /api/data-tables`: 테이블 목록 조회
+  - 파라미터:
+    - `db`: 데이터베이스 이름
+    - `filter`: 테이블 이름 필터 (선택 사항)
+  
+- `POST /api/data-tables`: 특정 테이블의 데이터 조회
+  - 요청 본문:
+    - `dbName`: 데이터베이스 이름
+    - `tableName`: 테이블 이름
+    - `limit`: 조회할 행 수 (기본값: 100)
+    - `offset`: 시작 위치 (기본값: 0)
+    - `where`: WHERE 절 (선택 사항)
+    - `orderBy`: ORDER BY 절 (선택 사항)
+
+### 사용 방법
+1. Service 페이지에서 DB 목록에서 데이터베이스 선택
+2. 테이블 검색 필드에 검색어 입력 또는 "Excel 접두어 테이블만 표시" 옵션 활성화
+3. "테이블 검색" 버튼 클릭하여 테이블 목록 조회
+4. 테이블 목록에서 특정 테이블 클릭하여 상세 정보 확인
+
+### 향후 개발 계획
+- 테이블 데이터 직접 조회 및 편집 기능
+- SHM(Shared Memory) 기반 데이터 캐싱 구현
+- Redis Pub/Sub을 활용한 실시간 데이터 동기화
+- DynamicTable<T> 타입을 활용한 타입 안정성 보장
+
+## 테이블 검색 기능 목 데이터
+
+테이블 검색 기능을 개발하고 테스트하기 위해 목 데이터가 구현되었습니다.
+
+### 목 데이터 파일 구조
+
+```
+src/test/test-data/db-tables-mock-data.ts
+```
+
+이 파일에는 다음과 같은 목 데이터와 유틸리티 함수가 포함되어 있습니다:
+
+1. **데이터베이스 목록 데이터**: `mockDatabases` - 시스템에서 사용 가능한 데이터베이스 목록
+2. **테이블 목록 데이터**: `mockTables` - 각 데이터베이스에 포함된 테이블 목록
+3. **테이블 컬럼 정보**: `mockColumns` - 테이블의 컬럼 정보 (데이터 타입, NULL 허용 여부 등)
+4. **테이블 데이터 샘플**: `mockTableData` - 테이블 내용 샘플 데이터
+
+### 유틸리티 함수
+
+- `getGroupedTables(tables)`: 테이블 목록을 접두사(prefix)에 따라 그룹화
+- `searchTables(dbName, filter, matchType)`: 데이터베이스 내에서 특정 조건에 맞는 테이블 검색
+- `getTableColumns(tableName)`: 지정된 테이블의 컬럼 정보 조회
+- `getTableData(tableName)`: 지정된 테이블의 데이터 샘플 조회
+
+### 목 데이터 테스트
+
+`src/test/table-search-mock.test.ts` 파일에는 목 데이터의 구조와 유틸리티 함수를 테스트하는 단위 테스트가 포함되어 있습니다.
+
+테스트 실행 방법:
+
+```bash
+npm test -- table-search-mock.test.ts
+```
+
+### 목 데이터 사용 방법
+
+실제 API 통신이 아직 구현되지 않았거나 개발/테스트 환경에서 사용할 수 있습니다:
+
+```typescript
+import { 
+  mockDatabases, 
+  searchTables, 
+  getTableColumns, 
+  getTableData 
+} from '@/test/test-data/db-tables-mock-data';
+
+// 데이터베이스 목록 가져오기
+const databases = mockDatabases;
+
+// 특정 DB의 Excel 접두사 테이블 검색하기
+const excelTables = searchTables('football_service', 'excel_', 'prefix');
+
+// 테이블 컬럼 정보 조회하기
+const columns = getTableColumns('excel_player_info');
+
+// 테이블 데이터 조회하기
+const rows = getTableData('excel_player_info');
+```
+
+### 타입 정의
+
+목 데이터와 함께 사용할 타입 정의가 `src/types/service.types.ts` 파일에 정의되어 있습니다:
+
+```typescript
+// 주요 타입 정의
+interface TableInfo { ... }  // 테이블 정보
+interface Column { ... }     // 컬럼 정보
+interface TableRow { ... }   // 테이블 행 (동적 속성)
+interface GroupedTables { ... } // 그룹화된 테이블
+```
+
+이러한 목 데이터와 유틸리티 함수를 사용하면 API가 완전히 구현되기 전에도 UI 개발과 테스트를 쉽게 진행할 수 있습니다.
