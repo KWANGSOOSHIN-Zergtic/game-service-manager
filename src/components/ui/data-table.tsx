@@ -451,6 +451,241 @@ export function DataTable({
     }
   };
 
+  // DB 출처 정보 확인 함수 - 컴포넌트 외부로 분리하여 재사용성 향상
+  const getDataSourceInfo = useCallback(() => {
+    // 카드 이름을 가져오는 함수
+    const getCardName = () => {
+      try {
+        const employerInfo = sessionStorage.getItem('employerStorage');
+        if (employerInfo) {
+          const parsedEmployerInfo = JSON.parse(employerInfo);
+          // name 또는 employer_name 필드에서 카드 이름 가져오기
+          return parsedEmployerInfo.name || 
+                parsedEmployerInfo.employer_name || 
+                parsedEmployerInfo.user_name || 
+                '카드';
+        }
+      } catch (error) {
+        console.error('[DataTable] 카드 이름 가져오기 실패:', error);
+      }
+      return '카드';
+    };
+
+    // DB List 테이블인 경우 특별 처리
+    if (dbName === 'DB List' || tableName === 'DB List') {
+      // dbInitInfo는 로그인 시 sessionStorage에 저장됨
+      try {
+        // 디버깅 로그 추가
+        console.log('[DataTable] DB List 출처 확인 중');
+        
+        // 1. dbInitInfo의 존재 여부 확인
+        const dbInitInfoStr = sessionStorage.getItem('dbInitInfo');
+        if (dbInitInfoStr) {
+          console.log('[DataTable] dbInitInfo가 sessionStorage에 존재함');
+          return `sessionStorage: DB List`;
+        }
+        
+        // 2. dbListSource 키 확인 (명시적으로 출처를 저장했을 경우)
+        const dbListSource = sessionStorage.getItem('dbListSource');
+        if (dbListSource) {
+          if (dbListSource.toLowerCase().includes('localstorage')) {
+            return `Local Storage: DB List`;
+          } else if (dbListSource.toLowerCase().includes('sessionstorage')) {
+            return `sessionStorage: DB List`;
+          } else {
+            return dbListSource; // 직접 저장된 출처 값 사용
+          }
+        }
+        
+        // 3. DB List 데이터가 어디서 왔는지 추가 확인
+        // 데이터 패턴 확인 (특정 필드가 있는지 등)
+        if (data && data.length > 0) {
+          // DB List 데이터 로그
+          console.log('[DataTable] DB List 데이터 샘플:', data[0]);
+          
+          // 첫 번째 데이터 항목에 source 필드가 있는지 확인
+          if (data[0].source) {
+            const source = String(data[0].source).toLowerCase();
+            if (source.includes('localstorage')) {
+              return `Local Storage: DB List`;
+            } else if (source.includes('sessionstorage')) {
+              return `sessionStorage: DB List`;
+            }
+          }
+        }
+        
+        // 기본적으로 DB List는 sessionStorage에 저장된 dbInitInfo에서 가져옴
+        return `sessionStorage: DB List`;
+      } catch (error) {
+        console.error('[DataTable] DB List 출처 확인 중 오류:', error);
+        return 'DB List';
+      }
+    }
+
+    // 현재 테이블에서 사용하는 데이터가 어디서 왔는지 확인
+    // 1. dataTable prop의 tableName에 'localStorage', 'sessionStorage' 등의 키워드가 있는지 확인
+    const isFromLocalStorageKeyword = tableName.toLowerCase().includes('localstorage') || 
+                                     tableName.toLowerCase().includes('local storage');
+    
+    const isFromSessionStorageKeyword = tableName.toLowerCase().includes('sessionstorage') ||
+                                       tableName.toLowerCase().includes('session storage');
+
+    // 2. 데이터의 내용 자체로 판단 (data 객체 내에 출처 정보가 있는지)
+    let hasLocalStorageDataHint = false;
+    let hasSessionStorageDataHint = false;
+
+    if (data && data.length > 0) {
+      // 데이터 샘플을 최대 5개까지만 확인
+      const sampleSize = Math.min(5, data.length);
+      for (let i = 0; i < sampleSize; i++) {
+        const item = data[i];
+        
+        // 데이터 항목에 출처 정보가 있는지 확인
+        if (item.source && (
+            item.source.toString().toLowerCase().includes('localstorage') ||
+            item.source.toString().toLowerCase().includes('local storage')
+        )) {
+          hasLocalStorageDataHint = true;
+          break;
+        }
+        
+        if (item.source && (
+            item.source.toString().toLowerCase().includes('sessionstorage') ||
+            item.source.toString().toLowerCase().includes('session storage')
+        )) {
+          hasSessionStorageDataHint = true;
+          break;
+        }
+        
+        // table_name 필드에 출처 정보가 있는지 확인 (DB List의 경우)
+        if (item.table_name && (
+            item.table_name.toString().toLowerCase().includes('localstorage') ||
+            item.table_name.toString().toLowerCase().includes('local storage')
+        )) {
+          hasLocalStorageDataHint = true;
+          break;
+        }
+        
+        if (item.table_name && (
+            item.table_name.toString().toLowerCase().includes('sessionstorage') ||
+            item.table_name.toString().toLowerCase().includes('session storage')
+        )) {
+          hasSessionStorageDataHint = true;
+          break;
+        }
+      }
+    }
+
+    // 3. sessionStorage에서 출처 정보 확인
+    let isLocalStorageFromStorage = false;
+    let isSessionStorageFromStorage = false;
+    
+    try {
+      // 여러 키 확인
+      const storageKeys = ['dataSource', 'dbSource', 'dataOrigin', 'tableSource'];
+      
+      for (const key of storageKeys) {
+        const source = sessionStorage.getItem(key);
+        if (source) {
+          const sourceLower = source.toLowerCase();
+          if (sourceLower.includes('localstorage') || sourceLower.includes('local storage')) {
+            isLocalStorageFromStorage = true;
+            break;
+          }
+          if (sourceLower.includes('sessionstorage') || sourceLower.includes('session storage')) {
+            isSessionStorageFromStorage = true;
+            break;
+          }
+        }
+      }
+      
+      // DB 이름이 localStorage/sessionStorage인 경우
+      const employerInfo = sessionStorage.getItem('employerStorage');
+      if (employerInfo) {
+        const parsedEmployerInfo = JSON.parse(employerInfo);
+        if (parsedEmployerInfo.db_name) {
+          const dbNameLower = parsedEmployerInfo.db_name.toLowerCase();
+          if (dbNameLower === 'localstorage' || dbNameLower === 'local storage') {
+            isLocalStorageFromStorage = true;
+          } else if (dbNameLower === 'sessionstorage' || dbNameLower === 'session storage') {
+            isSessionStorageFromStorage = true;
+          }
+        }
+      }
+      
+      // lastUsedDbName 확인
+      const lastUsedDbName = sessionStorage.getItem('lastUsedDbName');
+      if (lastUsedDbName) {
+        const lastUsedDbNameLower = lastUsedDbName.toLowerCase();
+        if (lastUsedDbNameLower === 'localstorage' || lastUsedDbNameLower === 'local storage') {
+          isLocalStorageFromStorage = true;
+        } else if (lastUsedDbNameLower === 'sessionstorage' || lastUsedDbNameLower === 'session storage') {
+          isSessionStorageFromStorage = true;
+        }
+      }
+      
+      // DB List 관련 특수 키 확인
+      const dbListSource = sessionStorage.getItem('dbListSource');
+      if (dbListSource) {
+        const dbListSourceLower = dbListSource.toLowerCase();
+        if (dbListSourceLower === 'localstorage' || dbListSourceLower === 'local storage') {
+          isLocalStorageFromStorage = true;
+        } else if (dbListSourceLower === 'sessionstorage' || dbListSourceLower === 'session storage') {
+          isSessionStorageFromStorage = true;
+        }
+      }
+    } catch (error) {
+      console.error('[DataTable] 스토리지 확인 중 오류:', error);
+    }
+
+    // 4. props의 dbName 확인
+    const isLocalStorageFromProps = dbName && 
+                                   (dbName.toLowerCase() === 'localstorage' || 
+                                    dbName.toLowerCase() === 'local storage');
+    
+    const isSessionStorageFromProps = dbName && 
+                                     (dbName.toLowerCase() === 'sessionstorage' || 
+                                      dbName.toLowerCase() === 'session storage');
+
+    // 모든 출처를 종합적으로 판단
+    if (isFromLocalStorageKeyword || hasLocalStorageDataHint || isLocalStorageFromStorage || isLocalStorageFromProps) {
+      const cardName = getCardName();
+      return `Local Storage: ${cardName}`;
+    }
+    
+    if (isFromSessionStorageKeyword || hasSessionStorageDataHint || isSessionStorageFromStorage || isSessionStorageFromProps) {
+      const cardName = getCardName();
+      return `sessionStorage: ${cardName}`;
+    }
+    
+    // 5. 그 외의 경우 dbName을 우선적으로 사용
+    if (dbName) {
+      return dbName;
+    }
+    
+    // 6. employerStorage에서 db_name 가져오기
+    try {
+      const employerInfo = sessionStorage.getItem('employerStorage');
+      if (employerInfo) {
+        const parsedEmployerInfo = JSON.parse(employerInfo);
+        if (parsedEmployerInfo.db_name) {
+          return parsedEmployerInfo.db_name;
+        }
+      }
+    } catch (error) {
+      console.error('[DataTable] employerStorage 파싱 실패:', error);
+    }
+    
+    // 7. lastUsedDbName 사용
+    const lastUsedDbName = sessionStorage.getItem('lastUsedDbName');
+    if (lastUsedDbName) {
+      return lastUsedDbName;
+    }
+    
+    // 8. 기본값
+    return 'Database';
+  }, [tableName, data, dbName]);
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -520,7 +755,7 @@ export function DataTable({
           <div className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-0.5 rounded">
             <Database className="h-3 w-3 text-purple-500" />
             <span className="text-purple-500 font-medium">
-              {dbName || 'Database'}
+              {getDataSourceInfo()}
             </span>
           </div>
         </div>
@@ -949,36 +1184,7 @@ export function DataTable({
         <div className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-0.5 rounded">
           <Database className="h-3 w-3 text-purple-500" />
           <span className="text-purple-500 font-medium">
-            {(() => {
-              // 우선 props의 dbName 사용
-              if (dbName) {
-                return dbName === 'LocalStorage' ? 'Local Storage' : dbName;
-              }
-              
-              // props의 dbName이 없으면 employerStorage에서 db_name 가져오기
-              try {
-                const employerInfo = sessionStorage.getItem('employerStorage');
-                if (employerInfo) {
-                  const parsedEmployerInfo = JSON.parse(employerInfo);
-                  if (parsedEmployerInfo.db_name) {
-                    return parsedEmployerInfo.db_name === 'LocalStorage' 
-                      ? 'Local Storage' 
-                      : parsedEmployerInfo.db_name;
-                  }
-                }
-              } catch (error) {
-                console.error('[DataTable] employerStorage 파싱 실패:', error);
-              }
-              
-              // 모두 없으면 lastUsedDbName 사용
-              const lastUsedDbName = sessionStorage.getItem('lastUsedDbName');
-              if (lastUsedDbName) {
-                return lastUsedDbName === 'LocalStorage' ? 'Local Storage' : lastUsedDbName;
-              }
-              
-              // 기본값
-              return 'Database';
-            })()}
+            {getDataSourceInfo()}
           </span>
         </div>
       </div>
