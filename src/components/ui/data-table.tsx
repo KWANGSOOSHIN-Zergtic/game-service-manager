@@ -792,6 +792,7 @@ export function DataTable({
                               e.stopPropagation();
                               
                               try {
+                                // Create는 특정 항목이 필요 없지만, 현재 컨텍스트에서 작업을 위해 필요하면 적용
                                 if (onCreateCurrency) {
                                   onCreateCurrency();
                                 }
@@ -812,6 +813,15 @@ export function DataTable({
                               e.stopPropagation();
                               
                               try {
+                                // 체크박스 선택 없이 해당 행의 데이터만 직접 sessionStorage에 저장
+                                const selectedItem = data.find(d => d.id?.toString() === item.id?.toString());
+                                if (selectedItem) {
+                                  // 단일 항목 직접 저장 - 체크박스 선택 상태 변경 없음
+                                  sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItem));
+                                  sessionStorage.setItem('selectedCurrencies', JSON.stringify([selectedItem]));
+                                  console.log('[DataTable] Update 선택: 단일 항목 저장됨', selectedItem);
+                                }
+                                
                                 if (onUpdateCurrency) {
                                   onUpdateCurrency();
                                 }
@@ -832,6 +842,15 @@ export function DataTable({
                               e.stopPropagation();
                               
                               try {
+                                // 체크박스 선택 없이 해당 행의 데이터만 직접 sessionStorage에 저장
+                                const selectedItem = data.find(d => d.id?.toString() === item.id?.toString());
+                                if (selectedItem) {
+                                  // 단일 항목 직접 저장 - 체크박스 선택 상태 변경 없음
+                                  sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItem));
+                                  sessionStorage.setItem('selectedCurrencies', JSON.stringify([selectedItem]));
+                                  console.log('[DataTable] Delete 선택: 단일 항목 저장됨', selectedItem);
+                                }
+                                
                                 if (onDeleteCurrency) {
                                   onDeleteCurrency();
                                 }
