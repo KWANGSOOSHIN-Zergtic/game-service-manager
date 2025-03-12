@@ -18,7 +18,7 @@ import { MENU_ITEMS } from "@/config/menu"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 
-export default function TestPage() {
+export default function TableInfoPage() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [pageName, setPageName] = useState<string>("");
@@ -56,7 +56,7 @@ export default function TestPage() {
           .replace(/([A-Z])/g, (match, letter, offset) => {
             return offset > 0 ? `-${letter}` : letter;
           })
-          // 연속된 대문자 처리 (예: TestAPI -> test-api)
+          // 연속된 대문자 처리 (예: SampleAPI -> sample-api)
           .replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
           // 공백을 하이픈으로 변환
           .replace(/\s+/g, '-')
@@ -108,7 +108,7 @@ export default function TestPage() {
   };
 
   return (
-    <PageContainer path="test">
+    <PageContainer path="page-create">
       <div className="space-y-6">
         <Card>
           <CardHeader className="py-4 bg-gray-50">

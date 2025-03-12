@@ -87,7 +87,7 @@ export default function DBInformation() {
     };
 
     return (
-        <PageContainer path="test/db-information">
+        <PageContainer path="lab/db-information">
             <div className="flex flex-col gap-4">
                 <Button 
                     className="bg-green-500 hover:bg-green-600 w-full font-bold"

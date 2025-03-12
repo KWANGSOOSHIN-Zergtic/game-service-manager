@@ -130,7 +130,7 @@ export default function DbListLoadPage() {
   };
 
   return (
-    <PageContainer path="test/db-list-load">
+    <PageContainer path="lab/db-list-load">
       <div className="flex flex-col gap-4">
         <Button 
           className="bg-green-500 hover:bg-green-600 w-full font-bold"

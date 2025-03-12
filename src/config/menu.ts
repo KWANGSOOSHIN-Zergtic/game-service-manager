@@ -4,7 +4,7 @@ import {
   Gamepad2,
   Headset,
   Code,
-  TestTube,
+  FlaskConical,
   Settings,
   HelpCircle,
   Bell,
@@ -12,7 +12,8 @@ import {
   UserCircle,
   ComputerIcon,
   LucideIcon,
-  DatabaseZapIcon
+  DatabaseZapIcon,
+  Table
 } from "lucide-react"
 
 export interface MenuItem {
@@ -30,11 +31,12 @@ export const MENU_ITEMS: MenuItem[] = [
   { path: "cs", icon: Headset, label: "CS", showInSidebar: true },
   { path: "dev", icon: Code, label: "Dev", showInSidebar: true },
   { 
-      path: "test",icon: TestTube, label: "Test", showInSidebar: true,
+      path: "lab",icon: FlaskConical, label: "Lab", showInSidebar: true,
       subItems: [
-      { path: "test/db-list-load", icon: DatabaseZapIcon, label: "DbListLoad", showInSidebar: true },
-      { path: "test/db-information", icon: DatabaseZapIcon, label: "DbInformation", showInSidebar: true },
-      { path: "test/test-sub2", icon: TestTube, label: "TestSub2", showInSidebar: true }]
+      { path: "lab/db-list-load", icon: DatabaseZapIcon, label: "Lab-DbListLoad", showInSidebar: true },
+      { path: "lab/db-information", icon: DatabaseZapIcon, label: "Lab-DbInformation", showInSidebar: true },
+      { path: "lab/lab-sub", icon: FlaskConical, label: "Lab-Sub", showInSidebar: true },
+      { path: "lab/data-table", icon: Table, label: "Lab-DataTable", showInSidebar: true }]
   },
   { path: "help", icon: HelpCircle, label: "Help" },
   { path: "alarm", icon: Bell, label: "Alarm" },

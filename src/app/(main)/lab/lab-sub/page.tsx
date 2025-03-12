@@ -1,7 +1,7 @@
 import { PageContainer } from "@/components/layout/page-container"
 
-export default function TestSub2Page() {
+export default function LabSubPage() {
   return (
-    <PageContainer path="test/test-sub2" />
+    <PageContainer path="lab/lab-sub" />
   )
 } 
