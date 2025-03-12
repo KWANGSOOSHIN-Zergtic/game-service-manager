@@ -17,7 +17,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
 import { Skeleton } from '@/components/ui/skeleton';
-import { CurrencyControlPanel, AdvancedCurrencyControlPanel } from "@/components/control-panels/currency-control-panel";
+import { DataControlsPanel, AdvancedDataControlsPanel } from "@/components/control-panels/currency-control-panel";
 import { IUITableData, ITableColumn } from '@/types/table.types';
 
 // 이전 타입과의 호환성을 위한 타입 별칭
@@ -42,12 +42,12 @@ interface DataTableProps {
   showActions?: boolean;
   onSelectRows?: () => void;
   dbName?: string;
-  showCurrencyControls?: boolean; // Currency Controls 표시 여부
+  showDataControls?: boolean; // Currency Controls 표시 여부
   onCreateCurrency?: () => void;
   onUpdateCurrency?: () => void;
   onDeleteCurrency?: () => void;
   // Advanced Currency Controls 추가
-  showAdvancedCurrencyControls?: boolean;
+  showAdvancedDataControls?: boolean;
   onUseItem?: () => void;
   onGetItem?: () => void;
   onSendItem?: () => void;
@@ -95,11 +95,11 @@ export function DataTable({
   showActions = true,
   onSelectRows,
   dbName,
-  showCurrencyControls = false,
+  showDataControls = false,
   onCreateCurrency,
   onUpdateCurrency,
   onDeleteCurrency,
-  showAdvancedCurrencyControls = false,
+  showAdvancedDataControls = false,
   onUseItem,
   onGetItem,
   onSendItem
@@ -492,9 +492,9 @@ export function DataTable({
           </div>
         </div>
         
-        {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
-        {showCurrencyControls && (
-          <CurrencyControlPanel
+        {/* Currency Control Panel - showDataControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
+        {showDataControls && (
+          <DataControlsPanel
             onCreateClick={handleCreateCurrency}
             onUpdateClick={handleUpdateCurrency}
             onDeleteClick={handleDeleteCurrency}
@@ -502,9 +502,9 @@ export function DataTable({
           />
         )}
 
-        {/* Advanced Currency Control Panel - showAdvancedCurrencyControls가 true일 때만 표시 */}
-        {showAdvancedCurrencyControls && (
-          <AdvancedCurrencyControlPanel
+        {/* Advanced Currency Control Panel - showAdvancedDataControls가 true일 때만 표시 */}
+        {showAdvancedDataControls && (
+          <AdvancedDataControlsPanel
             onUseItemClick={handleUseItem}
             onGetItemClick={handleGetItem}
             onSendItemClick={handleSendItem}
@@ -791,9 +791,9 @@ export function DataTable({
         </div>
       </div>
       
-      {/* Currency Control Panel - showCurrencyControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
-      {showCurrencyControls && (
-        <CurrencyControlPanel
+      {/* Currency Control Panel - showDataControls가 true일 때만 표시되며, 디버그 정보 다음에 위치 */}
+      {showDataControls && (
+        <DataControlsPanel
           onCreateClick={handleCreateCurrency}
           onUpdateClick={handleUpdateCurrency}
           onDeleteClick={handleDeleteCurrency}
@@ -801,9 +801,9 @@ export function DataTable({
         />
       )}
 
-      {/* Advanced Currency Control Panel - showAdvancedCurrencyControls가 true일 때만 표시 */}
-      {showAdvancedCurrencyControls && (
-        <AdvancedCurrencyControlPanel
+      {/* Advanced Currency Control Panel - showAdvancedDataControls가 true일 때만 표시 */}
+      {showAdvancedDataControls && (
+        <AdvancedDataControlsPanel
           onUseItemClick={handleUseItem}
           onGetItemClick={handleGetItem}
           onSendItemClick={handleSendItem}

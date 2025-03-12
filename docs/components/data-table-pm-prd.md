@@ -138,7 +138,7 @@
   onSelectionChange={handleSelectionChange}
   onSort={handleSort}
   onPageChange={handlePageChange}
-  showCurrencyControls={true}
+  showDataControls={true}
   onCreateCurrency={handleCreateCurrency}
   onUpdateCurrency={handleUpdateCurrency}
   onDeleteCurrency={handleDeleteCurrency}

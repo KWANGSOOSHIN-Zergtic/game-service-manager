@@ -147,7 +147,7 @@ export function DataTable({
       
       {/* 디버그 정보 및 화폐 관리 패널 */}
       <DebugInfo />
-      <CurrencyControlPanel />
+      <DataControlsPanel />
     </div>
   );
 }
@@ -441,7 +441,7 @@ if (!data.length) {
 
 ### **2.7 화폐 관리 패널 UI**
 ```tsx
-export function CurrencyControlPanel({
+export function DataControlsPanel({
   onCreateClick,
   onUpdateClick,
   onDeleteClick,
@@ -483,7 +483,7 @@ export function CurrencyControlPanel({
   );
 }
 
-export function AdvancedCurrencyControlPanel({
+export function AdvancedDataControlsPanel({
   onUseItemClick,
   onGetItemClick,
   onSendItemClick,
@@ -766,7 +766,7 @@ export default function ProductManagement() {
         customFormatters={{
           price: (value) => `₩${Number(value).toLocaleString()}`
         }}
-        showCurrencyControls={true}
+        showDataControls={true}
         onCreateCurrency={handleCreateProduct}
         dbName="ProductDB"
       />

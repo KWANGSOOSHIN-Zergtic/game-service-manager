@@ -58,7 +58,7 @@
     - 2-2-2-5. Select User - 아코디언 (구현됨)
     - 2-2-2-6. 컨텐츠 탭 (구현됨 - 데이터 연동 일부 진행 중)
     - 2-2-2-7. 컨텐츠 컨트롤 패널 (구현됨)
-    - 2-2-2-8. Advanced Currency Control Panel (구현됨)
+    - 2-2-2-8. Advanced Data Control Panel (구현됨)
 
 → 3. 콘텐츠 상태 변경 (부분 구현됨)
 → 4. 저장 (부분 구현됨)
@@ -164,7 +164,7 @@
 - [✓] **Update (수정) 버튼**
 - [✓] **Delete (삭제) 버튼**
 
-##### **2-2-2-8. Advanced Currency Control Panel (구현됨)**
+##### **2-2-2-8. Advanced Data Control Panel (구현됨)**
 
 - [✓] 재화 지급/차감 기능
 - [✓] 특정 이벤트 보상 설정

@@ -29,8 +29,8 @@ import { IUITableData } from '@/types/table.types';
 export default function DataTablePage() {
   // 상태 관리
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showCurrencyControls, setShowCurrencyControls] = useState<boolean>(false);
-  const [showAdvancedCurrencyControls, setShowAdvancedCurrencyControls] = useState<boolean>(false);
+  const [showDataControls, setShowDataControls] = useState<boolean>(false);
+  const [showAdvancedDataControls, setShowAdvancedDataControls] = useState<boolean>(false);
 
   // 이벤트 핸들러
   const handleToggleLoading = () => {
@@ -53,7 +53,7 @@ export default function DataTablePage() {
     console.log(`Page changed to ${page}`);
   };
 
-  // 통화 컨트롤 핸들러
+  // 데이터 컨트롤 핸들러
   const handleCreateCurrency = () => {
     console.log('Create currency clicked');
   };
@@ -102,20 +102,20 @@ export default function DataTablePage() {
               
               <div className="flex items-center space-x-2">
                 <Switch 
-                  id="currency-controls" 
-                  checked={showCurrencyControls} 
-                  onCheckedChange={setShowCurrencyControls} 
+                  id="data-controls" 
+                  checked={showDataControls} 
+                  onCheckedChange={setShowDataControls} 
                 />
-                <Label htmlFor="currency-controls">통화 컨트롤 표시</Label>
+                <Label htmlFor="data-controls">데이터 컨트롤 표시</Label>
               </div>
               
               <div className="flex items-center space-x-2">
                 <Switch 
-                  id="advanced-currency-controls" 
-                  checked={showAdvancedCurrencyControls} 
-                  onCheckedChange={setShowAdvancedCurrencyControls} 
+                  id="advanced-data-controls" 
+                  checked={showAdvancedDataControls} 
+                  onCheckedChange={setShowAdvancedDataControls} 
                 />
-                <Label htmlFor="advanced-currency-controls">고급 통화 컨트롤 표시</Label>
+                <Label htmlFor="advanced-data-controls">고급 데이터 컨트롤 표시</Label>
               </div>
             </div>
           </CardContent>
@@ -167,11 +167,11 @@ export default function DataTablePage() {
                   onSort={handleSort}
                   onPageChange={handlePageChange}
                   dbName="UserDB"
-                  showCurrencyControls={showCurrencyControls}
+                  showDataControls={showDataControls}
                   onCreateCurrency={handleCreateCurrency}
                   onUpdateCurrency={handleUpdateCurrency}
                   onDeleteCurrency={handleDeleteCurrency}
-                  showAdvancedCurrencyControls={showAdvancedCurrencyControls}
+                  showAdvancedDataControls={showAdvancedDataControls}
                   onUseItem={handleUseItem}
                   onGetItem={handleGetItem}
                   onSendItem={handleSendItem}
@@ -202,11 +202,11 @@ export default function DataTablePage() {
                   onSort={handleSort}
                   onPageChange={handlePageChange}
                   dbName="ItemDB"
-                  showCurrencyControls={showCurrencyControls}
+                  showDataControls={showDataControls}
                   onCreateCurrency={handleCreateCurrency}
                   onUpdateCurrency={handleUpdateCurrency}
                   onDeleteCurrency={handleDeleteCurrency}
-                  showAdvancedCurrencyControls={showAdvancedCurrencyControls}
+                  showAdvancedDataControls={showAdvancedDataControls}
                   onUseItem={handleUseItem}
                   onGetItem={handleGetItem}
                   onSendItem={handleSendItem}
@@ -237,11 +237,11 @@ export default function DataTablePage() {
                   onSort={handleSort}
                   onPageChange={handlePageChange}
                   dbName="CurrencyDB"
-                  showCurrencyControls={showCurrencyControls}
+                  showDataControls={showDataControls}
                   onCreateCurrency={handleCreateCurrency}
                   onUpdateCurrency={handleUpdateCurrency}
                   onDeleteCurrency={handleDeleteCurrency}
-                  showAdvancedCurrencyControls={showAdvancedCurrencyControls}
+                  showAdvancedDataControls={showAdvancedDataControls}
                   onUseItem={handleUseItem}
                   onGetItem={handleGetItem}
                   onSendItem={handleSendItem}
@@ -272,11 +272,11 @@ export default function DataTablePage() {
                   onSort={handleSort}
                   onPageChange={handlePageChange}
                   dbName="LogDB"
-                  showCurrencyControls={showCurrencyControls}
+                  showDataControls={showDataControls}
                   onCreateCurrency={handleCreateCurrency}
                   onUpdateCurrency={handleUpdateCurrency}
                   onDeleteCurrency={handleDeleteCurrency}
-                  showAdvancedCurrencyControls={showAdvancedCurrencyControls}
+                  showAdvancedDataControls={showAdvancedDataControls}
                   onUseItem={handleUseItem}
                   onGetItem={handleGetItem}
                   onSendItem={handleSendItem}
@@ -307,11 +307,11 @@ export default function DataTablePage() {
                   onSort={handleSort}
                   onPageChange={handlePageChange}
                   dbName="StatsDB"
-                  showCurrencyControls={showCurrencyControls}
+                  showDataControls={showDataControls}
                   onCreateCurrency={handleCreateCurrency}
                   onUpdateCurrency={handleUpdateCurrency}
                   onDeleteCurrency={handleDeleteCurrency}
-                  showAdvancedCurrencyControls={showAdvancedCurrencyControls}
+                  showAdvancedDataControls={showAdvancedDataControls}
                   onUseItem={handleUseItem}
                   onGetItem={handleGetItem}
                   onSendItem={handleSendItem}

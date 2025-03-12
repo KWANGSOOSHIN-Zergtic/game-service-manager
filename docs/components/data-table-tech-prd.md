@@ -127,8 +127,8 @@
 
 | 기능명 | 구현 방식 | 기술적 고려사항 |
 |--------|----------|----------------|
-| **화폐 관리 패널** | `CurrencyControlPanel` 컴포넌트 조건부 렌더링 | 상태에 따른 표시/숨김, 이벤트 핸들러 연결 |
-| **고급 화폐 관리** | `AdvancedCurrencyControlPanel` 컴포넌트 통합 | 아이템 사용/획득/전송 기능 |
+| **화폐 관리 패널** | `DataControlsPanel` 컴포넌트 조건부 렌더링 | 상태에 따른 표시/숨김, 이벤트 핸들러 연결 |
+| **고급 화폐 관리** | `AdvancedDataControlsPanel` 컴포넌트 통합 | 아이템 사용/획득/전송 기능 |
 | **디버그 정보** | 디버그 모드 토글 버튼 및 이벤트 발생 | CustomEvent 디스패치로 외부 디버그 패널 제어 |
 | **DB 정보 표시** | 다양한 소스(props, sessionStorage)에서 DB 정보 가져오기 | 우선순위에 따른 정보 소스 선택 |
 | **에러 상태 표시** | API 응답 상태에 따른 UI 변경 | sessionStorage에서 상태 정보 확인 |
@@ -156,11 +156,11 @@ interface DataTableProps {
   showActions?: boolean;
   onSelectRows?: () => void;
   dbName?: string;
-  showCurrencyControls?: boolean;
+  showDataControls?: boolean;
   onCreateCurrency?: () => void;
   onUpdateCurrency?: () => void;
   onDeleteCurrency?: () => void;
-  showAdvancedCurrencyControls?: boolean;
+  showAdvancedDataControls?: boolean;
   onUseItem?: () => void;
   onGetItem?: () => void;
   onSendItem?: () => void;
@@ -279,7 +279,7 @@ export default function ProductList() {
       className="shadow-lg"
       headerClassName="bg-blue-50"
       dbName="ProductDB"
-      showCurrencyControls={true}
+      showDataControls={true}
       onCreateCurrency={() => handleCreateProduct()}
     />
   );

@@ -15,8 +15,8 @@ export interface ControlPanelButton {
   disabled?: boolean;
 }
 
-// Currency Control Panel 속성 정의
-export interface CurrencyControlPanelProps {
+// Data Control Panel 속성 정의
+export interface DataControlsPanelProps {
   onCreateClick?: () => void;
   onUpdateClick?: () => void;
   onDeleteClick?: () => void;
@@ -29,24 +29,24 @@ export interface CurrencyControlPanelProps {
   customButtons?: ControlPanelButton[];
 }
 
-export function CurrencyControlPanel({
+export function DataControlsPanel({
   onCreateClick,
   onUpdateClick,
   onDeleteClick,
   onRefreshClick,
   className = '',
-  title = 'Currency Control Panel',
+  title = 'Data Control Panel',
   showRefreshButton = true,
   showInfoMessage = true,
-  infoMessage = '화폐를 수정하거나 삭제하려면 먼저 행을 선택하세요.',
+  infoMessage = '데이터를 수정하거나 삭제하려면 먼저 행을 선택하세요.',
   customButtons
-}: CurrencyControlPanelProps) {
+}: DataControlsPanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 새로고침 처리 함수
   const handleRefresh = () => {
     setIsRefreshing(true);
-    console.log('[CurrencyControlPanel] 화폐 데이터 새로고침 요청');
+    console.log('[DataControlsPanel] 데이터 새로고침 요청');
     
     // 커스텀 새로고침 핸들러가 제공된 경우 호출
     if (onRefreshClick) {
@@ -56,9 +56,9 @@ export function CurrencyControlPanel({
     // 새로고침 시뮬레이션
     setTimeout(() => {
       // 페이지 새로고침 이벤트 발생
-      window.dispatchEvent(new CustomEvent('refresh-currency-data'));
+      window.dispatchEvent(new CustomEvent('refresh-data'));
       setIsRefreshing(false);
-      console.log('[CurrencyControlPanel] 화폐 데이터 새로고침 완료');
+      console.log('[DataControlsPanel] 데이터 새로고침 완료');
     }, 1000);
   };
 
@@ -70,7 +70,7 @@ export function CurrencyControlPanel({
       icon: <PlusCircle className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-green-500 hover:bg-green-600 text-white',
       variant: 'default',
-      onClick: onCreateClick || (() => console.log('[CurrencyControlPanel] CREATE 버튼 클릭됨')),
+      onClick: onCreateClick || (() => console.log('[DataControlsPanel] CREATE 버튼 클릭됨')),
       disabled: false
     },
     {
@@ -79,7 +79,7 @@ export function CurrencyControlPanel({
       icon: <Edit className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-blue-500 hover:bg-blue-600 text-white',
       variant: 'default',
-      onClick: onUpdateClick || (() => console.log('[CurrencyControlPanel] UPDATE 버튼 클릭됨')),
+      onClick: onUpdateClick || (() => console.log('[DataControlsPanel] UPDATE 버튼 클릭됨')),
       disabled: false
     },
     {
@@ -88,7 +88,7 @@ export function CurrencyControlPanel({
       icon: <Trash2 className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-red-500 hover:bg-red-600 text-white',
       variant: 'default',
-      onClick: onDeleteClick || (() => console.log('[CurrencyControlPanel] DELETE 버튼 클릭됨')),
+      onClick: onDeleteClick || (() => console.log('[DataControlsPanel] DELETE 버튼 클릭됨')),
       disabled: false
     }
   ];
@@ -148,8 +148,8 @@ export function CurrencyControlPanel({
   );
 }
 
-// Advanced Currency Control Panel 속성 정의
-export interface AdvancedCurrencyControlPanelProps {
+// Advanced Data Control Panel 속성 정의
+export interface AdvancedDataControlsPanelProps {
   onUseItemClick?: () => void;
   onGetItemClick?: () => void;
   onSendItemClick?: () => void;
@@ -162,24 +162,24 @@ export interface AdvancedCurrencyControlPanelProps {
   customButtons?: ControlPanelButton[];
 }
 
-export function AdvancedCurrencyControlPanel({
+export function AdvancedDataControlsPanel({
   onUseItemClick,
   onGetItemClick,
   onSendItemClick,
   onRefreshClick,
   className = '',
-  title = 'Advanced Currency Control Panel',
+  title = 'Advanced Data Control Panel',
   showRefreshButton = true,
   showInfoMessage = true,
   infoMessage = '아이템을 사용하거나 전송하려면 먼저 행을 선택하세요.',
   customButtons
-}: AdvancedCurrencyControlPanelProps) {
+}: AdvancedDataControlsPanelProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // 새로고침 처리 함수
   const handleRefresh = () => {
     setIsRefreshing(true);
-    console.log('[AdvancedCurrencyControlPanel] 화폐 데이터 새로고침 요청');
+    console.log('[AdvancedDataControlsPanel] 데이터 새로고침 요청');
     
     // 커스텀 새로고침 핸들러가 제공된 경우 호출
     if (onRefreshClick) {
@@ -189,9 +189,9 @@ export function AdvancedCurrencyControlPanel({
     // 새로고침 시뮬레이션
     setTimeout(() => {
       // 페이지 새로고침 이벤트 발생
-      window.dispatchEvent(new CustomEvent('refresh-currency-data'));
+      window.dispatchEvent(new CustomEvent('refresh-data'));
       setIsRefreshing(false);
-      console.log('[AdvancedCurrencyControlPanel] 화폐 데이터 새로고침 완료');
+      console.log('[AdvancedDataControlsPanel] 데이터 새로고침 완료');
     }, 1000);
   };
 
@@ -203,7 +203,7 @@ export function AdvancedCurrencyControlPanel({
       icon: <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-indigo-500 hover:bg-indigo-600 text-white',
       variant: 'default',
-      onClick: onUseItemClick || (() => console.log('[AdvancedCurrencyControlPanel] USE ITEM 버튼 클릭됨')),
+      onClick: onUseItemClick || (() => console.log('[AdvancedDataControlsPanel] USE ITEM 버튼 클릭됨')),
       disabled: false
     },
     {
@@ -212,7 +212,7 @@ export function AdvancedCurrencyControlPanel({
       icon: <Download className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-amber-500 hover:bg-amber-600 text-white',
       variant: 'default',
-      onClick: onGetItemClick || (() => console.log('[AdvancedCurrencyControlPanel] GET ITEM 버튼 클릭됨')),
+      onClick: onGetItemClick || (() => console.log('[AdvancedDataControlsPanel] GET ITEM 버튼 클릭됨')),
       disabled: false
     },
     {
@@ -221,7 +221,7 @@ export function AdvancedCurrencyControlPanel({
       icon: <Send className="h-3.5 w-3.5 mr-1.5" />,
       bgColorClass: 'bg-cyan-500 hover:bg-cyan-600 text-white',
       variant: 'default',
-      onClick: onSendItemClick || (() => console.log('[AdvancedCurrencyControlPanel] SEND ITEM 버튼 클릭됨')),
+      onClick: onSendItemClick || (() => console.log('[AdvancedDataControlsPanel] SEND ITEM 버튼 클릭됨')),
       disabled: false
     }
   ];

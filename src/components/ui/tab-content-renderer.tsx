@@ -1975,12 +1975,12 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                 customFormatters={contentProps.formatters as Record<string, (value: string | number | null | object) => string | number | React.ReactNode> | undefined}
                 onSelectionChange={isCurrencyTab ? handleCurrencyRowSelect : undefined}
                 // Currency Tab일 경우 Control Panel을 표시하고 이벤트 핸들러를 연결
-                showCurrencyControls={isCurrencyTab}
+                showDataControls={isCurrencyTab}
                 onCreateCurrency={isCurrencyTab ? handleCreateCurrency : undefined}
                 onUpdateCurrency={isCurrencyTab ? handleUpdateCurrency : undefined}
                 onDeleteCurrency={isCurrencyTab ? handleDeleteCurrency : undefined}
-                // Advanced Currency Controls
-                showAdvancedCurrencyControls={isCurrencyTab}
+                // Advanced Data Controls
+                showAdvancedDataControls={isCurrencyTab}
                 onUseItem={isCurrencyTab ? handleUseItem : undefined}
                 onGetItem={isCurrencyTab ? handleGetItem : undefined}
                 onSendItem={isCurrencyTab ? handleSendItem : undefined}
