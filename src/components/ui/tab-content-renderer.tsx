@@ -20,7 +20,8 @@ import {
   Clock,
   ChevronDown,
   Edit,
-  Save
+  Save,
+  Trash2
 } from 'lucide-react';
 import { JsonViewerCustom, JsonTheme } from '@/components/ui/json-viewer-custom';
 import {
@@ -1697,24 +1698,82 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     };
     
     return (
-      <ConfirmDialog
-        open={showDeleteDialog}
-        onOpenChange={setShowDeleteDialog}
-        title={`🚨 ${deletingCurrencies?.length || 0}개 항목 삭제`}
-        titleClassName="text-red-600 font-extrabold"
-        description="선택한 항목을 삭제하시겠습니까?"
-        secondaryDescription="이 작업은 되돌릴 수 없습니다."
-        icon={AlertCircle}
-        iconBgColor="bg-red-100"
-        iconColor="text-red-600"
-        cancelText="취소"
-        confirmText="삭제"
-        confirmBgColor="bg-red-600 hover:bg-red-700 focus:ring-red-300"
-        onCancel={handleCancelDelete}
-        onConfirm={handleConfirmDelete}
-        isLoading={isDeleting}
-        loadingText="삭제 중"
-      />
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none rounded-lg shadow-2xl">
+          {/* 모달 헤더 - 현대적인 디자인 */}
+          <div className="bg-gradient-to-r from-red-600 to-orange-600 p-6 text-white">
+            <DialogTitle className="flex items-center text-2xl font-light tracking-wide mb-2">
+              <AlertCircle className="mr-3 h-6 w-6 text-red-200" />
+              화폐 삭제
+            </DialogTitle>
+            <DialogDescription className="text-red-100 opacity-90 text-sm">
+              선택한 {deletingCurrencies?.length || 0}개 항목을 삭제합니다. 이 작업은 되돌릴 수 없습니다.
+            </DialogDescription>
+          </div>
+          
+          {/* 모달 내용 */}
+          <div className="p-6 bg-white flex flex-col">
+            <div className="mb-6">
+              {deletingCurrencies && deletingCurrencies.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">삭제할 항목:</h3>
+                  <div className="bg-gray-50 p-4 rounded-lg max-h-[20vh] overflow-auto border border-gray-100">
+                    <div className="text-gray-700 mb-2">총 {deletingCurrencies.length}개 항목이 선택되었습니다.</div>
+                    <div className="text-gray-600 text-sm">
+                      이 항목들을 영구적으로 삭제하시겠습니까?
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                <p className="text-red-800 font-medium flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2 text-red-600" />
+                  경고
+                </p>
+                <p className="mt-2 text-red-700 text-sm">
+                  이 작업은 되돌릴 수 없으며, 데이터베이스에서 항목이 영구적으로 삭제됩니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 모달 푸터 */}
+          <div className="p-4 bg-white border-t border-gray-100 flex justify-end gap-2 items-center">
+            <Button 
+              variant="outline" 
+              onClick={handleCancelDelete} 
+              disabled={isDeleting}
+              className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            >
+              취소
+            </Button>
+            <Button 
+              onClick={handleConfirmDelete} 
+              disabled={isDeleting}
+              className={`
+                py-2 px-4 flex items-center gap-2 transition-all rounded-md
+                ${isDeleting 
+                  ? "bg-red-400" 
+                  : "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-md hover:shadow"
+                }
+              `}
+            >
+              {isDeleting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>삭제 중...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  <span>삭제</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   };
 
@@ -1783,23 +1842,78 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     const itemName = usingItem?.info.name || usingItem?.info.item_name || '아이템';
     
     return (
-      <ConfirmDialog
-        open={showUseItemDialog}
-        onOpenChange={setShowUseItemDialog}
-        title={`아이템 사용: ${itemName}`}
-        description="선택한 아이템을 사용하시겠습니까?"
-        secondaryDescription="이 작업은 되돌릴 수 없습니다."
-        icon={CheckCircle2}
-        iconBgColor="bg-blue-100"
-        iconColor="text-blue-600"
-        cancelText="취소"
-        confirmText="사용"
-        confirmBgColor="bg-blue-600 hover:bg-blue-700 focus:ring-blue-300"
-        onCancel={handleCancelUse}
-        onConfirm={handleConfirmUse}
-        isLoading={isUsingItem}
-        loadingText="사용 중"
-      />
+      <Dialog open={showUseItemDialog} onOpenChange={setShowUseItemDialog}>
+        <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none rounded-lg shadow-2xl">
+          {/* 모달 헤더 - 현대적인 디자인 */}
+          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 p-6 text-white">
+            <DialogTitle className="flex items-center text-2xl font-light tracking-wide mb-2">
+              <CheckCircle2 className="mr-3 h-6 w-6 text-blue-200" />
+              아이템 사용
+            </DialogTitle>
+            <DialogDescription className="text-blue-100 opacity-90 text-sm">
+              선택한 아이템을 사용합니다. 이 작업은 되돌릴 수 없습니다.
+            </DialogDescription>
+          </div>
+          
+          {/* 모달 내용 */}
+          <div className="p-6 bg-white flex flex-col">
+            <div className="mb-6">
+              {usingItem && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">사용할 아이템:</h3>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-700">{itemName}</p>
+                    </div>
+                    <CheckCircle2 className="h-8 w-8 text-blue-500" />
+                  </div>
+                </div>
+              )}
+              
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                <p className="text-gray-700">
+                  이 아이템을 사용하면 계정에서 소모되며, 아이템 효과가 적용됩니다. 이 작업은 되돌릴 수 없습니다.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 모달 푸터 */}
+          <div className="p-4 bg-white border-t border-gray-100 flex justify-end gap-2 items-center">
+            <Button 
+              variant="outline" 
+              onClick={handleCancelUse} 
+              disabled={isUsingItem}
+              className="border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+            >
+              취소
+            </Button>
+            <Button 
+              onClick={handleConfirmUse} 
+              disabled={isUsingItem}
+              className={`
+                py-2 px-4 flex items-center gap-2 transition-all rounded-md
+                ${isUsingItem 
+                  ? "bg-blue-400" 
+                  : "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-md hover:shadow"
+                }
+              `}
+            >
+              {isUsingItem ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>사용 중...</span>
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>사용</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     );
   };
 
@@ -2014,19 +2128,38 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           )}
           
           {/* 경고 모달 */}
-          <ConfirmDialog
-            open={showWarningDialog}
-            onOpenChange={setShowWarningDialog}
-            title={warningTitle}
-            description={warningMessage}
-            icon={AlertCircle}
-            iconBgColor="bg-yellow-100"
-            iconColor="text-yellow-600"
-            confirmText="확인"
-            cancelText="닫기"
-            confirmBgColor="bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-300"
-            onConfirm={() => setShowWarningDialog(false)}
-          />
+          <Dialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+            <DialogContent className="sm:max-w-[900px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none rounded-lg shadow-2xl">
+              {/* 모달 헤더 - 현대적인 디자인 */}
+              <div className="bg-gradient-to-r from-yellow-500 to-amber-500 p-6 text-white">
+                <DialogTitle className="flex items-center text-2xl font-light tracking-wide mb-2">
+                  <AlertCircle className="mr-3 h-6 w-6 text-yellow-200" />
+                  {warningTitle || '경고'}
+                </DialogTitle>
+                <DialogDescription className="text-yellow-100 opacity-90 text-sm">
+                  확인이 필요한 정보가 있습니다.
+                </DialogDescription>
+              </div>
+              
+              {/* 모달 내용 */}
+              <div className="p-6 bg-white flex flex-col">
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                  <p className="text-yellow-800">{warningMessage}</p>
+                </div>
+              </div>
+
+              {/* 모달 푸터 */}
+              <div className="p-4 bg-white border-t border-gray-100 flex justify-end gap-2 items-center">
+                <Button 
+                  onClick={() => setShowWarningDialog(false)} 
+                  className="py-2 px-4 flex items-center gap-2 transition-all rounded-md bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 shadow-md hover:shadow text-white"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>확인</span>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           {/* CreateCurrencyModal 추가 */}
           <CreateCurrencyModal
             open={showCreateCurrencyModal}

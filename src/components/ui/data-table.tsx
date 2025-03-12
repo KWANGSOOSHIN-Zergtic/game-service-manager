@@ -12,13 +12,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MoreVertical, Plus, ListOrdered, Database, Bug } from "lucide-react";
+import { Search, MoreVertical, Plus, ListOrdered, Database, Bug, RefreshCw, Edit, Trash2 } from "lucide-react";
 import { Pagination } from "@/components/ui/pagination";
 import { ObjectDisplay } from "@/components/ui/object-display";
 import { ColumnFilter } from "@/components/ui/column-filter";
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataControlsPanel, AdvancedDataControlsPanel } from "@/components/control-panels/currency-control-panel";
 import { IUITableData, ITableColumn } from '@/types/table.types';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 // 이전 타입과의 호환성을 위한 타입 별칭
 export type TableData = IUITableData;
@@ -116,6 +123,9 @@ export function DataTable({
   const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(20);
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(new Set());
   const [isAllColumnsVisible, setIsAllColumnsVisible] = useState(true);
+  // 드롭다운 메뉴 상태 관리 추가
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [rowMenuOpenMap, setRowMenuOpenMap] = useState<Record<string, boolean>>({});
 
   // 순번 컬럼 정의
   const indexColumn = useMemo(() => ({
@@ -418,6 +428,29 @@ export function DataTable({
     }
   };
 
+  // 행 메뉴 열기/닫기 핸들러 개선
+  const handleRowMenuOpenChange = (id: string, isOpen: boolean) => {
+    try {
+      console.log(`[DataTable] 행 메뉴 상태 변경: id=${id}, isOpen=${isOpen}`);
+      setRowMenuOpenMap(prev => ({
+        ...prev,
+        [id]: isOpen
+      }));
+    } catch (error) {
+      console.error('[DataTable] 행 메뉴 상태 변경 중 오류:', error);
+    }
+  };
+
+  // 헤더 메뉴 열기/닫기 핸들러 추가
+  const handleHeaderMenuOpenChange = (isOpen: boolean) => {
+    try {
+      console.log(`[DataTable] 헤더 메뉴 상태 변경: isOpen=${isOpen}`);
+      setHeaderMenuOpen(isOpen);
+    } catch (error) {
+      console.error('[DataTable] 헤더 메뉴 상태 변경 중 오류:', error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -628,7 +661,57 @@ export function DataTable({
               )}
               <TableHead className="w-10 h-10 py-2 px-0 border-r border-gray-200">
                 <div className="flex items-center justify-center w-full px-2">
-                  <MoreVertical className="h-4 w-4 text-gray-400" />
+                  <DropdownMenu open={headerMenuOpen} onOpenChange={handleHeaderMenuOpenChange}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-purple-50">
+                        <MoreVertical className="h-4 w-4 text-gray-400" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem 
+                        className="cursor-default text-gray-400"
+                        disabled
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="cursor-default text-gray-400"
+                        disabled
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Update
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="cursor-default text-gray-400"
+                        disabled
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          
+                          try {
+                            // 데이터 새로고침 이벤트 발생
+                            window.dispatchEvent(new CustomEvent('refresh-data'));
+                            console.log('[DataTable] 헤더 새로고침 요청');
+                            // 메뉴 닫기
+                            setHeaderMenuOpen(false);
+                          } catch (error) {
+                            console.error('[DataTable] 새로고침 처리 중 오류:', error);
+                          }
+                        }}
+                        className="cursor-pointer text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Refresh
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </TableHead>
             </TableRow>
@@ -693,9 +776,99 @@ export function DataTable({
                   )}
                   <TableCell className={`w-10 py-3 px-0 text-center ${cellClassName} border-r border-gray-200`}>
                     <div className="flex justify-center items-center w-full px-2">
-                      <Button variant="ghost" size="icon" className="hover:bg-purple-50">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu 
+                        open={rowMenuOpenMap[item.id?.toString()] || false}
+                        onOpenChange={(isOpen) => handleRowMenuOpenChange(item.id?.toString(), isOpen)}
+                      >
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-purple-50">
+                            <MoreVertical className="h-4 w-4 text-gray-400" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              
+                              try {
+                                if (onCreateCurrency) {
+                                  onCreateCurrency();
+                                }
+                                // 메뉴 닫기
+                                handleRowMenuOpenChange(item.id?.toString(), false);
+                              } catch (error) {
+                                console.error('[DataTable] Create 처리 중 오류:', error);
+                              }
+                            }}
+                            className="cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              
+                              try {
+                                if (onUpdateCurrency) {
+                                  onUpdateCurrency();
+                                }
+                                // 메뉴 닫기
+                                handleRowMenuOpenChange(item.id?.toString(), false);
+                              } catch (error) {
+                                console.error('[DataTable] Update 처리 중 오류:', error);
+                              }
+                            }}
+                            className="cursor-pointer text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Update
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              
+                              try {
+                                if (onDeleteCurrency) {
+                                  onDeleteCurrency();
+                                }
+                                // 메뉴 닫기
+                                handleRowMenuOpenChange(item.id?.toString(), false);
+                              } catch (error) {
+                                console.error('[DataTable] Delete 처리 중 오류:', error);
+                              }
+                            }}
+                            className="cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              
+                              try {
+                                // 데이터 새로고침 이벤트 발생
+                                window.dispatchEvent(new CustomEvent('refresh-data'));
+                                console.log('[DataTable] 행 데이터 새로고침 요청');
+                                // 메뉴 닫기
+                                handleRowMenuOpenChange(item.id?.toString(), false);
+                              } catch (error) {
+                                console.error('[DataTable] 새로고침 처리 중 오류:', error);
+                              }
+                            }}
+                            className="cursor-pointer text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                          >
+                            <RefreshCw className="h-4 w-4 mr-2" />
+                            Refresh
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </TableCell>
                 </TableRow>
