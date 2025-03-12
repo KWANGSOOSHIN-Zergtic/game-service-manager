@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -1800,10 +1799,11 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
 
         // 샘플 성공 메시지
         const itemName = usingItem.info.name || usingItem.info.item_name || '아이템';
+        const displayName = typeof itemName === 'object' ? JSON.stringify(itemName) : String(itemName);
         
         toast({
           title: "사용 성공",
-          description: `${itemName} 아이템을 성공적으로 사용했습니다.`,
+          description: `${displayName} 아이템을 성공적으로 사용했습니다.`,
           variant: "default",
         });
         
@@ -1840,6 +1840,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     
     // 아이템 이름 가져오기
     const itemName = usingItem?.info.name || usingItem?.info.item_name || '아이템';
+    const displayName = typeof itemName === 'object' ? JSON.stringify(itemName) : String(itemName);
     
     return (
       <Dialog open={showUseItemDialog} onOpenChange={setShowUseItemDialog}>
@@ -1863,7 +1864,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
                   <h3 className="text-lg font-medium text-gray-800 mb-2">사용할 아이템:</h3>
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-blue-700">{itemName}</p>
+                      <p className="font-medium text-blue-700">{displayName}</p>
                     </div>
                     <CheckCircle2 className="h-8 w-8 text-blue-500" />
                   </div>
