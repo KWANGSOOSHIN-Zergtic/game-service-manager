@@ -1028,6 +1028,28 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     };
   }, [content.props, fetchData]);
 
+  // 일반 새로고침 이벤트 핸들러 등록 (모든 데이터 테이블에 적용)
+  useEffect(() => {
+    // 새로고침 이벤트 리스너 등록
+    const handleRefreshData = () => {
+      console.log('[TabContentRenderer] refresh-data 이벤트 감지, 데이터 새로고침 시작');
+      
+      // 데이터 테이블 타입인 경우만 새로고침 실행
+      if (content.type === 'dataTable' && content.props?.endpoint) {
+        console.log('[TabContentRenderer] 데이터 테이블 새로고침 실행');
+        fetchData();
+      }
+    };
+
+    // 이벤트 리스너 등록
+    window.addEventListener('refresh-data', handleRefreshData);
+
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('refresh-data', handleRefreshData);
+    };
+  }, [content.type, content.props, fetchData]);
+
   // 초기 데이터 로드 및 content.props.endpoint 변경 감지
   useEffect(() => {
     console.log('[TabContentRenderer] 데이터 로드 useEffect 실행:', {
