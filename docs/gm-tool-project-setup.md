@@ -459,7 +459,7 @@ npm test -- --watch
 - **설치 방법**: `src/components/ui/confirm-dialog.tsx` 파일을 추가하여 사용
 - **의존성**: ShadCN Alert Dialog (`@radix-ui/react-alert-dialog`)
 - **목적**: 다양한 작업에 대한 확인 대화상자를 일관되고 재사용 가능한 방식으로 제공
-- **문서**: [ConfirmDialog 컴포넌트 사용 방법](./components/gm-tools-confirm-dialog.md)
+- **문서**: [ConfirmDialog 컴포넌트 사용 방법](./components/gm-tool-confirm-dialog.md)
 
 **사용 예시**:
 ```tsx

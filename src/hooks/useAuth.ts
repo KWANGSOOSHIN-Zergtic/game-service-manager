@@ -181,7 +181,6 @@ export function useAuth() {
           localStorage.setItem('autoLoginPassword', btoa(loginData.password))
         }
 
-        toast.success('로그인에 성공했습니다!')
         return true
       } catch (error) {
         console.error('초기화 정보 조회 실패:', error)
@@ -216,7 +215,7 @@ export function useAuth() {
 
       // 로그인 페이지로 리다이렉트
       router.push('/')
-      toast.success('로그아웃되었습니다.')
+      toast.error('로그아웃 되었습니다.')
     } catch (error) {
       console.error('로그아웃 에러:', error)
       toast.error('로그아웃 처리 중 오류가 발생했습니다.')

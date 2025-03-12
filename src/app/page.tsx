@@ -1,10 +1,9 @@
 "use client"
 
-import Link from "next/link"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Github, Mail, Lock, LogIn } from "lucide-react"
+import { Mail, Lock, LogIn, LockKeyhole } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { useAuth } from "@/hooks/useAuth"
@@ -68,7 +67,7 @@ export default function LoginPage() {
       
       console.log('로그인 결과:', success)
       if (success) {
-        toast.success('로그인 성공! 대시보드로 이동합니다.');
+        toast.success('로그인에 성공했습니다');
         router.push("/dashboard")
       }
     } catch (error) {
@@ -123,9 +122,9 @@ export default function LoginPage() {
                 <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
-                  placeholder="E-mail"
+                  placeholder="E-mail ( id@woore.co.kr )"
                   value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value.toLowerCase() })}
                   className="w-full pl-10"
                   required
                   disabled={isLoading}
@@ -155,9 +154,12 @@ export default function LoginPage() {
                   />
                   Auto sign in
                 </label>
-                <Link href="/forgot-password" className="text-purple-600 hover:underline">
+                <span 
+                  className="text-purple-600 hover:underline cursor-pointer"
+                  onClick={() => toast.error("관리자에게 문의하세요.")}
+                >
                   Forgot password?
-                </Link>
+                </span>
               </div>
 
               <Button 
@@ -184,12 +186,12 @@ export default function LoginPage() {
 
               <div className="flex gap-4 justify-center">
                 <Button variant="outline" size="icon" className="w-10 h-10">
-                  <Github className="w-6 h-6" />
+                  <LockKeyhole className="w-6 h-6" />
                 </Button>
               </div>
 
               <div className="text-center text-sm text-gray-600">
-                No account yet? <Link href="/register" className="text-purple-600 hover:underline font-bold">Sign up</Link>
+                No account yet? <span className="text-purple-600 hover:underline font-bold cursor-pointer" onClick={() => toast.error("관리자에게 문의하세요.")}>Sign up</span>
               </div>
             </form>
           </div>
