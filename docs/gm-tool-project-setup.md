@@ -64,12 +64,43 @@ npm install -D cypress
 
 ## 프로젝트 구조 설정
 
-```bash
-mkdir -p src/{app,components,lib,styles,types}
-mkdir -p src/components/ui
-mkdir -p public/resource
-mkdir -p docs
-mkdir -p tests/{unit,e2e}
+```mermaid
+graph TD
+    A[프로젝트 루트] --> B[src]
+    A --> C[public]
+    A --> D[docs]
+    A --> E[tests]
+    
+    B --> B1[app]
+    B --> B2[components]
+    B --> B3[lib]
+    B --> B4[styles]
+    B --> B5[types]
+    
+    B2 --> B21[ui]
+    B21 --> B211[ShadCN 컴포넌트]
+    B21 --> B212[json-viewer.tsx]
+    B21 --> B213[json-viewer-custom.tsx]
+    B21 --> B214[confirm-dialog.tsx]
+    
+    B3 --> B31[db]
+    B31 --> B311[db-connection-manager.ts]
+    
+    B --> B6[hooks]
+    B6 --> B61[useApiRequest.ts]
+    
+    B --> B7[components/debug]
+    B7 --> B71[DebugProvider]
+    B7 --> B72[DebugToggleButton]
+    B7 --> B73[DebugPanel]
+    B7 --> B74[RequestSection]
+    B7 --> B75[ResponseSection]
+    B7 --> B76[StatusIndicator]
+    
+    E --> E1[unit]
+    E --> E2[e2e]
+    
+    C --> C1[resource]
 ```
 
 ## 환경 설정 파일
@@ -367,6 +398,56 @@ npm install react-json-pretty react-json-view --force
 ## 디버그 정보 컴포넌트 시스템
 
 디버그 정보 표시를 위한 컴포넌트 시스템이 `/src/components/debug` 디렉토리에 구현되었습니다.
+
+```mermaid
+classDiagram
+    class DebugProvider {
+        +state: DebugState
+        +toggleDebugMode()
+        +setRequestInfo()
+        +setResponseInfo()
+    }
+    
+    class DebugToggleButton {
+        +isDebugMode: boolean
+        +toggleDebug()
+    }
+    
+    class DebugPanel {
+        +isVisible: boolean
+        +requestInfo: RequestInfo
+        +responseInfo: ResponseInfo
+        +render()
+    }
+    
+    class RequestSection {
+        +requestInfo: RequestInfo
+        +render()
+    }
+    
+    class ResponseSection {
+        +responseInfo: ResponseInfo
+        +render()
+    }
+    
+    class StatusIndicator {
+        +status: 'success'|'error'|'loading'
+        +render()
+    }
+    
+    class useApiDebug {
+        +fetchWithDebug()
+        +debugInfo
+    }
+    
+    DebugProvider --> DebugToggleButton : provides context
+    DebugProvider --> DebugPanel : provides context
+    DebugPanel --> RequestSection : contains
+    DebugPanel --> ResponseSection : contains
+    RequestSection --> StatusIndicator : uses
+    ResponseSection --> StatusIndicator : uses
+    DebugProvider --> useApiDebug : uses
+```
 
 ### 주요 컴포넌트:
 

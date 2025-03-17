@@ -26,42 +26,45 @@
 
 ### **2.1 전체 사용자 흐름**
 
-```plaintext
-1. 로그인  
-    → 2. 메인 화면  
-        - 2-1. 상단 헤더  
-        - 2-2. 좌측 카테고리 메뉴  
-        - 2-3. 콘텐츠 페이지  
-
-→ 2-1. 상단 헤더 아이콘 → 별도 페이지 이동  
-    - 2-1-1. 컨텐츠 검색 (구현됨)
-    - 2-1-2. Help (구조만 구현됨)
-    - 2-1-3. Alarm (구조만 구현됨)
-    - 2-1-4. Setup (구조만 구현됨)
-    - 2-1-5. Account Setting (구조만 구현됨)
-    - 2-1-6. Logout (구현됨)
-
-→ 2-2. 좌측 카테고리 메뉴 → 선택 시 각 페이지로 이동  
-    - 2-2-1. Dashboard (구조만 구현됨)
-    - 2-2-2. Users (구현됨)
-    - 2-2-3. Service (구조만 구현됨)
-    - 2-2-4. CS (구조만 구현됨)
-    - 2-2-5. Dev (구조만 구현됨)
-    - 2-2-6. Test (구현됨 - 서브메뉴 포함)
-
-→ 2-2-2. Users 페이지 (구현됨)
-    - 2-2-2-1. DB List (구현됨)
-    - 2-2-2-2. User Search (구현됨)
-    - 2-2-2-3. Search Result (구현됨)
-    - 2-2-2-4. User Information (구현됨)
-        - 2-2-2-4-1. User Information Check Box Select (구현됨)
-    - 2-2-2-5. Select User - 아코디언 (구현됨)
-    - 2-2-2-6. 컨텐츠 탭 (구현됨 - 데이터 연동 일부 진행 중)
-    - 2-2-2-7. 컨텐츠 컨트롤 패널 (구현됨)
-    - 2-2-2-8. Advanced Data Control Panel (구현됨)
-
-→ 3. 콘텐츠 상태 변경 (부분 구현됨)
-→ 4. 저장 (부분 구현됨)
+```mermaid
+flowchart TD
+    A[1. 로그인] --> B[2. 메인 화면]
+    B --> B1[2-1. 상단 헤더]
+    B --> B2[2-2. 좌측 카테고리 메뉴]
+    B --> B3[2-3. 콘텐츠 페이지]
+    
+    B1 --> B11[2-1-1. 컨텐츠 검색]
+    B1 --> B12[2-1-2. Help]
+    B1 --> B13[2-1-3. Alarm]
+    B1 --> B14[2-1-4. Setup]
+    B1 --> B15[2-1-5. Account Setting]
+    B1 --> B16[2-1-6. Logout]
+    
+    B2 --> B21[2-2-1. Dashboard]
+    B2 --> B22[2-2-2. Users]
+    B2 --> B23[2-2-3. Service]
+    B2 --> B24[2-2-4. CS]
+    B2 --> B25[2-2-5. Dev]
+    B2 --> B26[2-2-6. Test]
+    
+    B22 --> C221[2-2-2-1. DB List]
+    B22 --> C222[2-2-2-2. User Search]
+    B22 --> C223[2-2-2-3. Search Result]
+    B22 --> C224[2-2-2-4. User Information]
+    C224 --> C2241[2-2-2-4-1. User Information Check Box Select]
+    B22 --> C225[2-2-2-5. Select User - 아코디언]
+    B22 --> C226[2-2-2-6. 컨텐츠 탭]
+    B22 --> C227[2-2-2-7. 컨텐츠 컨트롤 패널]
+    B22 --> C228[2-2-2-8. Advanced Data Control Panel]
+    
+    C227 --> D[3. 콘텐츠 상태 변경]
+    D --> E[4. 저장]
+    
+    class B11,C221,C222,C223,C224,C225,C226,C227,C228 implemented;
+    class B12,B13,B14,B15,B16,B21,B23,B24,B25 notImplemented;
+    
+    classDef implemented fill:#d4edda,stroke:#c3e6cb,color:#155724;
+    classDef notImplemented fill:#f8d7da,stroke:#f5c6cb,color:#721c24;
 ```
 
 ---

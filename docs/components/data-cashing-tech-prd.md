@@ -21,26 +21,21 @@
 ---
 
 ## **📌 2. 시스템 아키텍처**
-```plaintext
-+------------------------+       +--------------------------+
-| PostgreSQL (Multi-DB)  | <---> | Next.js API (DB Queries) |
-+------------------------+       +--------------------------+
-                                       |
-                                       v
-                          +------------------------+
-                          |  SHM (Shared Memory)   |
-                          |  + Cached Data         |
-                          |  + Table Structures    |
-                          +------------------------+
-                                       |
-                      +---------------------------------+
-                      | Next.js API (Data Management)  |
-                      +---------------------------------+
-                                       |
-                      +---------------------------------+
-                      | Redis Pub/Sub (Sync Changes)   |
-                      +---------------------------------+
+
+```mermaid
+graph TD
+    DB[PostgreSQL<br/>Multi-DB] <--> API[Next.js API<br/>DB Queries]
+    API --> SHM[SHM Shared Memory<br/>+ Cached Data<br/>+ Table Structures]
+    SHM --> MGT[Next.js API<br/>Data Management]
+    MGT --> REDIS[Redis Pub/Sub<br/>Sync Changes]
+    
+    style DB fill:#f9f,stroke:#333,stroke-width:2px
+    style API fill:#bbf,stroke:#333,stroke-width:2px
+    style SHM fill:#bfb,stroke:#333,stroke-width:2px
+    style MGT fill:#bbf,stroke:#333,stroke-width:2px
+    style REDIS fill:#fbf,stroke:#333,stroke-width:2px
 ```
+
 ✅ **다중 PostgreSQL DB에서 데이터를 가져와 SHM에 캐싱하는 구조**  
 ✅ **Redis Pub/Sub을 활용하여 데이터 변경 시 SHM 자동 업데이트**  
 ✅ **Next.js API를 통해 캐싱된 데이터를 제공하며, 필요 시 재로딩 가능**  

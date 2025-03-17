@@ -18,15 +18,14 @@
 ---
 
 ## **📌 2. 시스템 아키텍처**
-```plaintext
-+------------------------+       +--------------------------+
-| PostgreSQL (Multi-DB)  | <---> | Next.js API (DB Queries) |
-+------------------------+       +--------------------------+
-                                       |
-                                       v
-                          +-------------------------+
-                          | Frontend (UI 관리 페이지) |
-                          +-------------------------+
+```mermaid
+graph TD
+    DB[PostgreSQL<br/>Multi-DB] <--> API[Next.js API<br/>DB Queries]
+    API --> UI[Frontend<br/>UI 관리 페이지]
+    
+    style DB fill:#f9f,stroke:#333,stroke-width:2px
+    style API fill:#bbf,stroke:#333,stroke-width:2px
+    style UI fill:#bfb,stroke:#333,stroke-width:2px
 ```
 ✅ **다중 PostgreSQL DB에서 테이블 정보를 가져오는 구조**  
 ✅ **Next.js API를 통해 UI에서 테이블 검색 및 CRUD 기능 지원**  

@@ -21,147 +21,124 @@
 
 ## 2. 핵심 워크플로우 (클라이언트-서버 데이터 흐름)
 
-```
-[서버 초기화]
-↓
-[환경변수에 지정된 기본 DB (football_service DB) 연결 후 SELECT_SERVICE_DB_COLLECTION 쿼리를 사용한 연결 풀 DB 정보 획득]
-↓ 
-[환경변수에 지정된 기본 DB (football_service DB) 에서 클라이언트에 제공하게 될 간략한 DB COLLECTION 정보를 SELECT_DB_LIST 쿼리를 사용하여 획득]
-↓ 
-[서버 내부에 연결 풀을 구성하기 위한 DB 연결 정보 캐싱 (SELECT_SERVICE_DB_COLLECTION 응답 요소)]
-↓
-[서버 내부에 클라이언트에 제공할 DB 정보 구성을 위한 DB 연결 정보 캐싱 (SELECT_DB_LIST 응답 요소)]
-↓
-[서버 연결 풀 초기화 및 유지]
-↓
-[클라이언트 로그인 → DB 리스트 간략 정보 수신 및 로컬 저장(SELECT_DB_LIST 정보에 해당)]
-↓
-[클라이언트의 API 프로토콜 요청 (처리할 연결 풀 DB_NAME 항상 포함)]
-↓
-[서버 API 수신 → 지정된 DB_NAME의 연결 풀 사용]
-↓
-[쿼리 실행]
-↓
-[결과 반환]
-```
-
-### 2.1. 워크플로우 다이어그램
-
-다음은 클라이언트-서버 간 DB 연결 및 요청 처리 프로세스를 시각화한 다이어그램입니다:
-
-```
-┌────────────────────────────────────────────────────────────────┐
-│                           서버                                  │
-│                                                                │
-│  ┌─────────────────┐       ┌───────────────────────────────┐  │
-│  │                 │       │                               │  │
-│  │ 초기화 프로세스(1) │───────▶│ football_service DB 연결(2)    │  │
-│  │                 │       │                               │  │
-│  └─────────────────┘       └───────────────┬───────────────┘  │
-│                                            │                  │
-│                                            ▼                  │
-│  ┌─────────────────┐       ┌───────────────────────────────┐  │
-│  │                 │       │                               │  │
-│  │ DB 정보 캐싱(4,5) │◀──────│ 서비스 DB 정보 조회(3)           │  │
-│  │                 │       │                               │  │
-│  └────────┬────────┘       └───────────────────────────────┘  │
-│           │                                                   │
-│           ▼                                                   │
-│  ┌────────────────────┐                                       │
-│  │                    │                                       │
-│  │ 연결 풀 초기화(6)    │                                       │
-│  │                    │                                       │
-│  └────────┬───────────┘                                       │
-│           │                                                   │
-│           │              ┌───────────────────────────────┐    │
-│           │              │                               │    │
-│           └─────────────▶│ 요청 처리 준비 완료              │    │
-│                          │                               │    │
-│                          └──────────────┬────────────────┘    │
-└───────────────────────────────────────┬─┴────────────────────┬┘
-                                        │                      │
-                                        │                      │
-┌───────────────────────────────────────▼──────────────────────▼┐
-│                         클라이언트                              │
-│                                                                │
-│  ┌─────────────────┐       ┌───────────────────────────────┐  │
-│  │                 │       │                               │  │
-│  │ 로그인 요청(7)    │───────▶│ DB 리스트 정보 수신(7)           │  │
-│  │                 │       │                               │  │
-│  └─────────────────┘       └───────────────┬───────────────┘  │
-│                                            │                  │
-│                                            ▼                  │
-│  ┌─────────────────┐       ┌───────────────────────────────┐  │
-│  │                 │       │                               │  │
-│  │ API 요청(8)      │───────▶│ dbName 포함한 요청 전송(8)       │  │
-│  │                 │       │                               │  │
-│  └─────────────────┘       └───────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────┘
-                                        │
-                                        │
-┌───────────────────────────────────────▼──────────────────────┐
-│                           서버                                │
-│                                                              │
-│  ┌─────────────────┐       ┌───────────────────────────────┐ │
-│  │                 │       │                               │ │
-│  │ 요청 수신(9)      │───────▶│ dbName 검증(9)                 │ │
-│  │                 │       │                               │ │
-│  └─────────────────┘       └───────────────┬───────────────┘ │
-│                                            │                 │
-│                                            ▼                 │
-│  ┌─────────────────┐       ┌───────────────────────────────┐ │
-│  │                 │       │                               │ │
-│  │ 쿼리 실행(10)     │◀──────│ DB 연결 풀 사용(9)              │ │
-│  │                 │       │                               │ │
-│  └────────┬────────┘       └───────────────────────────────┘ │
-│           │                                                  │
-│           ▼                                                  │
-│  ┌────────────────────┐                                      │
-│  │                    │                                      │
-│  │ 결과 반환(11)        │                                      │
-│  │                    │                                      │
-│  └────────┬───────────┘                                      │
-│           │                                                  │
-└───────────┼──────────────────────────────────────────────────┘
-            │
-            ▼
-┌───────────────────────┐
-│      클라이언트        │
-│    (결과 수신 및 처리)   │
-└───────────────────────┘
+```mermaid
+stateDiagram-v2
+    state "서버" as Server {
+        state "초기화 프로세스" as Init
+        state "football_service DB 연결" as DBConnect
+        state "서비스 DB 정보 조회" as DBInfo
+        state "DB 정보 캐싱" as Cache
+        state "연결 풀 초기화" as Pool
+        state "요청 처리 준비 완료" as Ready
+        
+        [*] --> Init
+        Init --> DBConnect
+        DBConnect --> DBInfo
+        DBInfo --> Cache
+        Cache --> Pool
+        Pool --> Ready
+    }
+    
+    state "클라이언트" as Client {
+        state "로그인 요청" as Login
+        state "DB 리스트 정보 수신" as DBList
+        state "API 요청" as APIReq
+        state "dbName 포함한 요청 전송" as DBNameReq
+        
+        Login --> DBList
+        DBList --> APIReq
+        APIReq --> DBNameReq
+    }
+    
+    state "서버 요청 처리" as ServerProc {
+        state "요청 수신" as ReqRecv
+        state "dbName 검증" as Validate
+        state "DB 연결 풀 사용" as UsePool
+        state "쿼리 실행" as Query
+        state "결과 반환" as Result
+        
+        ReqRecv --> Validate
+        Validate --> UsePool
+        UsePool --> Query
+        Query --> Result
+    }
+    
+    Server --> Client: DB 리스트 전송
+    Client --> ServerProc: API 요청
+    ServerProc --> Client: 결과 반환
+    
+    note right of Server
+        1. 서버 초기화
+        2. football_service DB 연결
+        3. 서비스 DB 정보 조회
+        4-5. DB 정보 캐싱
+        6. 연결 풀 초기화
+    end note
+    
+    note right of Client
+        7. 로그인 및 DB 리스트 수신
+        8. API 요청 (dbName 포함)
+    end note
+    
+    note right of ServerProc
+        9. 요청 검증 및 연결 풀 사용
+        10. 쿼리 실행
+        11. 결과 반환
+    end note
 ```
 
-괄호 안의 숫자는 위의 워크플로우 단계와 일치합니다.
+이 다이어그램은 다음과 같은 프로세스를 보여줍니다:
 
-### 2.2. 세부 워크플로우 설명
+1. **서버 초기화 단계**:
+   - 초기화 프로세스 시작
+   - football_service DB 연결
+   - 서비스 DB 정보 조회 및 캐싱
+   - 연결 풀 초기화
 
-1. **서버 초기화 단계**: 
-   - 서버는 환경 변수(env)에 정의된 football_service DB 정보를 사용하여 초기 연결을 설정합니다.
-   - 이 연결을 통해 사용 가능한 모든 데이터베이스 목록 및 연결 정보를 로드합니다.
-   
-   > **중요**: football_service DB는 마스터 DB로서 모든 서비스 DB의 연결 정보와 클라이언트용 DB 리스트를 관리합니다.
+2. **클라이언트 요청 단계**:
+   - 로그인 요청 및 DB 리스트 정보 수신
+   - API 요청 (dbName 포함)
 
-2. **DB 정보 캐싱 및 연결 풀 초기화**: 
-   - 로드된 DB 정보는 서버 메모리에 캐싱됩니다(DB_COLLECTION).
-   - 각 DB 정보에 대해 연결 풀을 초기화하고 관리합니다.
-   - 서버는 이 연결 풀들을 서버 생명주기 동안 유지합니다.
-   
-   > **최적화**: 미리 초기화된 연결 풀을 통해 요청 처리 시간을 최소화합니다.
-
-3. **클라이언트 로그인 및 DB 정보 수신**: 
-   - 클라이언트가 로그인 시 `/api/db-list-load` 엔드포인트에서 사용 가능한 DB 목록 정보 수신
-   - 수신된 정보는 클라이언트 세션 스토리지에 저장 (예: `sessionStorage.setItem('dbList', JSON.stringify(dbListData))`)
-   
-   > **사용자 경험**: 이 정보는 UI에서 DB 선택 드롭다운 등으로 표시될 수 있습니다.
-
-4. **DB 요청 처리**: 
-   - 클라이언트는 API 요청 시 항상 사용할 DB_NAME을 파라미터로 포함시킵니다.
-   - 서버는 요청된 DB_NAME에 해당하는 연결 풀을 사용하여 요청을 처리합니다.
-   - 요청 처리 후 결과를 클라이언트에 반환합니다.
-   
-   > **필수 요소**: DB_NAME은 모든 DB 관련 API 요청에 필수적으로 포함되어야 합니다.
+3. **서버 요청 처리 단계**:
+   - 요청 수신 및 검증
+   - DB 연결 풀 사용
+   - 쿼리 실행 및 결과 반환
 
 ## 3. 핵심 컴포넌트
+
+```mermaid
+classDiagram
+    class DBConnectionManager {
+        -instance: DBConnectionManager
+        -connectionPools: Map
+        +getInstance()
+        +initializeConnectionPools()
+        +getConnection(dbName)
+        +releaseConnection(connection)
+    }
+    
+    class DB_COLLECTION {
+        +serviceDBs: Array
+        +clientDBs: Array
+    }
+    
+    class DB_QUERIES {
+        +SELECT_SERVICE_DB_COLLECTION
+        +SELECT_DB_LIST
+        +users
+        +currency
+        +service
+    }
+    
+    class ApiHandler {
+        +handleRequest(req, res)
+        +executeQuery(dbName, query, params)
+    }
+    
+    DBConnectionManager --> DB_COLLECTION : uses
+    ApiHandler --> DBConnectionManager : uses connection
+    ApiHandler --> DB_QUERIES : uses queries
+```
 
 ### 3.1. DB 정보 관리
 - **DB_COLLECTION**: 서비스에서 사용 가능한 DB 정보가 저장된 전역 객체 (`src/app/api/db-information/db-collection.ts`)
@@ -768,18 +745,37 @@ export async function executeQuery(params: QueryParams): Promise<QueryResult> {
 ### 9.2. 인증 정보 관리
 
 1. **환경 변수 관리**:
-   ```
-   # .env.development (개발 환경)
-   DB_HOST=dev-db.example.com
-   DB_PORT=5432
-   DB_USER=football_dev_user
-   DB_PASSWORD=dev_password
-   
-   # .env.production (운영 환경)
-   DB_HOST=prod-db.example.com
-   DB_PORT=5432
-   DB_USER=football_prod_user
-   DB_PASSWORD=prod_complex_password
+   ```dotenv
+   # 공통 설정
+   NODE_ENV=production  # development, test, staging, production
+
+   # football_service DB 정보 (마스터 DB)
+   FOOTBALL_SERVICE_HOST=db.football-service.com
+   FOOTBALL_SERVICE_PORT=5432
+   FOOTBALL_SERVICE_USER=football_service_user
+   FOOTBALL_SERVICE_PASSWORD=xxxx
+
+   # 백업 football_service DB 정보
+   BACKUP_FOOTBALL_SERVICE_HOST=backup-db.football-service.com
+   BACKUP_FOOTBALL_SERVICE_PORT=5432
+   BACKUP_FOOTBALL_SERVICE_USER=football_service_user
+   BACKUP_FOOTBALL_SERVICE_PASSWORD=xxxx
+
+   # 연결 풀 설정
+   DB_POOL_MAX=20
+   DB_POOL_IDLE_TIMEOUT=30000
+   DB_POOL_CONNECTION_TIMEOUT=2000
+   DB_QUERY_TIMEOUT=10000
+   DB_MAX_REUSE=7500
+
+   # 재시도 설정
+   DB_CONNECT_RETRY_COUNT=3
+   DB_CONNECT_RETRY_DELAY=1000
+   DB_POOL_INIT_RETRY_DELAY=5000
+
+   # 캐싱 설정
+   DB_REFRESH_INTERVAL=3600000  # 1시간마다 DB 정보 갱신 (밀리초)
+   DB_CACHE_LOCAL_BACKUP=true
    ```
    
    > **주의**: `.env` 파일은 버전 관리 시스템에 포함하지 않습니다. 대신 `.env.example` 파일을 제공하여 필요한 변수를 문서화합니다.
