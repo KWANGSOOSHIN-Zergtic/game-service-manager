@@ -1,5 +1,4 @@
 import { TabStructure } from '@/types/tab-structure';
-import { mockUserBallerData } from '@/test/test-data/mock-table-data';
 
 // 사용자 정보 탭 구조 정의
 export const userTabsStructure: TabStructure = {
@@ -14,10 +13,8 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/baller',
+              endpoint: '/api/users/multi-play/baller',
               tableName: 'Baller Information',
-              // BALLER 데이터 목업 데이터 직접 제공
-              data: mockUserBallerData,
               // 데이터 컨트롤 패널 표시를 위한 속성 추가
               showDataControls: true,
               customFormatters: {
@@ -56,7 +53,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/pub',
+              endpoint: '/api/users/pub',
             }
           }
         },
@@ -66,7 +63,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/record',
+              endpoint: '/api/users/record',
             }
           }
         },
@@ -76,7 +73,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/shop',
+              endpoint: '/api/users/shop',
             }
           }
         },
@@ -86,7 +83,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/club',
+              endpoint: '/api/users/club',
             }
           }
         },
@@ -96,7 +93,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/season-pass',
+              endpoint: '/api/users/season-pass',
             }
           }
         },
@@ -106,7 +103,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/menu-tab',
+              endpoint: '/api/users/menu-tab',
             }
           }
         }
@@ -122,7 +119,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/baller',
+              endpoint: '/api/users/story/baller',
             }
           }
         },
@@ -132,7 +129,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/pub',
+              endpoint: '/api/users/story/pub',
             }
           }
         },
@@ -142,7 +139,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/record',
+              endpoint: '/api/users/story/record',
             }
           }
         },
@@ -152,7 +149,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/shop',
+              endpoint: '/api/users/story/shop',
             }
           }
         },
@@ -162,7 +159,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/club',
+              endpoint: '/api/users/story/club',
             }
           }
         },
@@ -172,7 +169,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/season-pass',
+              endpoint: '/api/users/story/season-pass',
             }
           }
         },
@@ -182,7 +179,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/user/story/menu-tab',
+              endpoint: '/api/users/story/menu-tab',
             }
           }
         }
@@ -194,7 +191,7 @@ export const userTabsStructure: TabStructure = {
       content: {
         type: 'dataTable',
         props: {
-          endpoint: '/api/user/currency',
+          endpoint: '/api/users/currency',
           tableName: 'Currency Information',
           formatters: {
             count: (value: string | number | null) => `${Number(value || 0).toLocaleString()} 개`,
@@ -211,7 +208,7 @@ export const userTabsStructure: TabStructure = {
       content: {
         type: 'dataTable',
         props: {
-          endpoint: '/api/user/service',
+          endpoint: '/api/users/service',
         }
       }
     }

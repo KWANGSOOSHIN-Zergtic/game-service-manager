@@ -747,3 +747,38 @@ interface GroupedTables { ... } // 그룹화된 테이블
   - `showDataControls` 속성을 true로 설정하여 활성화
   - Currency와 BALLER 탭에서 모두 사용 가능
   - 각 탭에 맞는 핸들러 함수가 자동으로 연결됨
+
+## API 구현 현황
+
+### 1. 사용자 관리 API
+
+#### 1.1. Baller API
+- **구현일자**: 2024-03-19
+- **기능**: 사용자의 Baller 정보 CRUD 기능
+- **엔드포인트**: `/api/users/multi-play/baller`
+- **구현 파일**:
+  - `src/app/api/users/multi-play/baller/route.ts`: API 라우트 핸들러
+  - `src/app/api/users/multi-play/baller/service.ts`: 비즈니스 로직
+  - `src/app/api/db-query/queries-users-baller.ts`: DB 쿼리
+- **문서**: `docs/gm-tool-api-doc.md`
+- **테스트**:
+  - `src/test/api/users/multi-play/baller.test.ts`: 단위 테스트
+  - `src/test/api/users/multi-play/baller-api.test.ts`: 통합 테스트
+- **데이터베이스 연결 방식**:
+  - `DBConnectionManager`를 통한 연결 풀 관리
+  - `withClient` 패턴을 사용한 자동 연결 해제
+  - 명시적 `dbName` 파라미터를 통한 사용자 지정 데이터베이스 연결
+  - 쿼리 실행 전/후 프로세스 표준화(쿼리 로깅, 오류 처리, 결과 가공)
+- **오류 처리 전략**:
+  - 구조화된 오류 응답 포맷(`success`, `message/error`, `status`)
+  - 로깅 체계화(`logger.info`, `logger.warn`, `logger.error`)
+  - try-catch를 통한 예외 처리
+- **구현 특이사항**:
+  - TypeORM 대신 네이티브 PostgreSQL 클라이언트 사용
+  - 쿼리 파라미터화로 SQL 인젝션 방지
+  - 다중 항목 삭제 기능(쉼표로 구분된 ID 목록 처리)
+
+#### 1.2. Currency API (예정)
+- **예정일자**: TBD
+- **기능**: 사용자의 화폐 정보 CRUD 기능
+- **엔드포인트**: `/api/users/multi-play/currency`

@@ -848,7 +848,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
               : `/${content.props.endpoint}`;
             
             // 저장된 DB 이름 가져오기 (없으면 기본값 사용)
-            const savedDbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+            const savedDbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
             console.log('[TabContentRenderer] 저장된 DB 이름:', savedDbName);
             
             // 상대 경로로 API 호출
@@ -967,17 +967,25 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         // 디버그 정보 저장
         setDebugInfo(result);
         
-        // currenciesKey 결정 (API 응답 형식에 따라)
-        const currenciesKey = result.currencies ? 'currencies' : 'data';
+        // 데이터 키 결정 (API 응답 형식에 따라)
+        let dataKey = 'data';
+        let processedData = [];
+        
+        if (result.currencies) {
+          dataKey = 'currencies';
+        } else if (result.ballers) {
+          dataKey = 'ballers';
+        }
         
         // 데이터 처리
-        if (result.success && result[currenciesKey]) {
-          const processedData = result[currenciesKey].map((item: Record<string, unknown>, index: number) => ({
+        if (result.success && result[dataKey]) {
+          processedData = result[dataKey].map((item: Record<string, unknown>, index: number) => ({
             id: (item.id as number) || index + 1,
             ...item
           }));
           
           console.log('[TabContentRenderer] 처리된 데이터:', {
+            dataKey,
             count: processedData.length,
             firstItem: processedData[0] || null
           });
@@ -986,7 +994,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         } else {
           console.warn('[TabContentRenderer] 데이터가 없거나 응답이 성공이 아님:', {
             success: result.success,
-            hasData: !!result[currenciesKey],
+            hasData: !!result[dataKey],
             message: result.message || '데이터가 없습니다.'
           });
           
@@ -1030,10 +1038,10 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     const handleRefreshCurrencyData = () => {
       console.log('[TabContentRenderer] refresh-currency-data 이벤트 감지, 데이터 새로고침 시작');
       
-      // 현재 탭이 화폐 탭인지 확인
+      // 현재 탭이 화폐 탭 또는 Baller 탭인지 확인
       const contentProps = content.props || {};
       const endpoint = contentProps.endpoint as string | undefined;
-      if (endpoint && endpoint.includes('/api/users/currency')) {
+      if (endpoint && (endpoint.includes('/api/users/currency') || endpoint.includes('/api/users/multi-play/baller'))) {
         // 새로고침 실행
         fetchData();
       }
@@ -1598,9 +1606,9 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         <p className="mt-2 text-xs font-medium">사용 가능한 데이터베이스:</p>
         <ul className="mt-1 list-disc list-inside">
           <li className="ml-2">football_service</li>
-          <li className="ml-2">football_release</li>
-          <li className="ml-2">football_develop</li>
-          <li className="ml-2">football_develop_backup</li>
+          <li className="ml-2">shipping_product_db</li>
+          <li className="ml-2">shipping_dev_db</li>
+          <li className="ml-2">develop_db</li>
         </ul>
       </div>
       
@@ -1762,7 +1770,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             const parsedInfo = JSON.parse(storedInfo);
             dbName = parsedInfo.dbName;
           } else {
-            dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+            dbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
           }
         }
         
@@ -2117,7 +2125,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           const parsedInfo = JSON.parse(storedInfo);
           dbName = parsedInfo.dbName;
         } else {
-          dbName = sessionStorage.getItem('lastUsedDbName') || 'football_develop';
+          dbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
         }
       }
       
@@ -2227,7 +2235,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       const endpoint = contentProps.endpoint as string | undefined;
       // Currency 탭 또는 Baller 탭 확인
       const isCurrencyTab = endpoint ? endpoint.includes('/api/users/currency') : false;
-      const isBallerTab = endpoint ? endpoint.includes('/api/users/baller') : false;
+      const isBallerTab = endpoint ? endpoint.includes('/api/users/multi-play/baller') : false;
       
       return (
         <div className={`p-4 ${className}`}>
@@ -2334,27 +2342,92 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
           <CreateBallerModal
             open={showCreateBallerModal}
             onOpenChange={setShowCreateBallerModal}
-            onConfirm={() => {
-              // 로깅
+            onConfirm={(newBaller) => {
+              // 생성 중 상태로 설정
+              setIsCreatingBaller(true);
+              
+              // 사용자 정보 가져오기
+              const employerInfo = sessionStorage.getItem('employerStorage');
+              if (!employerInfo) {
+                console.error("사용자 정보가 없습니다.");
+                setWarningTitle('사용자 정보 없음');
+                setWarningMessage('사용자 정보가 없습니다. 로그인 후 다시 시도해주세요.');
+                setShowWarningDialog(true);
+                setIsCreatingBaller(false);
+                return;
+              }
+              
               try {
-                logger.info('[TabContentRenderer] 베럴 생성 확인됨:', {
-                  timestamp: new Date().toISOString(),
+                const parsedEmployerInfo = JSON.parse(employerInfo);
+                const employerUid = parsedEmployerInfo.uid;
+                const dbName = parsedEmployerInfo.db_name;
+                
+                // API 요청 데이터 준비
+                const requestData = {
+                  employerUid,
+                  dbName,
+                  excelBallerIndex: newBaller.excel_baller_index,
+                  trainingPoint: newBaller.training_point,
+                  characterLevel: newBaller.character_level,
+                  recruitProcess: newBaller.recruit_process,
+                  characterStatus: newBaller.character_status,
+                  talkGroupNo: 1, // 기본값
+                  maxUpgradePoint: 0 // 기본값
+                };
+                
+                // 로깅
+                console.log('[TabContentRenderer] Baller 생성 요청:', requestData);
+                
+                // API 호출
+                fetch('/api/users/multi-play/baller', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(requestData),
+                })
+                .then(response => {
+                  if (!response.ok) {
+                    return response.json().then(data => {
+                      throw new Error(data.error || data.message || '알 수 없는 오류가 발생했습니다.');
+                    });
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  // 성공 처리
+                  console.log("베럴이 성공적으로 생성되었습니다:", data);
+                  toast({
+                    title: "생성 성공",
+                    description: "베럴이 성공적으로 생성되었습니다.",
+                    variant: "default",
+                  });
+                  
+                  // 데이터 새로고침
+                  fetchData();
+                })
+                .catch(error => {
+                  console.error('[TabContentRenderer] Baller 생성 오류:', error);
+                  toast({
+                    title: "생성 실패",
+                    description: error.message || "베럴 생성 중 오류가 발생했습니다.",
+                    variant: "destructive",
+                  });
+                })
+                .finally(() => {
+                  // 모달 닫기
+                  setShowCreateBallerModal(false);
+                  setIsCreatingBaller(false);
                 });
               } catch (error) {
-                console.warn('[TabContentRenderer] 로깅 실패:', error);
+                console.error('[TabContentRenderer] 데이터 처리 중 오류:', error);
+                toast({
+                  title: "오류 발생",
+                  description: "데이터 처리 중 오류가 발생했습니다.",
+                  variant: "destructive",
+                });
+                setIsCreatingBaller(false);
               }
-              
-              // 성공 처리
-              console.log("베럴이 성공적으로 생성되었습니다.");
-              
-              // 데이터 새로고침
-              if (typeof fetchData === 'function') {
-                fetchData();
-              }
-              
-              // 모달 닫기
-              setShowCreateBallerModal(false);
-              setIsCreatingBaller(false);
             }}
             isCreating={isCreatingBaller}
           />

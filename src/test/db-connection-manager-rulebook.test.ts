@@ -56,7 +56,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
       // saveDBCollection 호출 확인
       expect(saveDBCollection).toHaveBeenCalled();
       expect(DB_COLLECTION).toHaveProperty('football_service');
-      expect(DB_COLLECTION).toHaveProperty('football_develop');
+      expect(DB_COLLECTION).toHaveProperty('shipping_dev_db');
       expect(DB_COLLECTION).toHaveProperty('football_staging');
       expect(DB_COLLECTION).toHaveProperty('football_production');
     });
@@ -68,7 +68,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
       const dbNames = Object.keys(DB_COLLECTION);
       
       expect(dbNames).toContain('football_service');
-      expect(dbNames).toContain('football_develop');
+      expect(dbNames).toContain('shipping_dev_db');
       expect(dbNames).toContain('football_staging');
       expect(dbNames).toContain('football_production');
       
@@ -120,8 +120,8 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
     });
     
     it('동일한 DB에 대해 같은 연결 풀을 재사용해야 한다', () => {
-      const pool1 = dbManager.getPool('football_develop');
-      const pool2 = dbManager.getPool('football_develop');
+      const pool1 = dbManager.getPool('shipping_dev_db');
+      const pool2 = dbManager.getPool('shipping_dev_db');
       
       expect(pool1).toBe(pool2);
     });
@@ -151,7 +151,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
       }
       
       // 다른 DB 연결 풀은 정상 동작하는지 확인
-      expect(() => dbManager.getPool('football_develop')).not.toThrow();
+      expect(() => dbManager.getPool('shipping_dev_db')).not.toThrow();
     });
   });
 
@@ -161,7 +161,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
     });
     
     it('withClient 메서드를 사용하여 쿼리를 실행하고 연결을 자동으로 반환해야 한다', async () => {
-      const dbName = 'football_develop';
+      const dbName = 'shipping_dev_db';
       
       try {
         await dbManager.withClient(dbName, async (client) => {
@@ -198,7 +198,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
     });
     
     it('withTransaction 메서드를 사용하여 트랜잭션을 실행할 수 있어야 한다', async () => {
-      const dbName = 'football_develop';
+      const dbName = 'shipping_dev_db';
       
       try {
         await dbManager.withTransaction(dbName, async (client) => {
@@ -243,7 +243,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
     });
     
     it('트랜잭션 오류 발생 시 롤백이 정상적으로 이루어져야 한다', async () => {
-      const dbName = 'football_develop';
+      const dbName = 'shipping_dev_db';
       const testName = 'rollback_test';
       
       try {
@@ -292,19 +292,19 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
       await dbManager.initialize();
       
       // 풀 확인
-      expect(() => dbManager.getPool('football_develop')).not.toThrow();
+      expect(() => dbManager.getPool('shipping_dev_db')).not.toThrow();
       
       // 모든 풀 닫기
       await dbManager.closeAllPools();
       
       // 풀이 닫힌 상태에서는 접근 불가
-      expect(() => dbManager.getPool('football_develop')).toThrow();
+      expect(() => dbManager.getPool('shipping_dev_db')).toThrow();
       
       // 다시 초기화
       await dbManager.initialize();
       
       // 다시 풀 확인
-      expect(() => dbManager.getPool('football_develop')).not.toThrow();
+      expect(() => dbManager.getPool('shipping_dev_db')).not.toThrow();
     });
     
     it('saveDBCollection 함수가 실패하면 초기화도 실패해야 한다', async () => {
@@ -361,7 +361,7 @@ describe('DB 연결 프로세스 룰북 테스트', () => {
     });
     
     it('연결 풀을 사용한 여러 동시 요청을 처리할 수 있어야 한다', async () => {
-      const dbName = 'football_develop';
+      const dbName = 'shipping_dev_db';
       const numberOfRequests = 3;
       
       try {

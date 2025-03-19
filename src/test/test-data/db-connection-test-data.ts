@@ -23,13 +23,13 @@ export const MASTER_DB_CONFIG = {
 
 // 서비스 DB 설정
 export const SERVICE_DB_CONFIGS = {
-  'football_develop': {
+  'shipping_dev_db': {
     index: 1,
-    name: 'football_develop',
+    name: 'shipping_dev_db',
     type: 'postgres',
     host: process.env.TEST_DB_HOST || 'localhost',
     port: Number(process.env.TEST_DB_PORT) || 5432,
-    data_base: 'football_develop',
+    data_base: 'shipping_dev_db',
     config: {
       service_db: {
         user: process.env.TEST_DB_USER || 'test_user',
@@ -70,7 +70,7 @@ export const SERVICE_DB_CONFIGS = {
 // DB 리스트 정보 (클라이언트에 제공되는 간략한 정보)
 export const DB_LIST_INFO = [
   {
-    db_name: 'football_develop',
+    db_name: 'shipping_dev_db',
     display_name: '개발 DB',
     description: '개발 환경 데이터베이스'
   },
@@ -158,6 +158,6 @@ export const INVALID_DB_CONFIG = {
 // 테스트 사용자 데이터
 export const TEST_USER_INFO = {
   uid: 'test-uid-123',
-  db_name: 'football_develop',
+  db_name: 'shipping_dev_db',
   role: 'developer'
 }; 

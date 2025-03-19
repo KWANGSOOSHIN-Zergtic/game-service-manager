@@ -283,7 +283,7 @@ classDiagram
 2. **DB 선택 및 저장**:
    - 사용자가 특정 DB를 선택하면 해당 정보를 세션 스토리지에 저장 (예: `sessionStorage.setItem('lastUsedDbName', selectedDbName)`)
    
-   > **기본값**: 사용자가 명시적으로 선택하지 않은 경우 기본 DB(일반적으로 'football_develop')를 사용합니다.
+   > **기본값**: 사용자가 명시적으로 선택하지 않은 경우 기본 DB(일반적으로 'shipping_dev_db')를 사용합니다.
 
    ```typescript
    // DB 선택 컴포넌트 예시
@@ -1144,7 +1144,7 @@ export class DBConnectionManager {
 
 1. **상태 확인 API**:
    ```
-   GET /api/admin/db-status?dbName=football_develop
+   GET /api/admin/db-status?dbName=shipping_dev_db
    ```
    
    응답 예시:

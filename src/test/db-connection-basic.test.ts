@@ -25,13 +25,13 @@ describe('DB 연결 기본 테스트', () => {
   });
 
   it('서비스 DB 정보가 올바르게 설정되어야 함', () => {
-    expect(DB_COLLECTION).toHaveProperty('football_develop');
+    expect(DB_COLLECTION).toHaveProperty('shipping_dev_db');
     expect(DB_COLLECTION).toHaveProperty('football_staging');
     expect(DB_COLLECTION).toHaveProperty('football_production');
     
     // 개발 DB 정보 확인
-    const devDB = DB_COLLECTION['football_develop'];
-    expect(devDB).toHaveProperty('name', 'football_develop');
+    const devDB = DB_COLLECTION['shipping_dev_db'];
+    expect(devDB).toHaveProperty('name', 'shipping_dev_db');
     expect(devDB).toHaveProperty('index', 1);
     expect(devDB).toHaveProperty('type', 'postgres');
     
@@ -50,7 +50,7 @@ describe('DB 연결 기본 테스트', () => {
     expect(DB_LIST_INFO).toHaveLength(3);
     
     // 각 DB 정보 확인
-    expect(DB_LIST_INFO[0]).toHaveProperty('db_name', 'football_develop');
+    expect(DB_LIST_INFO[0]).toHaveProperty('db_name', 'shipping_dev_db');
     expect(DB_LIST_INFO[0]).toHaveProperty('display_name', '개발 DB');
     
     expect(DB_LIST_INFO[1]).toHaveProperty('db_name', 'football_staging');
