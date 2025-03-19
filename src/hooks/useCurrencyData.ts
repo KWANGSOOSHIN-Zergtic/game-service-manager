@@ -57,7 +57,7 @@ export const useCurrencyData = (): UseCurrencyDataReturn => {
     setError(null);
     
     try {
-      const response = await apiRequest.get('/api/user/currency', {
+      const response = await apiRequest.get('/api/users/currency', {
         params: { employerUid, dbName }
       });
       
@@ -112,7 +112,7 @@ export const useCurrencyData = (): UseCurrencyDataReturn => {
     setError(null);
     
     try {
-      const response = await apiRequest.post('/api/user/currency', params);
+      const response = await apiRequest.post('/api/users/currency', params);
       
       // 디버그 정보 강화
       setDebugInfo({
@@ -164,7 +164,7 @@ export const useCurrencyData = (): UseCurrencyDataReturn => {
     setError(null);
     
     try {
-      const response = await apiRequest.put('/api/user/currency', params);
+      const response = await apiRequest.put('/api/users/currency', params);
       
       // 디버그 정보 강화
       setDebugInfo({
@@ -219,7 +219,7 @@ export const useCurrencyData = (): UseCurrencyDataReturn => {
     setError(null);
     
     try {
-      const response = await apiRequest.delete('/api/user/currency', {
+      const response = await apiRequest.delete('/api/users/currency', {
         params: { 
           employerUid, 
           excelItemIndex: excelItemIndices.join(','),

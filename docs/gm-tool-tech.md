@@ -140,7 +140,7 @@ export async function GET(request: NextRequest) {
 #### **코드 구현 예시 (재화 관리 API)**
 
 ```typescript
-// src/app/api/user/currency/route.ts
+// src/app/api/users/currency/route.ts
 // PUT: 사용자 재화 업데이트
 export async function PUT(request: NextRequest) {
   try {
@@ -272,12 +272,12 @@ GET /api/user-search?userId={userId}&dbName={dbName}
 
 #### **📌 재화 조회 API**
 ```http
-GET /api/user/currency?employerUid={uid}&dbName={dbName}
+GET /api/users/currency?employerUid={uid}&dbName={dbName}
 ```
 
 #### **📌 재화 생성/지급 API**
 ```http
-POST /api/user/currency
+POST /api/users/currency
 ```
 ```json
 {
@@ -290,7 +290,7 @@ POST /api/user/currency
 
 #### **📌 재화 수정 API**
 ```http
-PUT /api/user/currency
+PUT /api/users/currency
 ```
 ```json
 {
@@ -303,7 +303,7 @@ PUT /api/user/currency
 
 #### **📌 재화 삭제 API**
 ```http
-DELETE /api/user/currency?employerUid={uid}&excelItemIndex={itemId}&dbName={dbName}
+DELETE /api/users/currency?employerUid={uid}&excelItemIndex={itemId}&dbName={dbName}
 ```
 
 ---
@@ -429,7 +429,7 @@ export default function UsersPage() {
 ### **6.2 유저 아코디언 UI 컴포넌트**
 
 ```tsx
-// src/components/user/user-accordion.tsx (일부)
+// src/components/users/user-accordion.tsx (일부)
 export function UserAccordion({ selectedUsers, onRemoveUser }: UserAccordionProps) {
   return (
     <Accordion type="multiple" className="w-full space-y-2">

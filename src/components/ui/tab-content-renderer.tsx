@@ -42,6 +42,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { CreateCurrencyModal } from "../control-panels/create-currency-modal";
+import { CreateBallerModal } from "../control-panels/create-baller-modal";
 
 interface TabContentRendererProps {
   content: TabContent;
@@ -700,6 +701,8 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const [warningTitle, setWarningTitle] = useState('');
   const [showCreateCurrencyModal, setShowCreateCurrencyModal] = useState<boolean>(false);
   const [isCreatingCurrency, setIsCreatingCurrency] = useState<boolean>(false);
+  const [showCreateBallerModal, setShowCreateBallerModal] = useState<boolean>(false);
+  const [isCreatingBaller, setIsCreatingBaller] = useState<boolean>(false);
   
   // 로컬 스토리지에서 디버그 섹션 표시 상태 불러오기
   const getDebugSectionState = (): boolean => {
@@ -795,13 +798,30 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   
   // 데이터 테이블 타입일 경우 API 호출
   const fetchData = useCallback(async () => {
-    if (content.type !== 'dataTable' || !content.props?.endpoint) return;
+    if (content.type !== 'dataTable') return;
         
     setIsLoading(true);
     setError(null);
     setDebugInfo(null);
     setApiDebugInfo(null); // API 디버그 정보 초기화
     setRequestInfo(null); // 요청 정보 초기화
+    
+    // props.data가 제공된 경우, API 호출을 건너뛰고 직접 데이터 사용
+    if (content.props?.data) {
+      console.log('[TabContentRenderer] 제공된 목 데이터 사용:', {
+        dataLength: (content.props.data as TableData[]).length
+      });
+      setData(content.props.data as TableData[]);
+      setIsLoading(false);
+      return;
+    }
+    
+    // API 엔드포인트가 없는 경우 리턴
+    if (!content.props?.endpoint) {
+      setError('API 엔드포인트가 지정되지 않았습니다.');
+      setIsLoading(false);
+      return;
+    }
     
     try {
       console.log('[TabContentRenderer] 데이터 요청 시작:', {
@@ -819,7 +839,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         if (process.env.NODE_ENV === 'development') {
           const isDevelopmentMode = true;
           
-          if (isDevelopmentMode && typeof content.props.endpoint === 'string' && content.props.endpoint.includes('/api/user/currency')) {
+          if (isDevelopmentMode && typeof content.props.endpoint === 'string' && content.props.endpoint.includes('/api/users/currency')) {
             console.info('[TabContentRenderer] 개발 환경에서 테스트 데이터를 사용합니다.');
             
             // API 엔드포인트 경로 가져오기
@@ -1013,7 +1033,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       // 현재 탭이 화폐 탭인지 확인
       const contentProps = content.props || {};
       const endpoint = contentProps.endpoint as string | undefined;
-      if (endpoint && endpoint.includes('/api/user/currency')) {
+      if (endpoint && endpoint.includes('/api/users/currency')) {
         // 새로고침 실행
         fetchData();
       }
@@ -1054,13 +1074,14 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   useEffect(() => {
     console.log('[TabContentRenderer] 데이터 로드 useEffect 실행:', {
       contentType: content.type,
-      endpoint: content.props?.endpoint
+      endpoint: content.props?.endpoint,
+      hasData: !!content.props?.data
     });
     
-    if (content.type === 'dataTable' && content.props?.endpoint) {
+    if (content.type === 'dataTable' && (content.props?.endpoint || content.props?.data)) {
       fetchData();
     }
-  }, [fetchData, content.type, content.props?.endpoint]);
+  }, [fetchData, content.type, content.props?.endpoint, content.props?.data]);
 
   // Currency 관련 핸들러 함수
   const handleCreateCurrency = () => {
@@ -1093,6 +1114,123 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     }
   };
 
+  // Baller 관련 핸들러 함수
+  const handleCreateBaller = () => {
+    console.log("handleCreateBaller");
+    
+    // 사용자 정보 확인 - employerStorage에서 정보 가져오기
+    const employerInfo = sessionStorage.getItem('employerStorage');
+    if (!employerInfo) {
+      console.warn("사용자 정보가 없습니다.");
+      setWarningTitle('사용자 정보 없음');
+      setWarningMessage('사용자 정보가 없습니다. 로그인 후 다시 시도해주세요.');
+      setShowWarningDialog(true);
+      return;
+    }
+
+    try {
+      const parsedEmployerInfo = JSON.parse(employerInfo);
+      const employerUid = parsedEmployerInfo.uid;
+      const dbName = parsedEmployerInfo.db_name;
+      
+      console.log(`Baller 생성 시도: 사용자 ID ${employerUid}, DB: ${dbName}`);
+      
+      // CreateBallerModal 표시
+      setShowCreateBallerModal(true);
+    } catch (error) {
+      console.error("데이터 파싱 오류:", error);
+      setWarningTitle("오류 발생");
+      setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setShowWarningDialog(true);
+    }
+  };
+
+  const handleUpdateBaller = () => {
+    console.log("handleUpdateBaller");
+    
+    // 선택된 항목이 있는지 확인
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    
+    if (!selectedCurrencyStr && !selectedCurrenciesStr) {
+      console.warn("선택된 Baller가 없습니다.");
+      setWarningTitle('선택된 Baller 없음');
+      setWarningMessage('Baller를 업데이트하려면 먼저 테이블에서 행을 선택해주세요.');
+      setShowWarningDialog(true);
+      return;
+    }
+    
+    try {
+      // 단일 항목 또는 다중 항목 처리
+      let updateItems: TableData[] = [];
+      
+      if (selectedCurrenciesStr) {
+        updateItems = JSON.parse(selectedCurrenciesStr);
+      } else if (selectedCurrencyStr) {
+        updateItems = [JSON.parse(selectedCurrencyStr)];
+      }
+      
+      // 업데이트 모달 표시 준비
+      if (updateItems.length > 0) {
+        setUpdatingItems(updateItems);
+        setShowUpdateDialog(true);
+      } else {
+        console.warn("유효한 Baller 데이터가 없습니다.");
+        setWarningTitle('유효하지 않은 데이터');
+        setWarningMessage('선택된 Baller 데이터가 유효하지 않습니다.');
+        setShowWarningDialog(true);
+      }
+    } catch (error) {
+      console.error("선택된 Baller 처리 중 오류:", error);
+      setWarningTitle("오류 발생");
+      setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setShowWarningDialog(true);
+    }
+  };
+
+  const handleDeleteBaller = () => {
+    console.log("handleDeleteBaller");
+    
+    // 선택된 항목이 있는지 확인
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    
+    if (!selectedCurrencyStr && !selectedCurrenciesStr) {
+      console.warn("선택된 Baller가 없습니다.");
+      setWarningTitle('선택된 Baller 없음');
+      setWarningMessage('Baller를 삭제하려면 먼저 테이블에서 행을 선택해주세요.');
+      setShowWarningDialog(true);
+      return;
+    }
+    
+    try {
+      // 단일 항목 또는 다중 항목 처리
+      let deleteItems: TableData[] = [];
+      
+      if (selectedCurrenciesStr) {
+        deleteItems = JSON.parse(selectedCurrenciesStr);
+      } else if (selectedCurrencyStr) {
+        deleteItems = [JSON.parse(selectedCurrencyStr)];
+      }
+      
+      // 삭제 다이얼로그 표시 준비
+      if (deleteItems.length > 0) {
+        setDeletingCurrencies(deleteItems);
+        setShowDeleteDialog(true);
+      } else {
+        console.warn("유효한 Baller 데이터가 없습니다.");
+        setWarningTitle('유효하지 않은 데이터');
+        setWarningMessage('선택된 Baller 데이터가 유효하지 않습니다.');
+        setShowWarningDialog(true);
+      }
+    } catch (error) {
+      console.error("선택된 Baller 처리 중 오류:", error);
+      setWarningTitle("오류 발생");
+      setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setShowWarningDialog(true);
+    }
+  };
+
   // 화폐 생성 확인 핸들러 수정
   const handleConfirmCreateCurrency = (newCurrency: { excelItemIndex: number; count: number }) => {
     try {
@@ -1109,7 +1247,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       const dbName = parsedEmployerInfo.db_name;
       
       // API 호출
-      fetch("/api/user/currency", {
+      fetch("/api/users/currency", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1642,7 +1780,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         });
         
         // API 호출
-        const response = await fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndices.join(',')}&dbName=${dbName}`, {
+        const response = await fetch(`/api/users/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndices.join(',')}&dbName=${dbName}`, {
           method: 'DELETE',
         });
         
@@ -2007,7 +2145,7 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         const { id } = item;
         
         try {
-          const response = await fetch(`/api/user/currency`, {
+          const response = await fetch(`/api/users/currency`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json'
@@ -2087,8 +2225,10 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       // 데이터 테이블 표시 여부
       const contentProps = content.props || {};
       const endpoint = contentProps.endpoint as string | undefined;
-      const isCurrencyTab = endpoint ? endpoint.includes('/api/user/currency') : false;
-
+      // Currency 탭 또는 Baller 탭 확인
+      const isCurrencyTab = endpoint ? endpoint.includes('/api/users/currency') : false;
+      const isBallerTab = endpoint ? endpoint.includes('/api/users/baller') : false;
+      
       return (
         <div className={`p-4 ${className}`}>
           {isLoading ? (
@@ -2108,14 +2248,14 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             <>
               <DataTable
                 tableName={(contentProps.tableName as string) || '테이블'}
-                data={data}
+                data={contentProps.data as TableData[] || data}
                 customFormatters={contentProps.formatters as Record<string, (value: string | number | null | object) => string | number | React.ReactNode> | undefined}
                 onSelectionChange={isCurrencyTab ? handleCurrencyRowSelect : undefined}
-                // Currency Tab일 경우 Control Panel을 표시하고 이벤트 핸들러를 연결
-                showDataControls={isCurrencyTab}
-                onCreateCurrency={isCurrencyTab ? handleCreateCurrency : undefined}
-                onUpdateCurrency={isCurrencyTab ? handleUpdateCurrency : undefined}
-                onDeleteCurrency={isCurrencyTab ? handleDeleteCurrency : undefined}
+                // Currency Tab 또는 Baller Tab일 경우 Control Panel을 표시하고 이벤트 핸들러를 연결
+                showDataControls={contentProps.showDataControls === true || isCurrencyTab}
+                onCreateCurrency={isCurrencyTab ? handleCreateCurrency : (contentProps.showDataControls === true && isBallerTab) ? handleCreateBaller : undefined}
+                onUpdateCurrency={isCurrencyTab ? handleUpdateCurrency : (contentProps.showDataControls === true && isBallerTab) ? handleUpdateBaller : undefined}
+                onDeleteCurrency={isCurrencyTab ? handleDeleteCurrency : (contentProps.showDataControls === true && isBallerTab) ? handleDeleteBaller : undefined}
                 // Advanced Data Controls
                 showAdvancedDataControls={isCurrencyTab}
                 onUseItem={isCurrencyTab ? handleUseItem : undefined}
@@ -2189,6 +2329,34 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             onOpenChange={setShowCreateCurrencyModal}
             onConfirm={handleConfirmCreateCurrency}
             isCreating={isCreatingCurrency}
+          />
+          {/* CreateBallerModal 추가 */}
+          <CreateBallerModal
+            open={showCreateBallerModal}
+            onOpenChange={setShowCreateBallerModal}
+            onConfirm={() => {
+              // 로깅
+              try {
+                logger.info('[TabContentRenderer] 베럴 생성 확인됨:', {
+                  timestamp: new Date().toISOString(),
+                });
+              } catch (error) {
+                console.warn('[TabContentRenderer] 로깅 실패:', error);
+              }
+              
+              // 성공 처리
+              console.log("베럴이 성공적으로 생성되었습니다.");
+              
+              // 데이터 새로고침
+              if (typeof fetchData === 'function') {
+                fetchData();
+              }
+              
+              // 모달 닫기
+              setShowCreateBallerModal(false);
+              setIsCreatingBaller(false);
+            }}
+            isCreating={isCreatingBaller}
           />
         </div>
       );

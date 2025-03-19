@@ -75,4 +75,27 @@ export const mockStatisticsData: IUITableData[] = Array.from({ length: 30 }).map
   transactions: Math.floor(Math.random() * 2000) + 500,
   average_session: Math.floor(Math.random() * 30) + 10,
   retention_rate: Math.floor(Math.random() * 30) + 70,
-})); 
+}));
+
+/**
+ * UserBaller 엔티티에 기반한 목 데이터
+ */
+export const mockUserBallerData: IUITableData[] = Array.from({ length: 50 }).map((_, index) => {
+  const created_at = new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000);
+  const updated_at = new Date(created_at.getTime() + Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000);
+  
+  return {
+    id: index + 1,
+    excel_baller_index: Math.floor(Math.random() * 1000) + 1000,
+    employer_uid: Math.random() > 0.3 ? Math.floor(Math.random() * 100) + 1 : null,
+    training_point: Math.floor(Math.random() * 1000),
+    character_level: Math.floor(Math.random() * 30) + 1,
+    recruit_process: Math.floor(Math.random() * 5),
+    character_status: Math.floor(Math.random() * 3),
+    talk_group_no: Math.floor(Math.random() * 5) + 1,
+    etc: Math.random() > 0.5 ? `메모 #${index + 1}` : null,
+    max_upgrade_point: Math.floor(Math.random() * 5000),
+    created_at: created_at.toISOString(),
+    updated_at: updated_at.toISOString()
+  };
+}); 

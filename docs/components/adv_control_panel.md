@@ -253,7 +253,7 @@ const handleUseItem = () => {
 
 ```typescript
 // 아이템 사용 API 호출 예시
-fetch("/api/user/item/use", {
+fetch("/api/users/item/use", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { User } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useUserSearch } from "@/hooks/useUserSearch"
-import { UserAccordion } from "@/components/user/user-accordion"
+import { UserAccordion } from "@/components/users/user-accordion"
 
 interface InitDBListInfo {
   index: number

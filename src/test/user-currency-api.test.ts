@@ -1,4 +1,4 @@
-import { getUserCurrency, updateUserCurrency } from '@/app/api/user/currency/service';
+import { getUserCurrency, updateUserCurrency } from '@/app/api/users/currency/service';
 
 // 모킹된 모듈들 설정
 jest.mock('@/lib/db/db-connection-manager', () => {
@@ -96,8 +96,8 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 // updateUserCurrency 함수를 직접 모킹
-jest.mock('@/app/api/user/currency/service', () => {
-  const originalModule = jest.requireActual('@/app/api/user/currency/service');
+jest.mock('@/app/api/users/currency/service', () => {
+  const originalModule = jest.requireActual('@/app/api/users/currency/service');
   
   return {
     ...originalModule,
@@ -206,7 +206,7 @@ interface MockResponse {
   };
 }
 
-import { PUT } from '@/app/api/user/currency/route';
+import { PUT } from '@/app/api/users/currency/route';
 import { NextRequest } from 'next/server';
 
 describe('User Currency API', () => {

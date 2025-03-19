@@ -1,4 +1,5 @@
 import { TabStructure } from '@/types/tab-structure';
+import { mockUserBallerData } from '@/test/test-data/mock-table-data';
 
 // 사용자 정보 탭 구조 정의
 export const userTabsStructure: TabStructure = {
@@ -14,6 +15,38 @@ export const userTabsStructure: TabStructure = {
             type: 'dataTable',
             props: {
               endpoint: '/api/user/baller',
+              tableName: 'Baller Information',
+              // BALLER 데이터 목업 데이터 직접 제공
+              data: mockUserBallerData,
+              // 데이터 컨트롤 패널 표시를 위한 속성 추가
+              showDataControls: true,
+              customFormatters: {
+                excel_baller_index: (value: string | number | null) => `#${value || '-'}`,
+                employer_uid: (value: string | number | null) => value ? `${value}` : '미고용',
+                character_level: (value: string | number | null) => `Lv.${value || 1}`,
+                character_status: (value: string | number | null) => {
+                  const status = Number(value || 0);
+                  switch (status) {
+                    case 0: return '비활성';
+                    case 1: return '활성';
+                    case 2: return '훈련중';
+                    default: return `상태 ${status}`;
+                  }
+                },
+                recruit_process: (value: string | number | null) => {
+                  const process = Number(value || 0);
+                  switch (process) {
+                    case 0: return '미채용';
+                    case 1: return '접촉';
+                    case 2: return '협상중';
+                    case 3: return '계약';
+                    case 4: return '완료';
+                    default: return `단계 ${process}`;
+                  }
+                },
+                created_at: (value: string | Date | null) => value ? new Date(value).toLocaleString('ko-KR') : '-',
+                updated_at: (value: string | Date | null) => value ? new Date(value).toLocaleString('ko-KR') : '-'
+              }
             }
           }
         },

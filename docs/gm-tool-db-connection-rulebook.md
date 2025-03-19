@@ -381,7 +381,7 @@ classDiagram
    
    // 사용 예시
    async function getUserCurrencyList(employerUid: string) {
-     return await apiRequest('/api/user/currency', {
+     return await apiRequest('/api/users/currency', {
        params: { employerUid }
        // dbName은 자동으로 추가됨
      });
@@ -393,7 +393,7 @@ classDiagram
 1. **API 요청 형식**:
    ```typescript
    // 예시: DB_NAME을 쿼리 파라미터로 포함
-   fetch(`/api/user/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndex}&dbName=${dbName}`, {
+   fetch(`/api/users/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndex}&dbName=${dbName}`, {
      method: 'DELETE'
    });
    ```

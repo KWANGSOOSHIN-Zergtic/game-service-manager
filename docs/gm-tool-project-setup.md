@@ -707,3 +707,43 @@ interface GroupedTables { ... } // 그룹화된 테이블
 ```
 
 이러한 목 데이터와 유틸리티 함수를 사용하면 API가 완전히 구현되기 전에도 UI 개발과 테스트를 쉽게 진행할 수 있습니다.
+
+## 게임 서비스 매니저 프로젝트 설정
+
+## 설치된 라이브러리 및 패키지
+
+### 1. UI 컴포넌트 및 디자인 시스템
+- **ShadCN/UI**: 재사용 가능한 UI 컴포넌트 시스템
+  - 설치 방법: `npx shadcn@latest add [component-name]`
+  - 목적: 모던하고 접근성 높은 UI 컴포넌트 제공
+- **Lucide React**: 아이콘 라이브러리
+  - 설치 방법: `npm install lucide-react`
+  - 목적: 일관된 디자인의 벡터 아이콘 제공
+
+### 2. 데이터 관리 및 통신
+- **DataControlsPanel**: 화폐 및 BALLER 데이터 관리를 위한 컨트롤 패널 컴포넌트
+  - 위치: `src/components/control-panels/currency-control-panel.tsx`
+  - 목적: 화폐 및 BALLER 데이터의 생성, 수정, 삭제 기능 제공
+  - 특징: CREATE, UPDATE, DELETE 버튼 및 관련 모달 다이얼로그 포함
+  - 사용법: 데이터 테이블의 showDataControls 속성을 true로 설정
+
+### 3. 모달 다이얼로그
+- **CreateCurrencyModal**: 화폐 생성을 위한 모달 컴포넌트
+  - 위치: `src/components/control-panels/create-currency-modal.tsx`
+  - 목적: 화폐 아이템 추가 시 필요한 정보 입력 인터페이스 제공
+- **CreateBallerModal**: BALLER 생성을 위한 모달 컴포넌트
+  - 위치: `src/components/control-panels/create-baller-modal.tsx`
+  - 목적: BALLER 추가 시 필요한 정보 입력 인터페이스 제공
+
+## 컴포넌트 구성 참고사항
+
+### 데이터 컨트롤 패널 (DataControlsPanel)
+- **용도**: 화폐 또는 BALLER 데이터 관리
+- **주요 기능**: 
+  - CREATE: 새 항목 생성
+  - UPDATE: 선택한 항목 정보 수정
+  - DELETE: 선택한 항목 삭제
+- **구현 방식**: 
+  - `showDataControls` 속성을 true로 설정하여 활성화
+  - Currency와 BALLER 탭에서 모두 사용 가능
+  - 각 탭에 맞는 핸들러 함수가 자동으로 연결됨
