@@ -796,225 +796,186 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     });
   };
   
-  // 데이터 테이블 타입일 경우 API 호출
+  // 데이터 가져오기 함수 개선
   const fetchData = useCallback(async () => {
-    if (content.type !== 'dataTable') return;
-        
+    if (content.type !== 'dataTable' || (!content.props?.endpoint && !content.props?.data)) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
-    setDebugInfo(null);
-    setApiDebugInfo(null); // API 디버그 정보 초기화
-    setRequestInfo(null); // 요청 정보 초기화
-    
-    // props.data가 제공된 경우, API 호출을 건너뛰고 직접 데이터 사용
-    if (content.props?.data) {
-      console.log('[TabContentRenderer] 제공된 목 데이터 사용:', {
-        dataLength: (content.props.data as TableData[]).length
-      });
-      setData(content.props.data as TableData[]);
-      setIsLoading(false);
-      return;
-    }
-    
-    // API 엔드포인트가 없는 경우 리턴
-    if (!content.props?.endpoint) {
-      setError('API 엔드포인트가 지정되지 않았습니다.');
-      setIsLoading(false);
-      return;
-    }
-    
+
     try {
-      console.log('[TabContentRenderer] 데이터 요청 시작:', {
-        contentType: content.type,
-        endpoint: content.props.endpoint
+      // 데이터 가져오기 로직
+      console.log('[TabContentRenderer] 데이터 가져오기 시작:', {
+        endpoint: content.props?.endpoint,
+        hasData: !!content.props?.data
       });
-      
-      // employerStorage에서 사용자 정보 가져오기
-      const employerInfo = sessionStorage.getItem('employerStorage');
-      
-      // 개발 환경에서 사용자 정보가 없을 경우 테스트 데이터 사용 옵션 제공
-      if (!employerInfo) {
-        console.warn('[TabContentRenderer] 사용자 정보를 찾을 수 없음: sessionStorage에 employerStorage가 없습니다.');
-        
-        if (process.env.NODE_ENV === 'development') {
-          const isDevelopmentMode = true;
+
+      let result: ApiResponse;
+
+      if (content.props.data) {
+        // 직접 데이터가 제공된 경우
+        result = {
+          success: true,
+          data: content.props.data as Record<string, unknown>[]
+        };
+      } else {
+        try {
+          // employer_uid 가져오기
+          const employerInfo = sessionStorage.getItem('employerStorage');
+          if (!employerInfo) {
+            throw new Error('사용자 정보를 찾을 수 없습니다. 사용자 목록 페이지에서 사용자를 선택해주세요.');
+          }
           
-          if (isDevelopmentMode && typeof content.props.endpoint === 'string' && content.props.endpoint.includes('/api/users/currency')) {
-            console.info('[TabContentRenderer] 개발 환경에서 테스트 데이터를 사용합니다.');
-            
-            // API 엔드포인트 경로 가져오기
-            const endpoint = typeof content.props.endpoint === 'string' && content.props.endpoint.startsWith('/') 
-              ? content.props.endpoint 
-              : `/${content.props.endpoint}`;
-            
-            // 저장된 DB 이름 가져오기 (없으면 기본값 사용)
-            const savedDbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
-            console.log('[TabContentRenderer] 저장된 DB 이름:', savedDbName);
-            
-            // 상대 경로로 API 호출
-            const testUrl = `${endpoint}?employerUid=97&dbName=${savedDbName}`;
-            console.log('[TabContentRenderer] 테스트 URL 호출:', testUrl);
-            
-            // 테스트 URL에 대한 요청 정보 설정
-            setRequestInfo({
-              url: testUrl,
-              params: {
-                employerUid: 97,
-                dbName: savedDbName
-              },
-              method: 'GET',
-              timestamp: new Date()
-            });
-            
-            // API 디버그 정보 설정
-            setApiDebugInfo({
-              requestUrl: testUrl,
-              requestMethod: 'GET',
-              requestHeaders: { 'Content-Type': 'application/json' },
-              timestamp: new Date().toISOString()
-            });
-            
-            try {
-              const response = await fetch(testUrl);
-              
-              // 응답 상태 확인 및 로깅
-              console.log('[TabContentRenderer] 테스트 API 응답 상태:', response.status);
-              
-              const result = await response.json();
-              setDebugInfo(result);
-              
-              if (result.success && result.currencies) {
-                const processedData = result.currencies.map((item: Record<string, unknown>, index: number) => ({
-                  id: (item.id as number) || index + 1,
-                  ...item
-                }));
-                
-                setData(processedData);
-                setIsLoading(false);
-                return;
-              }
-            } catch (testError) {
-              console.error('[TabContentRenderer] 테스트 데이터 호출 실패:', testError);
+          const parsedEmployerInfo = JSON.parse(employerInfo);
+          const employerUid = parsedEmployerInfo.uid;
+          
+          // DB이름 가져오기
+          let dbName = '';
+          if (parsedEmployerInfo.db_name) {
+            dbName = parsedEmployerInfo.db_name;
+          } else {
+            // 이전 방식으로 DB 이름 가져오기
+            const storedInfo = sessionStorage.getItem('popupUserInfo');
+            if (storedInfo) {
+              const parsedInfo = JSON.parse(storedInfo);
+              dbName = parsedInfo.dbName;
+            } else {
+              dbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
             }
           }
+          
+          if (!employerUid || !dbName) {
+            throw new Error('사용자 UID 또는 데이터베이스 정보가 누락되었습니다.');
+          }
+          
+          // API 엔드포인트
+          const endpoint = content.props.endpoint as string;
+          
+          // 쿼리 파라미터 구성
+          const params = new URLSearchParams();
+          params.append('employerUid', String(employerUid));
+          params.append('dbName', dbName);
+          
+          const url = `${endpoint}?${params.toString()}`;
+          console.log('[TabContentRenderer] API 요청 URL:', url);
+          
+          // API 요청 정보 저장
+          setRequestInfo({
+            url,
+            params: { employerUid, dbName },
+            method: 'GET',
+            timestamp: new Date()
+          });
+          
+          // API 요청
+          const response = await fetch(url);
+          result = await response.json();
+          
+          // 디버그 정보 저장
+          setDebugInfo(result);
+          
+          // API 호출 결과 상태 업데이트
+          if (result.success) {
+            updateApiResponseStatus('success');
+          } else {
+            updateApiResponseStatus('error');
+          }
+        } catch (error) {
+          console.error('[TabContentRenderer] API 호출 중 오류:', error);
+          result = {
+            success: false,
+            error: error instanceof Error ? error.message : 'API 오류가 발생했습니다.'
+          };
+          updateApiResponseStatus('failure');
         }
+      }
+
+      // 응답 처리
+      let newData: TableData[] = [];
+      
+      if (result.success) {
+        try {
+          // 데이터 형식 확인
+          if (result.currencies) {
+            // Currency 데이터 형식
+            newData = result.currencies.map((item, index) => ({
+              ...item,
+              id: item.id || `item-${index}`,
+              displayIndex: index + 1
+            })) as TableData[];
+          } else if (result.data) {
+            // 일반 데이터 형식
+            newData = result.data.map((item, index) => ({
+              ...item,
+              id: item.id || `item-${index}`,
+              displayIndex: index + 1
+            })) as TableData[];
+          } else if (result.ballers) {
+            // Baller 데이터 형식
+            newData = (result.ballers as unknown[]).map((item, index) => ({
+              ...(item as Record<string, unknown>),
+              id: (item as Record<string, unknown>).id || `item-${index}`,
+              displayIndex: index + 1
+            })) as TableData[];
+          } else {
+            // 기타 데이터 형식 (필요에 따라 확장)
+            console.warn('[TabContentRenderer] 알 수 없는 데이터 형식:', result);
+          }
+          
+          // 테이블 데이터 세션 스토리지에 저장
+          sessionStorage.setItem('tableData', JSON.stringify(newData));
+          console.log('[TabContentRenderer] 테이블 데이터 세션 스토리지에 저장 완료:', newData.length, '개 항목');
+          
+          // 데이터 로드 시 선택 데이터 초기화
+          sessionStorage.removeItem('selectedCurrency');
+          sessionStorage.removeItem('selectedCurrencies');
+          console.log('[TabContentRenderer] 데이터 로드 시 선택 데이터 초기화');
+        } catch (error) {
+          console.error('[TabContentRenderer] 데이터 처리 중 오류:', error);
+          setError('데이터 처리 중 오류가 발생했습니다.');
+        }
+      } else {
+        // 오류 메시지 설정
+        setError(result.error || result.message || '데이터를 가져오는 중 오류가 발생했습니다.');
         
-        setError(`사용자 정보를 찾을 수 없습니다. 사용자 목록 페이지에서 사용자를 선택해주세요.`);
-        setIsLoading(false);
-        return;
+        // 데이터 초기화
+        newData = [];
+        
+        // 에러 시에도 세션 스토리지 내용 초기화
+        sessionStorage.removeItem('tableData');
+        sessionStorage.removeItem('selectedCurrency');
+        sessionStorage.removeItem('selectedCurrencies');
       }
       
-      // ... 나머지 코드 ...
-      // employerInfo가 존재하는 경우 처리
-      try {
-        // 사용자 정보 파싱
-        const employerData = JSON.parse(employerInfo);
-        const employerUid = employerData.uid;
-        const dbName = employerData.db_name;
-        
-        if (!employerUid || !dbName) {
-          setError('사용자 정보가 유효하지 않습니다.');
-          setIsLoading(false);
-          return;
-        }
-        
-        console.log('[TabContentRenderer] 사용자 정보 로드 성공:', {
-          employerUid,
-          dbName,
-          endpoint: content.props.endpoint
-        });
-        
-        // API 엔드포인트 경로 가져오기
-        const endpoint = typeof content.props.endpoint === 'string' && content.props.endpoint.startsWith('/') 
-          ? content.props.endpoint 
-          : `/${content.props.endpoint}`;
-        
-        // 상대 경로로 API 호출 URL 생성
-        const apiUrl = `${endpoint}?employerUid=${employerUid}&dbName=${dbName}`;
-        
-        // 요청 정보 설정
-        setRequestInfo({
-          url: apiUrl,
-          params: {
-            employerUid,
-            dbName
-          },
-          method: 'GET',
-          timestamp: new Date()
-        });
-        
-        // API 디버그 정보 설정
-        setApiDebugInfo({
-          requestUrl: apiUrl,
-          requestMethod: 'GET',
-          requestHeaders: { 'Content-Type': 'application/json' },
-          timestamp: new Date().toISOString()
-        });
-        
-        console.log('[TabContentRenderer] API 호출 시작:', apiUrl);
-        
-        // API 요청
-        const response = await fetch(apiUrl);
-        console.log('[TabContentRenderer] API 응답 상태:', response.status);
-        
-        if (!response.ok) {
-          throw new Error(`API 요청 실패: ${response.status} ${response.statusText}`);
-        }
-        
-        const result = await response.json();
-        console.log('[TabContentRenderer] API 응답 데이터:', result);
-        
-        // 디버그 정보 저장
-        setDebugInfo(result);
-        
-        // 데이터 키 결정 (API 응답 형식에 따라)
-        let dataKey = 'data';
-        let processedData = [];
-        
-        if (result.currencies) {
-          dataKey = 'currencies';
-        } else if (result.ballers) {
-          dataKey = 'ballers';
-        }
-        
-        // 데이터 처리
-        if (result.success && result[dataKey]) {
-          processedData = result[dataKey].map((item: Record<string, unknown>, index: number) => ({
-            id: (item.id as number) || index + 1,
-            ...item
-          }));
-          
-          console.log('[TabContentRenderer] 처리된 데이터:', {
-            dataKey,
-            count: processedData.length,
-            firstItem: processedData[0] || null
-          });
-          
-          setData(processedData);
-        } else {
-          console.warn('[TabContentRenderer] 데이터가 없거나 응답이 성공이 아님:', {
-            success: result.success,
-            hasData: !!result[dataKey],
-            message: result.message || '데이터가 없습니다.'
-          });
-          
-          setData([]);
-          
-          if (!result.success) {
-            setError(result.error || result.message || '데이터를 가져오는데 실패했습니다.');
-          }
-        }
-      } catch (parseError) {
-        console.error('[TabContentRenderer] 사용자 정보 처리 중 오류:', parseError);
-        setError('사용자 정보를 처리하는 중 오류가 발생했습니다.');
-      }
+      setData(newData);
     } catch (error) {
       console.error('[TabContentRenderer] 데이터 요청 중 오류 발생:', error);
       setError('데이터를 가져오는 중 오류가 발생했습니다.');
+      setData([]);
     } finally {
       setIsLoading(false);
     }
   }, [content.type, content.props, content.props?.endpoint]);
+
+  // 새로운 useEffect 추가 - 체크박스 선택 및 세션 스토리지 동기화 처리
+  useEffect(() => {
+    // row-selection-changed 이벤트 리스너 등록
+    const handleRowSelectionChanged = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('[TabContentRenderer] row-selection-changed 이벤트 감지:', 
+        customEvent.detail?.count || 0, '개 항목 선택됨');
+      
+      // 이 시점에 selectedCurrency와 selectedCurrencies는 이미 업데이트되어 있음
+    };
+    
+    window.addEventListener('row-selection-changed', handleRowSelectionChanged);
+    
+    return () => {
+      window.removeEventListener('row-selection-changed', handleRowSelectionChanged);
+    };
+  }, []);
 
   // toggle-debug-section 이벤트 리스너 설정
   useEffect(() => {
@@ -1156,26 +1117,54 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
   const handleUpdateBaller = () => {
     console.log("handleUpdateBaller");
     
-    // 선택된 항목이 있는지 확인
-    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
-    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    // 체크박스로 선택된 행 수 확인
+    const tableCheckboxes = document.querySelectorAll('table input[type="checkbox"]:checked');
+    console.log("[TabContentRenderer] 체크된 체크박스 수:", tableCheckboxes.length);
     
-    if (!selectedCurrencyStr && !selectedCurrenciesStr) {
-      console.warn("선택된 Baller가 없습니다.");
-      setWarningTitle('선택된 Baller 없음');
-      setWarningMessage('Baller를 업데이트하려면 먼저 테이블에서 행을 선택해주세요.');
-      setShowWarningDialog(true);
-      return;
-    }
+    // 세션 스토리지에서 선택된 항목 정보 가져오기
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    
+    console.log("[TabContentRenderer] 세션 스토리지 데이터 확인:", {
+      selectedCurrency: selectedCurrencyStr ? "있음" : "없음",
+      selectedCurrencies: selectedCurrenciesStr ? "있음" : "없음"
+    });
     
     try {
       // 단일 항목 또는 다중 항목 처리
       let updateItems: TableData[] = [];
       
       if (selectedCurrenciesStr) {
+        // 다중 선택된 항목 처리
         updateItems = JSON.parse(selectedCurrenciesStr);
       } else if (selectedCurrencyStr) {
+        // 단일 선택된 항목 처리
         updateItems = [JSON.parse(selectedCurrencyStr)];
+      } else if (tableCheckboxes.length > 0 && !selectedCurrenciesStr && !selectedCurrencyStr) {
+        // 체크박스는 선택되었지만 세션 스토리지에 데이터가 없는 경우
+        // 테이블 데이터에서 직접 선택된 항목 찾기
+        const tableDataStr = sessionStorage.getItem('tableData');
+        if (tableDataStr) {
+          const tableData = JSON.parse(tableDataStr);
+          const checkedIds = Array.from(tableCheckboxes).map(checkbox => {
+            const row = (checkbox as HTMLElement).closest('tr');
+            return row?.getAttribute('data-row-id');
+          }).filter(Boolean);
+          
+          if (checkedIds.length > 0) {
+            const items = tableData.filter((item: Record<string, unknown>) => 
+              checkedIds.includes(String(item.id)));
+            
+            if (items.length > 0) {
+              updateItems = items;
+              console.log("[TabContentRenderer] 테이블 데이터에서 직접 찾은 선택 항목:", items.length);
+              
+              // 세션 스토리지에 저장
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify(items));
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(items[0]));
+            }
+          }
+        }
       }
       
       // 업데이트 모달 표시 준비
@@ -1183,42 +1172,77 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         setUpdatingItems(updateItems);
         setShowUpdateDialog(true);
       } else {
-        console.warn("유효한 Baller 데이터가 없습니다.");
-        setWarningTitle('유효하지 않은 데이터');
-        setWarningMessage('선택된 Baller 데이터가 유효하지 않습니다.');
+        // 체크박스 선택 없음 경고
+        if (tableCheckboxes.length === 0) {
+          console.warn("[TabContentRenderer] 선택된 Baller가 없습니다.");
+          setWarningTitle('선택된 Baller 없음');
+          setWarningMessage('Baller를 업데이트하려면 먼저 테이블에서 행을 선택해주세요.');
+        } else {
+          console.warn("[TabContentRenderer] 유효한 Baller 데이터가 없습니다.");
+          setWarningTitle('유효하지 않은 데이터');
+          setWarningMessage('선택된 Baller 데이터를 찾을 수 없습니다. 다시 선택해주세요.');
+        }
         setShowWarningDialog(true);
       }
     } catch (error) {
-      console.error("선택된 Baller 처리 중 오류:", error);
+      console.error("[TabContentRenderer] 선택된 Baller 처리 중 오류:", error);
       setWarningTitle("오류 발생");
       setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
       setShowWarningDialog(true);
     }
   };
-
+  
   const handleDeleteBaller = () => {
     console.log("handleDeleteBaller");
     
-    // 선택된 항목이 있는지 확인
-    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
-    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    // 체크박스로 선택된 행 수 확인
+    const tableCheckboxes = document.querySelectorAll('table input[type="checkbox"]:checked');
+    console.log("[TabContentRenderer] 체크된 체크박스 수:", tableCheckboxes.length);
     
-    if (!selectedCurrencyStr && !selectedCurrenciesStr) {
-      console.warn("선택된 Baller가 없습니다.");
-      setWarningTitle('선택된 Baller 없음');
-      setWarningMessage('Baller를 삭제하려면 먼저 테이블에서 행을 선택해주세요.');
-      setShowWarningDialog(true);
-      return;
-    }
+    // 세션 스토리지에서 선택된 항목 정보 가져오기
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    
+    console.log("[TabContentRenderer] 세션 스토리지 데이터 확인:", {
+      selectedCurrency: selectedCurrencyStr ? "있음" : "없음",
+      selectedCurrencies: selectedCurrenciesStr ? "있음" : "없음"
+    });
     
     try {
       // 단일 항목 또는 다중 항목 처리
       let deleteItems: TableData[] = [];
       
       if (selectedCurrenciesStr) {
+        // 다중 선택된 항목 처리
         deleteItems = JSON.parse(selectedCurrenciesStr);
       } else if (selectedCurrencyStr) {
+        // 단일 선택된 항목 처리
         deleteItems = [JSON.parse(selectedCurrencyStr)];
+      } else if (tableCheckboxes.length > 0 && !selectedCurrenciesStr && !selectedCurrencyStr) {
+        // 체크박스는 선택되었지만 세션 스토리지에 데이터가 없는 경우
+        // 테이블 데이터에서 직접 선택된 항목 찾기
+        const tableDataStr = sessionStorage.getItem('tableData');
+        if (tableDataStr) {
+          const tableData = JSON.parse(tableDataStr);
+          const checkedIds = Array.from(tableCheckboxes).map(checkbox => {
+            const row = (checkbox as HTMLElement).closest('tr');
+            return row?.getAttribute('data-row-id');
+          }).filter(Boolean);
+          
+          if (checkedIds.length > 0) {
+            const items = tableData.filter((item: Record<string, unknown>) => 
+              checkedIds.includes(String(item.id)));
+            
+            if (items.length > 0) {
+              deleteItems = items;
+              console.log("[TabContentRenderer] 테이블 데이터에서 직접 찾은 선택 항목:", items.length);
+              
+              // 세션 스토리지에 저장
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify(items));
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(items[0]));
+            }
+          }
+        }
       }
       
       // 삭제 다이얼로그 표시 준비
@@ -1226,19 +1250,26 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         setDeletingCurrencies(deleteItems);
         setShowDeleteDialog(true);
       } else {
-        console.warn("유효한 Baller 데이터가 없습니다.");
-        setWarningTitle('유효하지 않은 데이터');
-        setWarningMessage('선택된 Baller 데이터가 유효하지 않습니다.');
+        // 체크박스 선택 없음 경고
+        if (tableCheckboxes.length === 0) {
+          console.warn("[TabContentRenderer] 선택된 Baller가 없습니다.");
+          setWarningTitle('선택된 Baller 없음');
+          setWarningMessage('Baller를 삭제하려면 먼저 테이블에서 행을 선택해주세요.');
+        } else {
+          console.warn("[TabContentRenderer] 유효한 Baller 데이터가 없습니다.");
+          setWarningTitle('유효하지 않은 데이터');
+          setWarningMessage('선택된 Baller 데이터를 찾을 수 없습니다. 다시 선택해주세요.');
+        }
         setShowWarningDialog(true);
       }
     } catch (error) {
-      console.error("선택된 Baller 처리 중 오류:", error);
+      console.error("[TabContentRenderer] 선택된 Baller 처리 중 오류:", error);
       setWarningTitle("오류 발생");
       setWarningMessage("데이터 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
       setShowWarningDialog(true);
     }
   };
-
+  
   // 화폐 생성 확인 핸들러 수정
   const handleConfirmCreateCurrency = (newCurrency: { excelItemIndex: number; count: number }) => {
     try {
@@ -1305,25 +1336,55 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     }
   };
   
+  // 화폐 업데이트 함수 개선
   const handleUpdateCurrency = () => {
-    // 선택된 화폐들이 있는지 확인
-    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
+    // 체크박스로 선택된 행 수 확인
+    const tableCheckboxes = document.querySelectorAll('table input[type="checkbox"]:checked');
+    console.log("[TabContentRenderer] 체크된 체크박스 수:", tableCheckboxes.length);
     
-    if (selectedCurrencies) {
-      try {
-        const parsedItems = JSON.parse(selectedCurrencies) as TableData[];
-        console.log('[TabContentRenderer] 화폐 수정 시도:', parsedItems);
-        
-        if (parsedItems.length === 0) {
-          console.warn('[TabContentRenderer] 수정할 화폐가 선택되지 않았습니다.');
+    // 세션 스토리지에서 선택된 항목 정보 가져오기
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    
+    try {
+      let parsedItems: TableData[] = [];
+      
+      if (selectedCurrenciesStr) {
+        // 다중 선택된 항목 처리
+        parsedItems = JSON.parse(selectedCurrenciesStr) as TableData[];
+      } else if (selectedCurrencyStr) {
+        // 단일 선택된 항목 처리
+        parsedItems = [JSON.parse(selectedCurrencyStr)];
+      } else if (tableCheckboxes.length > 0 && !selectedCurrenciesStr && !selectedCurrencyStr) {
+        // 체크박스는 선택되었지만 세션 스토리지에 데이터가 없는 경우
+        // 테이블 데이터에서 직접 선택된 항목 찾기
+        const tableDataStr = sessionStorage.getItem('tableData');
+        if (tableDataStr) {
+          const tableData = JSON.parse(tableDataStr);
+          const checkedIds = Array.from(tableCheckboxes).map(checkbox => {
+            const row = (checkbox as HTMLElement).closest('tr');
+            return row?.getAttribute('data-row-id');
+          }).filter(Boolean);
           
-          // 경고 모달 표시
-          setWarningTitle('선택된 화폐 없음');
-          setWarningMessage('수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-          setShowWarningDialog(true);
-          return;
+          if (checkedIds.length > 0) {
+            const items = tableData.filter((item: Record<string, unknown>) => 
+              checkedIds.includes(String(item.id)));
+            
+            if (items.length > 0) {
+              parsedItems = items as TableData[];
+              console.log("[TabContentRenderer] 테이블 데이터에서 직접 찾은 선택 항목:", items.length);
+              
+              // 세션 스토리지에 저장
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify(items));
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(items[0]));
+            }
+          }
         }
-        
+      }
+      
+      console.log('[TabContentRenderer] 화폐 수정 시도:', parsedItems);
+      
+      if (parsedItems.length > 0) {
         // 로깅
         try {
           logger.info('[TabContentRenderer] 화폐 수정 버튼 클릭', {
@@ -1338,43 +1399,78 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         // 수정할 화폐 정보 설정 및 다이얼로그 표시
         setUpdatingItems(parsedItems);
         setShowUpdateDialog(true);
-      } catch (error) {
-        console.error('[TabContentRenderer] selectedCurrencies 파싱 오류:', error);
-        toast({
-          title: "오류",
-          description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
+      } else {
+        // 체크박스 선택 없음 경고
+        if (tableCheckboxes.length === 0) {
+          console.warn('[TabContentRenderer] 수정할 화폐가 선택되지 않았습니다.');
+          setWarningTitle('선택된 화폐 없음');
+          setWarningMessage('수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+        } else {
+          console.warn('[TabContentRenderer] 유효한 화폐 데이터가 없습니다.');
+          setWarningTitle('유효하지 않은 데이터');
+          setWarningMessage('선택된 화폐 데이터를 찾을 수 없습니다. 다시 선택해주세요.');
+        }
+        setShowWarningDialog(true);
       }
-    } else {
-      console.warn('[TabContentRenderer] 수정할 화폐가 선택되지 않았습니다.');
-      
-      // 경고 모달 표시
-      setWarningTitle('선택된 화폐 없음');
-      setWarningMessage('수정할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-      setShowWarningDialog(true);
+    } catch (error) {
+      console.error('[TabContentRenderer] 화폐 데이터 처리 중 오류:', error);
+      toast({
+        title: "오류",
+        description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     }
   };
   
+  // 화폐 삭제 함수 개선
   const handleDeleteCurrency = () => {
-    // 선택된 화폐들이 있는지 확인
-    const selectedCurrencies = sessionStorage.getItem('selectedCurrencies');
+    // 체크박스로 선택된 행 수 확인
+    const tableCheckboxes = document.querySelectorAll('table input[type="checkbox"]:checked');
+    console.log("[TabContentRenderer] 체크된 체크박스 수:", tableCheckboxes.length);
     
-    if (selectedCurrencies) {
-      try {
-        const parsedItems = JSON.parse(selectedCurrencies) as TableData[];
-        console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedItems);
-        
-        if (parsedItems.length === 0) {
-          console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
+    // 세션 스토리지에서 선택된 항목 정보 가져오기
+    const selectedCurrenciesStr = sessionStorage.getItem('selectedCurrencies');
+    const selectedCurrencyStr = sessionStorage.getItem('selectedCurrency');
+    
+    try {
+      let parsedItems: TableData[] = [];
+      
+      if (selectedCurrenciesStr) {
+        // 다중 선택된 항목 처리
+        parsedItems = JSON.parse(selectedCurrenciesStr) as TableData[];
+      } else if (selectedCurrencyStr) {
+        // 단일 선택된 항목 처리
+        parsedItems = [JSON.parse(selectedCurrencyStr)];
+      } else if (tableCheckboxes.length > 0 && !selectedCurrenciesStr && !selectedCurrencyStr) {
+        // 체크박스는 선택되었지만 세션 스토리지에 데이터가 없는 경우
+        // 테이블 데이터에서 직접 선택된 항목 찾기
+        const tableDataStr = sessionStorage.getItem('tableData');
+        if (tableDataStr) {
+          const tableData = JSON.parse(tableDataStr);
+          const checkedIds = Array.from(tableCheckboxes).map(checkbox => {
+            const row = (checkbox as HTMLElement).closest('tr');
+            return row?.getAttribute('data-row-id');
+          }).filter(Boolean);
           
-          // 경고 모달 표시
-          setWarningTitle('선택된 화폐 없음');
-          setWarningMessage('삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-          setShowWarningDialog(true);
-          return;
+          if (checkedIds.length > 0) {
+            const items = tableData.filter((item: Record<string, unknown>) => 
+              checkedIds.includes(String(item.id)));
+            
+            if (items.length > 0) {
+              parsedItems = items as TableData[];
+              console.log("[TabContentRenderer] 테이블 데이터에서 직접 찾은 선택 항목:", items.length);
+              
+              // 세션 스토리지에 저장
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify(items));
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(items[0]));
+            }
+          }
         }
-        
+      }
+      
+      console.log('[TabContentRenderer] 화폐 삭제 시도:', parsedItems);
+      
+      if (parsedItems.length > 0) {
         // 모든 항목에 excel_item_index가 있는지 확인
         const invalidItems = parsedItems.filter(item => !item.excel_item_index);
         if (invalidItems.length > 0) {
@@ -1401,21 +1497,26 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         // 삭제할 화폐 정보 설정 및 다이얼로그 표시
         setDeletingCurrencies(parsedItems);
         setShowDeleteDialog(true);
-      } catch (error) {
-        console.error('[TabContentRenderer] selectedCurrencies 파싱 오류:', error);
-        toast({
-          title: "오류",
-          description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
-          variant: "destructive",
-        });
+      } else {
+        // 체크박스 선택 없음 경고
+        if (tableCheckboxes.length === 0) {
+          console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
+          setWarningTitle('선택된 화폐 없음');
+          setWarningMessage('삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
+        } else {
+          console.warn('[TabContentRenderer] 유효한 화폐 데이터가 없습니다.');
+          setWarningTitle('유효하지 않은 데이터');
+          setWarningMessage('선택된 화폐 데이터를 찾을 수 없습니다. 다시 선택해주세요.');
+        }
+        setShowWarningDialog(true);
       }
-    } else {
-      console.warn('[TabContentRenderer] 삭제할 화폐가 선택되지 않았습니다.');
-      
-      // 경고 모달 표시
-      setWarningTitle('선택된 화폐 없음');
-      setWarningMessage('삭제할 화폐를 먼저 선택해주세요. 테이블에서 행을 클릭하여 화폐를 선택하세요.');
-      setShowWarningDialog(true);
+    } catch (error) {
+      console.error('[TabContentRenderer] 화폐 데이터 처리 중 오류:', error);
+      toast({
+        title: "오류",
+        description: "화폐 정보를 읽는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1534,7 +1635,35 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
     }
   };
 
+  // 탭 콘텐츠가 로드될 때 선택된 항목 정보 초기화
+  useEffect(() => {
+    // 컴포넌트 마운트 시 세션 스토리지에서 선택 항목 초기화
+    console.log("[TabContentRenderer] 컴포넌트 마운트 - 선택 항목 초기화");
+    sessionStorage.removeItem('selectedCurrency');
+    sessionStorage.removeItem('selectedCurrencies');
+    
+    // 체크박스 상태 초기화 이벤트 등록
+    window.addEventListener('reset-selection', () => {
+      console.log("[TabContentRenderer] reset-selection 이벤트로 선택 항목 초기화");
+      sessionStorage.removeItem('selectedCurrency');
+      sessionStorage.removeItem('selectedCurrencies');
+    });
+    
+    return () => {
+      window.removeEventListener('reset-selection', () => {
+        console.log("[TabContentRenderer] reset-selection 이벤트 리스너 제거");
+      });
+    };
+  }, []);
+
+  // 화폐 행 선택 처리 핸들러 추가: 이전 데이터를 완전히 초기화하고 새로 저장
   const handleCurrencyRowSelect = (selectedItems: TableData[]) => {
+    console.log('[TabContentRenderer] 선택된 행 업데이트:', selectedItems.length, '개 항목');
+    
+    // 먼저 이전 선택 정보 초기화
+    sessionStorage.removeItem('selectedCurrency');
+    sessionStorage.removeItem('selectedCurrencies');
+    
     // 선택된 행이 있으면 모든 항목을 저장
     if (selectedItems.length > 0) {
       sessionStorage.setItem('selectedCurrencies', JSON.stringify(selectedItems));
@@ -1542,9 +1671,6 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItems[0]));
       console.log('[TabContentRenderer] 화폐 선택됨:', selectedItems);
     } else {
-      // 선택 취소된 경우 저장된 정보 삭제
-      sessionStorage.removeItem('selectedCurrencies');
-      sessionStorage.removeItem('selectedCurrency');
       console.log('[TabContentRenderer] 화폐 선택 취소됨');
     }
   };
@@ -1741,8 +1867,8 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
       
       try {
         try {
-          logger.info('[TabContentRenderer] 화폐 삭제 확인됨:', {
-            currencyIds: deletingCurrencies.map(item => item.id),
+          logger.info('[TabContentRenderer] 항목 삭제 확인됨:', {
+            itemIds: deletingCurrencies.map(item => item.id),
             timestamp: new Date().toISOString(),
           });
         } catch (error) {
@@ -1773,49 +1899,121 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
             dbName = sessionStorage.getItem('lastUsedDbName') || 'shipping_dev_db';
           }
         }
+
+        // 현재 탭 확인 - BALLER인지 CURRENCY인지 확인
+        const currentTab = content?.props?.endpoint as string || '';
+        const isBallerTab = currentTab.includes('/api/users/multi-play/baller');
         
-        // excelItemIndex 가져오기 (API에서 사용하는 파라미터)
-        const excelItemIndices = deletingCurrencies.map(item => item.excel_item_index);
+        let apiEndpoint = '';
+        let queryParams = '';
         
-        if (!employerUid || !dbName || excelItemIndices.some(index => !index)) {
-          throw new Error('삭제에 필요한 정보가 누락되었습니다.');
+        if (isBallerTab) {
+          console.log('[TabContentRenderer] Baller 삭제 처리');
+          
+          // Baller 탭인 경우: excelBallerIndex 필드 사용
+          const excelBallerIndices = deletingCurrencies.map(item => {
+            // Baller 삭제에 사용되는 필드는 excelBallerIndex 또는 excel_baller_index 일 수 있음
+            return item.excelBallerIndex || item.excel_baller_index || item.excel_item_index;
+          });
+          
+          if (!employerUid || !dbName || excelBallerIndices.some(index => !index)) {
+            console.error('[DeleteDialog] 필요한 정보 누락:', {
+              employerUid,
+              dbName,
+              items: deletingCurrencies,
+              excelBallerIndices
+            });
+            throw new Error('삭제에 필요한 정보가 누락되었습니다.');
+          }
+          
+          apiEndpoint = `/api/users/multi-play/baller`;
+          queryParams = `employerUid=${employerUid}&excelBallerIndex=${excelBallerIndices.join(',')}&dbName=${dbName}`;
+        } else {
+          console.log('[TabContentRenderer] Currency 삭제 처리');
+          
+          // Currency 탭인 경우: excelItemIndex 필드 사용
+          const excelItemIndices = deletingCurrencies.map(item => item.excel_item_index);
+          
+          if (!employerUid || !dbName || excelItemIndices.some(index => !index)) {
+            console.error('[DeleteDialog] 필요한 정보 누락:', {
+              employerUid,
+              dbName,
+              items: deletingCurrencies
+            });
+            throw new Error('삭제에 필요한 정보가 누락되었습니다.');
+          }
+          
+          apiEndpoint = `/api/users/currency`;
+          queryParams = `employerUid=${employerUid}&excelItemIndex=${excelItemIndices.join(',')}&dbName=${dbName}`;
         }
         
-        console.log('[TabContentRenderer] 화폐 삭제 API 호출:', {
-          employerUid,
-          dbName,
-          excelItemIndices
+        console.log('[TabContentRenderer] 항목 삭제 API 호출:', {
+          endpoint: apiEndpoint,
+          query: queryParams
         });
         
         // API 호출
-        const response = await fetch(`/api/users/currency?employerUid=${employerUid}&excelItemIndex=${excelItemIndices.join(',')}&dbName=${dbName}`, {
+        const response = await fetch(`${apiEndpoint}?${queryParams}`, {
           method: 'DELETE',
         });
         
-        // 응답 처리
-        const result = await response.json() as {
-          success: boolean;
-          message: string;
-          results?: Array<{
-            excelItemIndex: number;
+        // 응답 상태 확인 및 디버깅을 위한 로깅
+        console.log('[TabContentRenderer] 삭제 응답 상태:', {
+          status: response.status,
+          statusText: response.statusText,
+          contentType: response.headers.get('content-type')
+        });
+        
+        // 응답이 JSON이 아닌 경우 처리
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('[TabContentRenderer] JSON이 아닌 응답:', {
+            contentType,
+            status: response.status
+          });
+          
+          // HTML 응답 등이 있을 경우 text로 읽기
+          const responseText = await response.text();
+          console.error('[TabContentRenderer] 응답 내용:', responseText.substring(0, 200) + '...');
+          
+          throw new Error(`서버 오류가 발생했습니다 (${response.status}): ${response.statusText}`);
+        }
+        
+        // JSON 응답 처리
+        let result;
+        try {
+          result = await response.json() as {
             success: boolean;
             message: string;
-          }>;
-        };
+            results?: Array<{
+              success: boolean;
+              message: string;
+              [key: string]: unknown;
+            }>;
+          };
+        } catch (parseError) {
+          console.error('[TabContentRenderer] JSON 파싱 오류:', parseError);
+          throw new Error('응답 데이터 처리 중 오류가 발생했습니다.');
+        }
         
         if (!response.ok || !result.success) {
-          throw new Error(result.message || '삭제 처리 중 오류가 발생했습니다.');
+          console.error('[TabContentRenderer] 요청 실패:', {
+            status: response.status,
+            data: result
+          });
+          throw new Error(result.message || `삭제 처리 중 오류가 발생했습니다. (${response.status})`);
         }
         
         // 삭제 결과 요약
         const totalCount = deletingCurrencies.length;
-        const successCount = result.results?.filter(r => r.success).length || 0;
+        const successCount = result.results?.filter(r => r.success).length || totalCount;
         const failCount = totalCount - successCount;
         
         // 삭제된 항목의 이름 추출
         const itemNames = deletingCurrencies.map(item => {
-          const name = item.name || item.item_name || '재화';
-          const type = item.type || item.item_type || '';
+          // Baller와 Currency 모두 지원
+          const name = item.name || item.baller_name || item.item_name || '항목';
+          const type = item.type || item.baller_type || item.item_type || '';
           return type ? `${name} (${type})` : name;
         }).join(', ');
         
@@ -1837,10 +2035,10 @@ export function TabContentRenderer({ content, className = '' }: TabContentRender
         fetchData();
         
       } catch (error) {
-        console.error('[TabContentRenderer] 화폐 삭제 중 오류:', error);
+        console.error('[TabContentRenderer] 항목 삭제 중 오류:', error);
         toast({
           title: "삭제 실패",
-          description: error instanceof Error ? error.message : "화폐 삭제 중 오류가 발생했습니다.",
+          description: error instanceof Error ? error.message : "항목 삭제 중 오류가 발생했습니다.",
           variant: "destructive",
         });
       } finally {

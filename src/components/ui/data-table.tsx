@@ -275,27 +275,214 @@ export function DataTable({
     if (onSort) onSort(key, direction);
   }, [sortConfig, filteredData, data, processTableData, onSort]);
 
-  // 선택 처리
-  const handleSelectAll = (checked: boolean) => {
-    const newSelected = checked ? data.map(item => item.id?.toString() || '') : [];
-    setSelectedRows(newSelected);
-    onSelectionChange?.(checked ? data : []);
-  };
+  // 행 선택 처리 개선 - 체크박스 선택 처리 강화
+  const handleSelectRow = useCallback(
+    (id: React.Key, checked: boolean) => {
+      setSelectedRows((prev) => {
+        // 체크박스 상태에 따라 selectedRows 업데이트
+        const newSelectedRows = checked 
+          ? [...prev, id.toString()] 
+          : prev.filter((rowId) => rowId !== id.toString());
+        
+        console.log('[DataTable] 행 선택 상태 변경:', {
+          id,
+          checked,
+          selectedCount: newSelectedRows.length
+        });
+        
+        // 선택된 항목 데이터 처리
+        try {
+          // 세션 스토리지에서 전체 테이블 데이터 가져오기
+          const tableDataStr = sessionStorage.getItem('tableData');
+          if (tableDataStr) {
+            const tableData = JSON.parse(tableDataStr);
+            
+            // 이전 선택 정보 완전히 제거
+            sessionStorage.removeItem('selectedCurrency');
+            sessionStorage.removeItem('selectedCurrencies');
+            
+            // 현재 선택된 항목의 전체 데이터 찾기
+            if (newSelectedRows.length === 1) {
+              // 단일 선택 - selectedCurrency에 저장
+              const selectedItem = tableData.find((item: Record<string, unknown>) => 
+                String(item.id) === String(newSelectedRows[0]));
+              
+              if (selectedItem) {
+                // 선택된 항목 저장
+                sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItem));
+                sessionStorage.setItem('selectedCurrencies', JSON.stringify([selectedItem]));
+                console.log('[DataTable] 단일 항목 선택 저장 완료:', selectedItem);
+              } else {
+                console.warn('[DataTable] 선택된 항목을 테이블 데이터에서 찾을 수 없음:', newSelectedRows[0]);
+              }
+            } else if (newSelectedRows.length > 1) {
+              // 다중 선택 - selectedCurrencies에 저장
+              const selectedItems = tableData.filter((item: Record<string, unknown>) => 
+                newSelectedRows.includes(String(item.id)));
+              
+              if (selectedItems.length > 0) {
+                // 선택된 모든 항목 저장
+                sessionStorage.setItem('selectedCurrencies', JSON.stringify(selectedItems));
+                // 첫 번째 항목도 selectedCurrency에 저장 (이전 코드와 호환성 유지)
+                sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItems[0]));
+                console.log('[DataTable] 다중 항목 선택 저장 완료:', selectedItems.length, '개 항목');
+              } else {
+                console.warn('[DataTable] 선택된 항목들을 테이블 데이터에서 찾을 수 없음');
+              }
+            } else {
+              // 선택 해제 - 세션 스토리지에서 제거 (이미 위에서 제거했음)
+              console.log('[DataTable] 모든 선택 해제됨, 세션 스토리지 선택 정보 제거');
+            }
+          } else {
+            console.warn('[DataTable] 테이블 데이터를 세션 스토리지에서 찾을 수 없음');
+          }
+        } catch (error) {
+          console.error('[DataTable] 선택 데이터 처리 중 오류 발생:', error);
+        }
+        
+        // 선택 변경 이벤트 발생
+        const selectionChangedEvent = new CustomEvent('row-selection-changed', {
+          detail: { 
+            selectedRows: newSelectedRows,
+            count: newSelectedRows.length
+          }
+        });
+        window.dispatchEvent(selectionChangedEvent);
+        
+        // 콜백 함수 호출 (있는 경우)
+        if (onSelectionChange) {
+          // 선택된 행 ID에 해당하는 완전한 데이터 객체 찾기
+          const selectedRowsData = newSelectedRows
+            .map(rowId => data.find(item => String(item.id) === rowId))
+            .filter(item => item !== undefined) as TableData[];
+          
+          onSelectionChange(selectedRowsData);
+        }
+        
+        return newSelectedRows;
+      });
+    },
+    [data, onSelectionChange]
+  );
 
-  const handleSelectRow = (id: string) => {
-    setSelectedRows(prev => {
-      const newSelected = prev.includes(id)
-        ? prev.filter(rowId => rowId !== id)
-        : [...prev, id];
+  // 일괄 선택 처리 개선
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      // 전체 선택 또는 전체 해제
+      const newSelectedRows = checked 
+        ? data.map((row) => row.id.toString())
+        : [];
       
-      const selectedItems = data.filter(item => 
-        newSelected.includes(item.id?.toString() || '')
-      );
-      onSelectionChange?.(selectedItems);
+      setSelectedRows(newSelectedRows);
+      console.log('[DataTable] 전체 행 선택 상태 변경:', {
+        checked,
+        selectedCount: newSelectedRows.length
+      });
       
-      return newSelected;
-    });
-  };
+      // 선택된 항목 데이터 처리
+      try {
+        // 이전 선택 정보 완전히 제거
+        sessionStorage.removeItem('selectedCurrency');
+        sessionStorage.removeItem('selectedCurrencies');
+        
+        if (checked && newSelectedRows.length > 0) {
+          // 전체 선택 시 모든 데이터 저장
+          const tableDataStr = sessionStorage.getItem('tableData');
+          if (tableDataStr) {
+            const tableData = JSON.parse(tableDataStr);
+            
+            if (newSelectedRows.length === 1) {
+              // 항목이 1개만 있는 경우 단일 선택으로 처리
+              const selectedItem = tableData[0];
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItem));
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify([selectedItem]));
+              console.log('[DataTable] 단일 항목 전체 선택 저장 완료');
+            } else {
+              // 다중 선택 처리
+              sessionStorage.setItem('selectedCurrencies', JSON.stringify(tableData));
+              sessionStorage.setItem('selectedCurrency', JSON.stringify(tableData[0]));
+              console.log('[DataTable] 다중 항목 전체 선택 저장 완료:', tableData.length, '개 항목');
+            }
+          }
+        } else {
+          // 전체 해제 시 세션 스토리지에서 제거 (이미 위에서 제거했음)
+          console.log('[DataTable] 전체 선택 해제됨, 세션 스토리지 선택 정보 제거');
+        }
+      } catch (error) {
+        console.error('[DataTable] 전체 선택 데이터 처리 중 오류 발생:', error);
+      }
+      
+      // 선택 변경 이벤트 발생
+      const selectionChangedEvent = new CustomEvent('row-selection-changed', {
+        detail: { 
+          selectedRows: newSelectedRows,
+          count: newSelectedRows.length
+        }
+      });
+      window.dispatchEvent(selectionChangedEvent);
+      
+      // 콜백 함수 호출 (있는 경우)
+      if (onSelectionChange) {
+        if (checked) {
+          // 전체 선택시에는 데이터 전체를 전달
+          onSelectionChange(data);
+        } else {
+          // 전체 해제시에는 빈 배열 전달
+          onSelectionChange([]);
+        }
+      }
+    },
+    [data, onSelectionChange]
+  );
+
+  // 컴포넌트 마운트/업데이트 시 체크박스 상태와 세션 스토리지 동기화
+  useEffect(() => {
+    // 컴포넌트 마운트 시 이전 선택 정보 초기화
+    setSelectedRows([]);
+    sessionStorage.removeItem('selectedCurrency');
+    sessionStorage.removeItem('selectedCurrencies');
+    
+    console.log('[DataTable] 컴포넌트 마운트/업데이트 - 선택 상태 초기화');
+    
+    // 컴포넌트 언마운트 시 클린업 함수
+    return () => {
+      console.log('[DataTable] 컴포넌트 언마운트 - 정리 작업');
+    };
+  }, [tableName]); // tableName이 변경될 때마다 (탭이 변경될 때) 실행
+
+  // 선택 상태 동기화 이벤트 리스너 추가
+  useEffect(() => {
+    const handleSyncSelection = () => {
+      console.log('[DataTable] 선택 상태 동기화 요청 수신');
+      
+      if (selectedRows.length > 0) {
+        // 선택된 항목의 완전한 데이터 객체 가져오기
+        const selectedRowsData = selectedRows
+          .map(rowId => filteredData.find(item => String(item.id) === rowId))
+          .filter(item => item !== undefined) as TableData[];
+        
+        // 선택된 모든 항목 저장
+        if (selectedRowsData.length > 0) {
+          console.log('[DataTable] 선택 상태 동기화 중:', selectedRowsData.length, '개 항목');
+          sessionStorage.setItem('selectedCurrencies', JSON.stringify(selectedRowsData));
+          sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedRowsData[0]));
+          
+          // 상위 컴포넌트의 콜백 함수 호출
+          if (onSelectionChange) {
+            onSelectionChange(selectedRowsData);
+          }
+        }
+      }
+    };
+    
+    // 이벤트 리스너 등록
+    window.addEventListener('sync-table-selection', handleSyncSelection);
+    
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      window.removeEventListener('sync-table-selection', handleSyncSelection);
+    };
+  }, [selectedRows, filteredData, onSelectionChange]);
 
   // 페이지네이션 처리
   const handlePageChange = useCallback((newPage: number) => {
@@ -974,7 +1161,7 @@ export function DataTable({
                     <div className="flex justify-center items-center w-full px-2">
                       <Checkbox
                         checked={selectedRows.includes(item.id?.toString())}
-                        onCheckedChange={() => handleSelectRow(item.id?.toString())}
+                        onCheckedChange={(checked) => handleSelectRow(item.id, !!checked)}
                       />
                     </div>
                   </TableCell>
@@ -1027,27 +1214,6 @@ export function DataTable({
                               e.stopPropagation();
                               
                               try {
-                                // Create는 특정 항목이 필요 없지만, 현재 컨텍스트에서 작업을 위해 필요하면 적용
-                                if (onCreateCurrency) {
-                                  onCreateCurrency();
-                                }
-                                // 메뉴 닫기
-                                handleRowMenuOpenChange(item.id?.toString(), false);
-                              } catch (error) {
-                                console.error('[DataTable] Create 처리 중 오류:', error);
-                              }
-                            }}
-                            className="cursor-pointer text-green-600 hover:text-green-700 hover:bg-green-50"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              
-                              try {
                                 // 체크박스 선택 없이 해당 행의 데이터만 직접 sessionStorage에 저장
                                 const selectedItem = data.find(d => d.id?.toString() === item.id?.toString());
                                 if (selectedItem) {
@@ -1081,9 +1247,19 @@ export function DataTable({
                                 const selectedItem = data.find(d => d.id?.toString() === item.id?.toString());
                                 if (selectedItem) {
                                   // 단일 항목 직접 저장 - 체크박스 선택 상태 변경 없음
+                                  // 중요: 원본 데이터 그대로 저장 (필드 이름이 다양할 수 있음)
+                                  // Baller의 경우 excel_baller_index, excelBallerIndex 등의 필드,
+                                  // Currency의 경우 excel_item_index 등의 필드가 있을 수 있음
                                   sessionStorage.setItem('selectedCurrency', JSON.stringify(selectedItem));
                                   sessionStorage.setItem('selectedCurrencies', JSON.stringify([selectedItem]));
-                                  console.log('[DataTable] Delete 선택: 단일 항목 저장됨', selectedItem);
+                                  
+                                  console.log('[DataTable] Delete 선택: 단일 항목 저장됨', {
+                                    id: selectedItem.id,
+                                    // 디버깅: 관련 필드 로깅
+                                    excel_item_index: selectedItem.excel_item_index,
+                                    excelBallerIndex: selectedItem.excelBallerIndex,
+                                    excel_baller_index: selectedItem.excel_baller_index
+                                  });
                                 }
                                 
                                 if (onDeleteCurrency) {
