@@ -68,7 +68,7 @@ npm install -D cypress
 graph TD
     A[프로젝트 루트] --> B[src]
     A --> C[public]
-    A --> D[docs]
+    A --> D[documents]
     A --> E[tests]
     
     B --> B1[app]
@@ -248,13 +248,35 @@ coverage/
 - 이미지 최적화
 - 코드 스플리팅
 - 레이지 로딩
-- 메모이제이션
 
-### 6. 보안
-- API 키 환경변수 관리
-- XSS 방지
-- CSRF 토큰 사용
-- 입력값 검증
+## 최근 업데이트
+
+### 2024년 3월 21일
+
+#### 1. Baller API UI 통합
+- Baller API가 성공적으로 UI에 통합되었습니다.
+- Users > Select Users 카드 > MULTIPLAY > BALLER 탭에서 Baller 정보 CRUD 작업 가능
+- 실제 API와 연동되어 데이터베이스 작업 수행
+
+#### 2. 데이터 테이블 컴포넌트 개선
+- 체크박스 선택 기능 개선: 선택 데이터가 즉시 세션 스토리지에 저장됨
+- 행 메뉴(더보기) 기능 개선: DELETE, UPDATE 작업 시 필요한 데이터 정확히 전달
+- 테이블 컴포넌트의 마운트/언마운트 시 선택 데이터 초기화 로직 추가
+
+#### 3. 에러 처리 및 로깅 강화
+- JSON 파싱 오류 대응: HTML 응답 등 예외 상황 안전하게 처리
+- 응답 타입 검증 추가: Content-Type 확인 및 적절한 오류 메시지 제공
+- 디버그 로깅 확장: 오류 발생 시 더 많은 상황 정보 제공
+
+#### 4. TypeScript 타입 안전성 강화
+- `any` 타입 제거 및 정확한 타입 정의 추가
+- 오류 객체 타입 캐스팅으로 안전한 로깅 구현
+- API 응답 타입 정의 구체화
+
+#### 5. 웹 애플리케이션 안정성 향상
+- 예상치 못한 서버 응답에 대한 대응 방안 구현
+- 사용자 친화적인 오류 메시지 개선
+- 에러 바운더리로 애플리케이션 크래시 방지
 
 ## 배포 가이드
 
@@ -375,7 +397,7 @@ npm install react-json-pretty react-json-view --force
 - `src/hooks/useApiRequest.ts`: API 요청 및 디버그 정보 수집 훅
 - `src/components/ApiDebugInfo.tsx`: 디버그 정보 표시 컴포넌트
 - `src/app/api/db-query/debug-info/route.ts`: 디버그 정보 API 엔드포인트
-- `docs/api-debug-info.md`: 기능 상세 문서
+- `documents/api-debug-info.md`: 기능 상세 문서
 
 # 프로젝트 설정 정보
 
@@ -760,7 +782,7 @@ interface GroupedTables { ... } // 그룹화된 테이블
   - `src/app/api/users/multi-play/baller/route.ts`: API 라우트 핸들러
   - `src/app/api/users/multi-play/baller/service.ts`: 비즈니스 로직
   - `src/app/api/db-query/queries-users-baller.ts`: DB 쿼리
-- **문서**: `docs/gm-tool-api-doc.md`
+- **문서**: `documents/gm-tool-api-doc.md`
 - **테스트**:
   - `src/test/api/users/multi-play/baller.test.ts`: 단위 테스트
   - `src/test/api/users/multi-play/baller-api.test.ts`: 통합 테스트
