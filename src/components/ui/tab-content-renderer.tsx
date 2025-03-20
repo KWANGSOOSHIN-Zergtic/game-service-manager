@@ -281,13 +281,15 @@ const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({
             ) : (
               <span className="ml-2 text-sm text-gray-500 italic">URL 정보 없음</span>
             )}
+          </div>
+          <div className="flex items-center">
             {url && (
-              <button
+              <div
                 onClick={(e) => {
                   e.stopPropagation(); // 아코디언 토글 방지
                   copyToClipboard(url || '', 'url');
                 }}
-                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100 ml-2"
+                className="flex items-center text-gray-500 hover:text-blue-600 transition-colors px-2 py-1 rounded hover:bg-gray-100 ml-2 cursor-pointer"
                 title="URL 클립보드에 복사"
               >
                 {copiedSection === 'url' ? (
@@ -301,10 +303,10 @@ const RequestInfoSection: React.FC<RequestInfoSectionProps> = ({
                     <span className="text-xs">복사</span>
                   </>
                 )}
-              </button>
+              </div>
             )}
+            <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'transform rotate-180' : ''}`} />
           </div>
-          <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ml-2 ${isOpen ? 'transform rotate-180' : ''}`} />
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>

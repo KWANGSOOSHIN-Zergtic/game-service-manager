@@ -749,6 +749,12 @@ interface GroupedTables { ... } // 그룹화된 테이블
   - 특징: CREATE, UPDATE, DELETE 버튼 및 관련 모달 다이얼로그 포함
   - 사용법: 데이터 테이블의 showDataControls 속성을 true로 설정
 
+- **PubSeatControlPanel**: PUB 좌석 상태 관리를 위한 컨트롤 패널 컴포넌트
+  - 위치: `src/components/control-panels/pub-seat-control-panel.tsx` 
+  - 목적: PUB 좌석 상태, 대화 상태, 모집 상태 관리 인터페이스 제공
+  - 특징: 기본 CRUD 기능과 함께 좌석/대화/모집 상태 관리를 위한 특화 기능 포함
+  - 관련 모달: `src/components/control-panels/create-pub-seat-modal.tsx`
+
 ### 3. 모달 다이얼로그
 - **CreateCurrencyModal**: 화폐 생성을 위한 모달 컴포넌트
   - 위치: `src/components/control-panels/create-currency-modal.tsx`
@@ -756,18 +762,23 @@ interface GroupedTables { ... } // 그룹화된 테이블
 - **CreateBallerModal**: BALLER 생성을 위한 모달 컴포넌트
   - 위치: `src/components/control-panels/create-baller-modal.tsx`
   - 목적: BALLER 추가 시 필요한 정보 입력 인터페이스 제공
+- **CreatePubSeatModal**: PUB 좌석 상태 생성을 위한 모달 컴포넌트 
+  - 위치: `src/components/control-panels/create-pub-seat-modal.tsx`
+  - 목적: PUB 좌석 상태 추가 시 필요한 정보 입력 인터페이스 제공
+  - 특징: 좌석 수 조정, 상태 설정, 대화/모집 상태 설정 인터페이스 포함
 
 ## 컴포넌트 구성 참고사항
 
 ### 데이터 컨트롤 패널 (DataControlsPanel)
-- **용도**: 화폐 또는 BALLER 데이터 관리
+- **용도**: 화폐 또는 BALLER, PUB 데이터 관리
 - **주요 기능**: 
   - CREATE: 새 항목 생성
   - UPDATE: 선택한 항목 정보 수정
   - DELETE: 선택한 항목 삭제
+  - 특화 기능: 데이터 타입별 특화 기능 제공
 - **구현 방식**: 
   - `showDataControls` 속성을 true로 설정하여 활성화
-  - Currency와 BALLER 탭에서 모두 사용 가능
+  - Currency와 BALLER, PUB 탭에서 모두 사용 가능
   - 각 탭에 맞는 핸들러 함수가 자동으로 연결됨
 
 ## API 구현 현황

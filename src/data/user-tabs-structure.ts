@@ -53,7 +53,7 @@ export const userTabsStructure: TabStructure = {
           content: {
             type: 'dataTable',
             props: {
-              endpoint: '/api/users/pub',
+              endpoint: '/api/users/multi-play/pub',
             }
           }
         },
