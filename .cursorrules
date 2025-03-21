@@ -4,11 +4,6 @@
 - 요청이 들어올때 요청이 모호하면 재질문을 통해서 요청사항을 명확하게 해야 합니다.
 - 요청은 핵심 요청을 기본으로 하여 Json 형식의 고급 프롬프트화 되어 질문 되어야 합니다.
 - 코드는 철저한 함수화 컴포넌트화 로 작업 되어야 합니다
-- 작성된 코드는 Unit Test 및 E2E Test 를 작성 하여야 합니다 
-- Test 는 src/test 폴더 내에 작성 되어야 합니다. 
-- Test 데이터는 src/test/test-data 폴더 내에 작성 되어야 합니다.
-- Test Jest 를 통해서 실행 되어야 합니다.
-- 테스트 실행시 오류가 발생하면 관련 오류를 반드시 수정하여야 합니다.
 - 요청에 필요한 라이브러리나 패키지, 컴포넌트들은 요청시 모두 설치 되어야 합니다.
 - 설치된 항목은 '/dosc/gm-tool-project-setup.md'에 목적과, 설치 방법이 기재 되어야 합니다.
 
@@ -41,7 +36,7 @@
 
 ### ShadCN Components
 - 모든 UI 컴포넌트는 ShadCN을 사용해야 합니다.
-- 컴포넌트 사용 전 설치 여부를 확인해야 합니다: '/components/ui' 디렉토리 체크
+- 컴포넌트 사용 전 설치 여부를 확인해야 합니다: 'src/components/ui' 디렉토리 체크
 - 컴포넌트 설치 명령어를 사용해야 합니다: 'npx shadcn@latest add [component—name]'
     - 주의: 'npx shadcn—ui@latest add' 명령어는 deprecated. 반드시 'npx shadcn@latest add'를 사용해야 합니다.
 
@@ -53,14 +48,46 @@
 
 ### Component Structure
 
-- 컴포넌트는 'srccomponents' 디렉토리 내에 위치해야 합니다
+- 컴포넌트는 'src/components' 디렉토리 내에 위치해야 합니다
 - UI 컴포넌트는 'src/components/ui' 디렉토리에 위치해야 합니다
 - 페이지별 컴포넌트는 'src/app' 디렉토리 내 해당 라우트에 위치해야 합니다
+
+
+## 문서 가이드라인
 - 프로젝트의 문서는 'documents' 디렉토리 내에 위치해야 합니다
+- 문서는 프로젝트에 사용된 모든 기능을 설명하여야 합니다.
+- PRD 문서는 목적에 따라 pm, design, tech 로 나누어 작성 되어야 합니다.
+- API 문서 DB 문서는 상세한 구조 및 기능 연결에 대해 설명해야 하며 호출되는 요소 및 호출하는 요소에 대해서 설명해야 합니다.
+- 문서는 모든 기능을 설명해야 하며 예시 코드를 포함해야 합니다.
+- 문서는 도식을 포함 하여 상호간의 Flow 를 표현해야 합니다.
+
+### DB Guid Line 
+- DB 는 PostgreSQL 을 사용합니다.
+- 메모리 DB 는 Redis 를 사용합니다.
+- DB 의 스키마 구조는 entity 폴더의 Entity 를 사용하여 데이터 테이블을 생성 및 관리 합니다.
+
+### Memory Use
+- 데이터 테이블은 Shard Memory 를 사용하여 캐싱 하여 사용 합니다.
+- 유저의 데이터는 유저의 고유 아이디를 키로 사용하여 캐싱 하여 사용 합니다.
+- 데이터 테이블은 데이터 테이블 명을 키로 사용하여 캐싱 하여 사용 합니다.
 
 ## 프로그램 실행 및 테스트
-- jest test 를 제외한 직접 실행 테스트의 경우 아래의 조건을 준수 해야 합니다.
-- 프로그램 실행 명령어: 'npm run dev'
-- 프로그램 실행 후 접속 주소: 'http://localhost:3000'
-- 개발용 포트인 3000 포트를 사용하여 실행 해야 합니다.
-- 만약 3000번 포트가 이미 실행 중이면 종료후 실행 하여야 합니다
+- 작성된 코드는 Unit Test 및 E2E Test 를 작성 하여야 합니다 
+- Test 는 각 기능의 핵심 요소를 테스트 하여야 합니다.
+- Test 는 각 기능의 핵심 예외 사항을 생각 하여 제작 되어야 하며 해당 사항을 확실히 체크 하여야 합니다.
+
+- BackEnd Code 는 작성 이후 반드시 Unit Test 를 작성 하여야 합니다.
+- Unit 테스트 프레임워크는 Jest 를 사용합니다.
+- Unit Test 는 src/test/unit 폴더 내에 작성 되어야 합니다.
+- Unit Test 데이터는 src/test/test-data 폴더 내에 작성 되어야 합니다.
+
+- FrontEnd Code는 작성 이후 반드시 E2E Test 를 작성 하여야 합니다.
+- E2E 테스트 프레임워크는 Playwright 를 사용합니다.
+- E2E Test 는 src/test/e2e 폴더 내에 작성 되어야 합니다.
+- E2E Test 데이터는 src/test/test-data 폴더 내에 작성 되어야 합니다.
+
+- BackEnd Code 와 FrontEnd Code 의 연결 이후 반드시 e2e test 를 작성 및 코드 완료를 하여야 합니다.
+
+- 테스트 실행시 오류가 발생하면 관련 오류를 반드시 수정하여야 합니다.
+
+## 
